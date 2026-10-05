@@ -1,7 +1,7 @@
-version: '3.9'
 services:
   postgres:
     image: postgres:17-alpine
+    container_name: avengers-postgres
     environment:
       POSTGRES_DB: avengers
       POSTGRES_USER: avengers
@@ -10,17 +10,6 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-
-  bot:
-    build: .
-    depends_on:
-      - postgres
-    environment:
-      BOT_TOKEN: ${BOT_TOKEN}
-      BOT_USERNAME: ${BOT_USERNAME}
-      DB_URL: jdbc:postgresql://postgres:5432/avengers
-      DB_USER: avengers
-      DB_PASSWORD: secret
     restart: unless-stopped
 
 volumes:

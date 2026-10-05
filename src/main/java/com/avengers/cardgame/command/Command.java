@@ -7,6 +7,6 @@ public interface Command {
 
     String name();
 
-    void execute(TelegramClient client, long chatId, long userId, String text)
+    void execute(TelegramClient client, long chatId, long userId, String userName, String text)
             throws TelegramApiException;
 }

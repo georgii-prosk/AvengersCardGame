@@ -2,6 +2,11 @@ package com.avengers.cardgame.bot;
 
 import com.avengers.cardgame.command.Command;
 import com.avengers.cardgame.command.CommandRegistry;
+import com.avengers.cardgame.config.DatabaseConfig;
+import com.avengers.cardgame.repository.UserRepository;
+import com.avengers.cardgame.repository.impl.UserRepositoryImpl;
+import com.avengers.cardgame.service.UserService;
+import com.avengers.cardgame.service.ValidationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
@@ -18,7 +23,13 @@ public class AvengersBot implements LongPollingSingleThreadUpdateConsumer {
 
     public AvengersBot(String botToken) {
         this.telegramClient = new OkHttpTelegramClient(botToken);
-        this.commandRegistry = new CommandRegistry();
+
+        DatabaseConfig dbConfig = new DatabaseConfig();
+        UserRepository userRepository = new UserRepositoryImpl(dbConfig);
+        UserService userService = new UserService(userRepository);
+        ValidationService validationService = new ValidationService();
+
+        this.commandRegistry = new CommandRegistry(userService, validationService);
     }
 
     @Override
@@ -29,11 +40,12 @@ public class AvengersBot implements LongPollingSingleThreadUpdateConsumer {
 
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
+        String userName = update.getMessage().getFrom().getUserName();
         String text = update.getMessage().getText();
 
         Command command = commandRegistry.resolve(text);
         try {
-            command.execute(telegramClient, chatId, userId, text);
+            command.execute(telegramClient, chatId, userId, userName,text);
         } catch (TelegramApiException e) {
             log.error("Error while executing the command", e);
         }

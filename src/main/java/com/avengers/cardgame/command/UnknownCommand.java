@@ -12,7 +12,7 @@ public class UnknownCommand implements Command {
     }
 
     @Override
-    public void execute(TelegramClient client, long chatId, long userId, String text)
+    public void execute(TelegramClient client, long chatId, long userId, String userName, String text)
             throws TelegramApiException {
 
         String message = "Неизвестная команда. Введите /help для списка команд.";

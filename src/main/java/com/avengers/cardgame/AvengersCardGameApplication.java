@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.flywaydb.core.Flyway;
 
 public class AvengersCardGameApplication {
 
@@ -17,6 +18,16 @@ public class AvengersCardGameApplication {
             log.error("Environment variable BOT_TOKEN is not set");
             return;
         }
+
+        Flyway flyway = Flyway.configure()
+                .dataSource(
+                        System.getenv("DB_URL"),
+                        System.getenv("DB_USER"),
+                        System.getenv("DB_PASSWORD")
+                )
+                .load();
+        flyway.migrate();
+        log.info("Database migrations applied");
 
         try (TelegramBotsLongPollingApplication botsApplication =
                      new TelegramBotsLongPollingApplication()) {
