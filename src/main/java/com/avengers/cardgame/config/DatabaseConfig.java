@@ -4,32 +4,40 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-/**
- * Конфигурация подключения к базе данных.
- * <p>
- * Параметры подключения берутся из переменных окружения:
- * <ul>
- *     <li>{@code DB_URL} — JDBC URL базы данных;</li>
- *     <li>{@code DB_USER} — имя пользователя;</li>
- *     <li>{@code DB_PASSWORD} — пароль.</li>
- * </ul>
- */
 public class DatabaseConfig {
 
-    /** JDBC URL базы данных из переменной окружения {@code DB_URL}. */
-    private final String url = System.getenv("DB_URL");
-
-    /** Имя пользователя БД из переменной окружения {@code DB_USER}. */
-    private final String user = System.getenv("DB_USER");
-
-    /** Пароль БД из переменной окружения {@code DB_PASSWORD}. */
-    private final String password = System.getenv("DB_PASSWORD");
+    private final String url;
+    private final String user;
+    private final String password;
 
     /**
-     * Создаёт новое подключение к базе данных.
+     * Рабочий конструктор. Читает параметры из переменных окружения.
+     */
+    public DatabaseConfig() {
+        this(System.getenv("DB_URL"),
+                System.getenv("DB_USER"),
+                System.getenv("DB_PASSWORD"));
+    }
+
+    /**
+     * Конструктор для тестов. Позволяет передать параметры напрямую
+     * (например, из Testcontainers).
      *
-     * @return объект {@link Connection}
-     * @throws SQLException если подключение не удалось установить
+     * @param url      JDBC URL базы данных
+     * @param user     имя пользователя
+     * @param password пароль
+     */
+    public DatabaseConfig(String url, String user, String password) {
+        this.url = url;
+        this.user = user;
+        this.password = password;
+    }
+
+    /**
+     * Открывает соединение с базой данных.
+     *
+     * @return новое соединение {@link Connection}
+     * @throws SQLException при ошибке подключения
      */
     public Connection getConnection() throws SQLException {
         return DriverManager.getConnection(url, user, password);
