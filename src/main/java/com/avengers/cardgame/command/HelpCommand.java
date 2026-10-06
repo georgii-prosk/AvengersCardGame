@@ -4,6 +4,9 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
+/**
+ * Команда {@code /help} — выводит список доступных команд бота с кратким описанием.
+ */
 public class HelpCommand implements Command {
 
     @Override
@@ -11,6 +14,16 @@ public class HelpCommand implements Command {
         return "/help";
     }
 
+    /**
+     * Отправляет пользователю справочное сообщение со списком команд.
+     *
+     * @param client   клиент Telegram
+     * @param chatId   идентификатор чата
+     * @param userId   идентификатор пользователя
+     * @param userName имя пользователя
+     * @param text     текст сообщения
+     * @throws TelegramApiException при ошибке отправки сообщения
+     */
     @Override
     public void execute(TelegramClient client, long chatId, long userId, String userName,String text)
             throws TelegramApiException {
