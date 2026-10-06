@@ -7,10 +7,29 @@ import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.flywaydb.core.Flyway;
 
+/**
+ * Точка входа приложения AvengersCardGame.
+ * <p>
+ * Выполняет запуск Telegram-бота:
+ * <ol>
+ *     <li>Читает токен бота из переменной окружения {@code BOT_TOKEN}.</li>
+ *     <li>Применяет миграции базы данных через Flyway (используя {@code DB_URL},
+ *         {@code DB_USER}, {@code DB_PASSWORD}).</li>
+ *     <li>Регистрирует бота в {@link TelegramBotsLongPollingApplication} и
+ *         запускает Long Polling.</li>
+ * </ol>
+ */
 public class AvengersCardGameApplication {
 
+    /** Логгер приложения. */
     private final Logger log = LoggerFactory.getLogger(AvengersCardGameApplication.class);
 
+    /**
+     * Запускает приложение.
+     * <p>
+     * Если переменная окружения {@code BOT_TOKEN} не задана, работа прекращается.
+     * После успешного запуска главный поток блокируется до прерывания.
+     */
     void main() {
         String botToken = System.getenv("BOT_TOKEN");
 
