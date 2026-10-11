@@ -8,6 +8,10 @@ import com.avengers.cardgame.service.UserService;
  */
 public class ProfileCommand implements Command {
 
+    /** Заглушка для пустого поля профиля. */
+    private static final String NOT_SET = "не задано";
+
+    /** Сервис пользователей. */
     private final UserService userService;
 
     public ProfileCommand(UserService userService) {
@@ -19,10 +23,10 @@ public class ProfileCommand implements Command {
         User user = userService.getByUserId(request.userId());
 
         String displayName = (user.displayName() == null || user.displayName().isBlank())
-                ? "не задано"
+                ? NOT_SET
                 : user.displayName();
         String bio = (user.bio() == null || user.bio().isBlank())
-                ? "не задано"
+                ? NOT_SET
                 : user.bio();
 
         return new Reply("""

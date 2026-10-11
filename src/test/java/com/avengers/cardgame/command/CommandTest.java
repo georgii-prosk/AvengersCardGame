@@ -5,7 +5,11 @@ import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserRepository;
 import com.avengers.cardgame.service.UserService;
 import com.avengers.cardgame.service.ValidationService;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,9 +17,6 @@ import java.util.Optional;
 
 /**
  * Тесты для команд бота.
- * <p>
- * Команды предполагают, что пользователь уже зарегистрирован —
- * регистрацией занимается {@link RegisteringCommand}.
  */
 class CommandTest {
 
@@ -38,7 +39,7 @@ class CommandTest {
         @DisplayName("Возвращает приветствие")
         void shouldReturnGreeting() {
             Reply reply = new StartCommand()
-                    .handle(new CommandRequest(1L, "Tony", "/start"));
+                    .handle(new CommandRequest(1L, "Tony", ""));
 
             Assertions.assertTrue(reply.text().contains("AvengersCardGame"));
         }
@@ -47,9 +48,9 @@ class CommandTest {
         @DisplayName("Не зависит от данных пользователя")
         void doesNotDependOnUserData() {
             Reply withName = new StartCommand()
-                    .handle(new CommandRequest(1L, "Tony", "/start"));
+                    .handle(new CommandRequest(1L, "Tony", ""));
             Reply withoutName = new StartCommand()
-                    .handle(new CommandRequest(2L, null, "/start"));
+                    .handle(new CommandRequest(2L, null, ""));
 
             Assertions.assertEquals(withName.text(), withoutName.text());
         }
@@ -63,7 +64,7 @@ class CommandTest {
         @DisplayName("Содержит все команды в ответе")
         void shouldContainAllCommands() {
             Reply reply = new HelpCommand()
-                    .handle(new CommandRequest(1L, "Tony", "/help"));
+                    .handle(new CommandRequest(1L, "Tony", ""));
 
             String text = reply.text();
             Assertions.assertTrue(text.contains("/start"));
@@ -84,7 +85,7 @@ class CommandTest {
             userRepository.save(new User(1L, "Tony", "Genius", 100, 5, null, null));
 
             Reply reply = new ProfileCommand(userService)
-                    .handle(new CommandRequest(1L, "Tony", "/profile"));
+                    .handle(new CommandRequest(1L, "Tony", ""));
 
             String text = reply.text();
             Assertions.assertTrue(text.contains("Tony"));
@@ -99,7 +100,7 @@ class CommandTest {
             userRepository.save(new User(1L, "", "", 0, 0, null, null));
 
             Reply reply = new ProfileCommand(userService)
-                    .handle(new CommandRequest(1L, "Tony", "/profile"));
+                    .handle(new CommandRequest(1L, "Tony", ""));
 
             Assertions.assertTrue(reply.text().contains("не задано"));
         }
@@ -109,7 +110,7 @@ class CommandTest {
         void shouldThrowWhenUserNotFound() {
             Assertions.assertThrows(UserNotFoundException.class,
                     () -> new ProfileCommand(userService)
-                            .handle(new CommandRequest(1L, "Tony", "/profile")));
+                            .handle(new CommandRequest(1L, "Tony", "")));
         }
     }
 
@@ -124,7 +125,7 @@ class CommandTest {
             validationService.validName = true;
 
             Reply reply = new SetNameCommand(userService, validationService)
-                    .handle(new CommandRequest(1L, "Tony", "/setname Narek"));
+                    .handle(new CommandRequest(1L, "Tony", "Narek"));
 
             Assertions.assertEquals("Narek",
                     userRepository.findByUserId(1L).orElseThrow().displayName());
@@ -138,7 +139,7 @@ class CommandTest {
             validationService.validName = false;
 
             Reply reply = new SetNameCommand(userService, validationService)
-                    .handle(new CommandRequest(1L, "Tony", "/setname bad name"));
+                    .handle(new CommandRequest(1L, "Tony", "bad name"));
 
             Assertions.assertEquals("OldName",
                     userRepository.findByUserId(1L).orElseThrow().displayName());
@@ -151,7 +152,7 @@ class CommandTest {
             userRepository.save(new User(1L, "OldName"));
 
             Reply reply = new SetNameCommand(userService, validationService)
-                    .handle(new CommandRequest(1L, "Tony", "/setname"));
+                    .handle(new CommandRequest(1L, "Tony", ""));
 
             Assertions.assertEquals("OldName",
                     userRepository.findByUserId(1L).orElseThrow().displayName());
@@ -170,7 +171,7 @@ class CommandTest {
             validationService.validBio = true;
 
             Reply reply = new SetBioCommand(userService, validationService)
-                    .handle(new CommandRequest(1L, "Tony", "/setbio new bio"));
+                    .handle(new CommandRequest(1L, "Tony", "new bio"));
 
             Assertions.assertEquals("new bio",
                     userRepository.findByUserId(1L).orElseThrow().bio());
@@ -184,7 +185,7 @@ class CommandTest {
             validationService.validBio = false;
 
             Reply reply = new SetBioCommand(userService, validationService)
-                    .handle(new CommandRequest(1L, "Tony", "/setbio bad bio"));
+                    .handle(new CommandRequest(1L, "Tony", "bad bio"));
 
             Assertions.assertEquals("",
                     userRepository.findByUserId(1L).orElseThrow().bio());
@@ -197,7 +198,7 @@ class CommandTest {
             userRepository.save(new User(1L, "Tony"));
 
             Reply reply = new SetBioCommand(userService, validationService)
-                    .handle(new CommandRequest(1L, "Tony", "/setbio"));
+                    .handle(new CommandRequest(1L, "Tony", ""));
 
             Assertions.assertEquals("",
                     userRepository.findByUserId(1L).orElseThrow().bio());
@@ -213,54 +214,53 @@ class CommandTest {
 
         @BeforeEach
         void setUp() {
-            registry = new CommandRegistry(userService, validationService);
+            registry = new CommandRegistry();
+            registry.register("/start", new StartCommand());
+            registry.register("/help", new HelpCommand());
+            registry.register("/profile", new ProfileCommand(userService));
+            registry.register("/setname", new SetNameCommand(userService, validationService));
+            registry.register("/setbio", new SetBioCommand(userService, validationService));
         }
 
         @Test
-        @DisplayName("Разрешает /start")
-        void shouldResolveStart() {
-            Assertions.assertTrue(registry.resolve("/start").isPresent());
+        @DisplayName("Разрешает /start без аргумента")
+        void shouldResolveStartWithoutArgument() {
+            Optional<ResolvedCommand> resolved = registry.resolve("/start");
+
+            Assertions.assertTrue(resolved.isPresent());
+            Assertions.assertInstanceOf(StartCommand.class, resolved.get().command());
+            Assertions.assertEquals("", resolved.get().argument());
         }
 
         @Test
-        @DisplayName("Разрешает /help")
-        void shouldResolveHelp() {
-            Assertions.assertTrue(registry.resolve("/help").isPresent());
+        @DisplayName("Разрешает /setname с аргументом")
+        void shouldResolveSetNameWithArgument() {
+            Optional<ResolvedCommand> resolved = registry.resolve("/setname Narek");
+
+            Assertions.assertTrue(resolved.isPresent());
+            Assertions.assertInstanceOf(SetNameCommand.class, resolved.get().command());
+            Assertions.assertEquals("Narek", resolved.get().argument());
         }
 
         @Test
-        @DisplayName("Разрешает /profile")
-        void shouldResolveProfile() {
-            Assertions.assertTrue(registry.resolve("/profile").isPresent());
+        @DisplayName("Разрешает /setbio с многословным аргументом")
+        void shouldResolveSetBioWithMultiWordArgument() {
+            Optional<ResolvedCommand> resolved = registry.resolve("/setbio Привет мир 🦸");
+
+            Assertions.assertTrue(resolved.isPresent());
+            Assertions.assertEquals("Привет мир 🦸", resolved.get().argument());
         }
 
         @Test
-        @DisplayName("Разрешает /setname")
-        void shouldResolveSetName() {
-            Assertions.assertTrue(registry.resolve("/setname").isPresent());
-        }
-
-        @Test
-        @DisplayName("Разрешает /setbio")
-        void shouldResolveSetBio() {
-            Assertions.assertTrue(registry.resolve("/setbio").isPresent());
-        }
-
-        @Test
-        @DisplayName("Регистронезависимость")
+        @DisplayName("Регистронезависимость имени команды")
         void shouldResolveCaseInsensitive() {
             Assertions.assertTrue(registry.resolve("/START").isPresent());
-        }
-
-        @Test
-        @DisplayName("Игнорирует аргументы")
-        void shouldIgnoreArguments() {
-            Assertions.assertTrue(registry.resolve("/setname Tony").isPresent());
+            Assertions.assertTrue(registry.resolve("/SetName Narek").isPresent());
         }
 
         @Test
         @DisplayName("Пустой Optional для неизвестной команды")
-        void shouldReturnEmptyForUnknownCommand() {
+        void shouldReturnEmptyForUnknown() {
             Assertions.assertTrue(registry.resolve("/foo").isEmpty());
         }
 
@@ -274,6 +274,21 @@ class CommandTest {
         @DisplayName("Пустой Optional для пробелов")
         void shouldReturnEmptyForBlank() {
             Assertions.assertTrue(registry.resolve("   ").isEmpty());
+        }
+
+        @Test
+        @DisplayName("Команда без пробела после имени не распознаётся")
+        void shouldNotMatchCommandWithoutSpace() {
+            Assertions.assertTrue(registry.resolve("/setnameX foo").isEmpty());
+        }
+
+        @Test
+        @DisplayName("Ведущие и хвостовые пробелы не мешают")
+        void shouldTrimWhitespace() {
+            Optional<ResolvedCommand> resolved = registry.resolve("   /setname Narek   ");
+
+            Assertions.assertTrue(resolved.isPresent());
+            Assertions.assertEquals("Narek", resolved.get().argument());
         }
     }
 

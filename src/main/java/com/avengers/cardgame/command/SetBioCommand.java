@@ -8,9 +8,19 @@ import com.avengers.cardgame.service.ValidationService;
  */
 public class SetBioCommand implements Command {
 
-    private static final String COMMAND_NAME = "/setbio";
+    /** Текст ошибки при невалидном bio. */
+    private static final String ERROR = "Вы ввели некорректное описание профиля. "
+            + "Допустимо использовать до 256 символов латиницей или кириллицей "
+            + "+ эмодзи и знаков препинания, пробелов, цифр, спецсимволы "
+            + "(/|\\<>@#$%^&*(){}[]`~;:'\"-_=+).";
 
+    /** Префикс успешного ответа. */
+    private static final String SUCCESS_PREFIX = "Вы обновили описание своего профиля на ";
+
+    /** Сервис пользователей. */
     private final UserService userService;
+
+    /** Сервис валидации. */
     private final ValidationService validationService;
 
     public SetBioCommand(UserService userService, ValidationService validationService) {
@@ -20,24 +30,13 @@ public class SetBioCommand implements Command {
 
     @Override
     public Reply handle(CommandRequest request) {
-        String newBio = extractArgument(request.text(), COMMAND_NAME);
+        String newBio = request.argument();
 
         if (newBio.isEmpty() || !validationService.isValidBio(newBio)) {
-            return new Reply("Вы ввели некорректное описание профиля. "
-                    + "Допустимо использовать до 256 символов латиницей или кириллицей "
-                    + "+ эмодзи и знаков препинания, пробелов, цифр, спецсимволы "
-                    + "(/|\\<>@#$%^&*(){}[]`~;:'\"-_=+).");
+            return new Reply(ERROR);
         }
 
         userService.updateBio(request.userId(), newBio);
-        return new Reply("Вы обновили описание своего профиля на " + newBio);
-    }
-
-    private String extractArgument(String text, String command) {
-        String trimmed = text.trim();
-        if (trimmed.length() <= command.length()) {
-            return "";
-        }
-        return trimmed.substring(command.length()).trim();
+        return new Reply(SUCCESS_PREFIX + newBio);
     }
 }

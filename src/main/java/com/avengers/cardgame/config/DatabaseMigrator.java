@@ -9,8 +9,10 @@ import org.slf4j.LoggerFactory;
  */
 public class DatabaseMigrator {
 
+    /** Логгер. */
     private final Logger log = LoggerFactory.getLogger(DatabaseMigrator.class);
 
+    /** Параметры подключения к базе данных. */
     private final DatabaseConfig config;
 
     public DatabaseMigrator(DatabaseConfig config) {

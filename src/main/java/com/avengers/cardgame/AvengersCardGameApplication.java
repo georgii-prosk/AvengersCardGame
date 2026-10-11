@@ -2,9 +2,11 @@ package com.avengers.cardgame;
 
 import com.avengers.cardgame.bot.TelegramBot;
 import com.avengers.cardgame.command.CommandRegistry;
+import com.avengers.cardgame.command.CommandRegistryFactory;
 import com.avengers.cardgame.config.ConnectionFactory;
 import com.avengers.cardgame.config.DatabaseMigrator;
 import com.avengers.cardgame.config.EnvironmentConfig;
+import com.avengers.cardgame.config.EnvironmentConfigReader;
 import com.avengers.cardgame.repository.UserRepository;
 import com.avengers.cardgame.repository.impl.UserRepositoryImpl;
 import com.avengers.cardgame.service.UserService;
@@ -21,10 +23,11 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
  */
 public class AvengersCardGameApplication {
 
+    /** Логгер. */
     private final Logger log = LoggerFactory.getLogger(AvengersCardGameApplication.class);
 
     void main() {
-        EnvironmentConfig env = EnvironmentConfig.fromEnvironment();
+        EnvironmentConfig env = new EnvironmentConfigReader().read();
 
         // 1. Инфраструктура: миграции и подключение к БД
         new DatabaseMigrator(env.database()).migrate();
@@ -38,7 +41,8 @@ public class AvengersCardGameApplication {
         ValidationService validationService = new ValidationService();
 
         // 4. Слой команд
-        CommandRegistry commandRegistry = new CommandRegistry(userService, validationService);
+        CommandRegistry commandRegistry =
+                new CommandRegistryFactory(userService, validationService).create();
 
         // 5. Транспорт
         TelegramClient telegramClient = new OkHttpTelegramClient(env.botToken());
@@ -48,6 +52,12 @@ public class AvengersCardGameApplication {
         startBot(env.botToken(), bot);
     }
 
+    /**
+     * Регистрирует бота в Telegram и держит приложение запущенным.
+     *
+     * @param botToken токен бота
+     * @param bot      объект-обработчик апдейтов
+     */
     private void startBot(String botToken, TelegramBot bot) {
         try (TelegramBotsLongPollingApplication botsApplication =
                      new TelegramBotsLongPollingApplication()) {

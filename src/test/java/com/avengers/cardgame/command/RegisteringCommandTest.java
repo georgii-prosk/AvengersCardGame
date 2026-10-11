@@ -32,7 +32,7 @@ class RegisteringCommandTest {
         Command delegate = request -> new Reply("ok");
         Command registering = new RegisteringCommand(delegate, userService);
 
-        registering.handle(new CommandRequest(1L, "Tony", "/anything"));
+        registering.handle(new CommandRequest(1L, "Tony", ""));
 
         Assertions.assertTrue(userRepository.findByUserId(1L).isPresent());
         Assertions.assertEquals("Tony",
@@ -45,7 +45,7 @@ class RegisteringCommandTest {
         Command delegate = request -> new Reply("ok");
         Command registering = new RegisteringCommand(delegate, userService);
 
-        registering.handle(new CommandRequest(1L, null, "/anything"));
+        registering.handle(new CommandRequest(1L, null, ""));
 
         Assertions.assertEquals("Avenger",
                 userRepository.findByUserId(1L).orElseThrow().displayName());
@@ -57,7 +57,7 @@ class RegisteringCommandTest {
         Command delegate = request -> new Reply("ok");
         Command registering = new RegisteringCommand(delegate, userService);
 
-        registering.handle(new CommandRequest(1L, "   ", "/anything"));
+        registering.handle(new CommandRequest(1L, "   ", ""));
 
         Assertions.assertEquals("Avenger",
                 userRepository.findByUserId(1L).orElseThrow().displayName());
@@ -71,7 +71,7 @@ class RegisteringCommandTest {
         Command delegate = request -> new Reply("ok");
         Command registering = new RegisteringCommand(delegate, userService);
 
-        registering.handle(new CommandRequest(1L, "Tony", "/anything"));
+        registering.handle(new CommandRequest(1L, "Tony", ""));
 
         Assertions.assertEquals("Original",
                 userRepository.findByUserId(1L).orElseThrow().displayName());
@@ -83,7 +83,7 @@ class RegisteringCommandTest {
         Command delegate = request -> new Reply("delegate answer");
         Command registering = new RegisteringCommand(delegate, userService);
 
-        Reply reply = registering.handle(new CommandRequest(1L, "Tony", "/anything"));
+        Reply reply = registering.handle(new CommandRequest(1L, "Tony", ""));
 
         Assertions.assertEquals("delegate answer", reply.text());
     }
@@ -98,12 +98,12 @@ class RegisteringCommandTest {
         };
         Command registering = new RegisteringCommand(delegate, userService);
 
-        CommandRequest original = new CommandRequest(42L, "Tony", "/anything now");
+        CommandRequest original = new CommandRequest(42L, "Tony", "Narek");
         registering.handle(original);
 
         Assertions.assertEquals(42L, captured[0].userId());
         Assertions.assertEquals("Tony", captured[0].userName());
-        Assertions.assertEquals("/anything now", captured[0].text());
+        Assertions.assertEquals("Narek", captured[0].argument());
     }
 
     private class FakeUserRepository implements UserRepository {

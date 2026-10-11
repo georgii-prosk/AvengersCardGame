@@ -1,8 +1,5 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.service.UserService;
-import com.avengers.cardgame.service.ValidationService;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -12,18 +9,8 @@ import java.util.Optional;
  */
 public class CommandRegistry {
 
+    /** Карта зарегистрированных команд: имя → реализация. */
     private final Map<String, Command> commands = new HashMap<>();
-    private final UserService userService;
-
-    public CommandRegistry(UserService userService, ValidationService validationService) {
-        this.userService = userService;
-
-        register("/start", wrap(new StartCommand()));
-        register("/help", new HelpCommand());
-        register("/profile", wrap(new ProfileCommand(userService)));
-        register("/setname", wrap(new SetNameCommand(userService, validationService)));
-        register("/setbio", wrap(new SetBioCommand(userService, validationService)));
-    }
 
     /**
      * Регистрирует команду под указанным именем.
@@ -39,20 +26,20 @@ public class CommandRegistry {
      * Определяет команду по тексту сообщения.
      *
      * @param text полный текст сообщения
-     * @return команда, если найдена
+     * @return команда с аргументом, если найдена
      */
-    public Optional<Command> resolve(String text) {
+    public Optional<ResolvedCommand> resolve(String text) {
         if (text == null || text.isBlank()) {
             return Optional.empty();
         }
-        String commandName = text.trim().split("\\s+")[0].toLowerCase();
-        return Optional.ofNullable(commands.get(commandName));
-    }
-
-    /**
-     * Оборачивает команду в {@link RegisteringCommand}.
-     */
-    private Command wrap(Command command) {
-        return new RegisteringCommand(command, userService);
+        String trimmed = text.trim();
+        int spaceIndex = trimmed.indexOf(' ');
+        String name = (spaceIndex == -1 ? trimmed : trimmed.substring(0, spaceIndex)).toLowerCase();
+        Command command = commands.get(name);
+        if (command == null) {
+            return Optional.empty();
+        }
+        String argument = (spaceIndex == -1) ? "" : trimmed.substring(spaceIndex + 1).trim();
+        return Optional.of(new ResolvedCommand(command, argument));
     }
 }

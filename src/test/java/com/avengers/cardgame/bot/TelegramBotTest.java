@@ -1,6 +1,8 @@
 package com.avengers.cardgame.bot;
 
+
 import com.avengers.cardgame.command.CommandRegistry;
+import com.avengers.cardgame.command.CommandRegistryFactory;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserRepository;
 import com.avengers.cardgame.service.UserService;
@@ -16,7 +18,11 @@ import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.lang.reflect.Proxy;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -36,7 +42,9 @@ class TelegramBotTest {
         UserRepository userRepository = new FakeUserRepository();
         UserService userService = new UserService(userRepository);
         ValidationService validationService = new ValidationService();
-        CommandRegistry registry = new CommandRegistry(userService, validationService);
+
+        CommandRegistry registry =
+                new CommandRegistryFactory(userService, validationService).create();
 
         bot = new TelegramBot(client, registry);
     }
@@ -135,6 +143,15 @@ class TelegramBotTest {
 
         Assertions.assertFalse(sentTexts.isEmpty());
         Assertions.assertTrue(sentTexts.getLast().contains("Avenger"));
+    }
+
+    @Test
+    @DisplayName("/setnameX foo не считается командой /setname")
+    void consume_setNameWithoutSpace_isUnknown() {
+        bot.consume(createUpdate(1L, 10L, "Tony", "/setnameX foo"));
+
+        Assertions.assertFalse(sentTexts.isEmpty());
+        Assertions.assertTrue(sentTexts.getLast().contains("Неизвестная команда"));
     }
 
     private Update createUpdate(long userId, long chatId, String userName, String text) {

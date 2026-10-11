@@ -9,6 +9,7 @@ import java.sql.SQLException;
  */
 public class ConnectionFactory {
 
+    /** Параметры подключения к базе данных. */
     private final DatabaseConfig config;
 
     public ConnectionFactory(DatabaseConfig config) {

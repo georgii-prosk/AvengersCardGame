@@ -5,7 +5,7 @@ package com.avengers.cardgame.command;
  *
  * @param userId   идентификатор пользователя
  * @param userName отображаемое имя пользователя, может быть {@code null}
- * @param text     полный текст сообщения, включая имя команды
+ * @param argument текст после имени команды
  */
-public record CommandRequest(long userId, String userName, String text) {
+public record CommandRequest(long userId, String userName, String argument) {
 }

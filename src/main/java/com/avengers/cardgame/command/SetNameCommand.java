@@ -8,9 +8,17 @@ import com.avengers.cardgame.service.ValidationService;
  */
 public class SetNameCommand implements Command {
 
-    private static final String COMMAND_NAME = "/setname";
+    /** Текст ошибки при невалидном имени. */
+    private static final String ERROR = "Вы ввели некорректное имя. "
+            + "Допустимо использовать до 128 символов латиницей.";
 
+    /** Префикс успешного ответа. */
+    private static final String SUCCESS_PREFIX = "Вы сменили отображаемое имя на ";
+
+    /** Сервис пользователей. */
     private final UserService userService;
+
+    /** Сервис валидации. */
     private final ValidationService validationService;
 
     public SetNameCommand(UserService userService, ValidationService validationService) {
@@ -20,22 +28,13 @@ public class SetNameCommand implements Command {
 
     @Override
     public Reply handle(CommandRequest request) {
-        String newName = extractArgument(request.text(), COMMAND_NAME);
+        String newName = request.argument();
 
         if (newName.isEmpty() || !validationService.isValidName(newName)) {
-            return new Reply("Вы ввели некорректное имя. "
-                    + "Допустимо использовать до 128 символов латиницей.");
+            return new Reply(ERROR);
         }
 
         userService.updateDisplayName(request.userId(), newName);
-        return new Reply("Вы сменили отображаемое имя на " + newName);
-    }
-
-    private String extractArgument(String text, String command) {
-        String trimmed = text.trim();
-        if (trimmed.length() <= command.length()) {
-            return "";
-        }
-        return trimmed.substring(command.length()).trim();
+        return new Reply(SUCCESS_PREFIX + newName);
     }
 }

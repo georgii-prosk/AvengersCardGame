@@ -8,7 +8,10 @@ import com.avengers.cardgame.util.Constants;
  */
 public class RegisteringCommand implements Command {
 
+    /** Оборачиваемая команда. */
     private final Command delegate;
+
+    /** Сервис пользователей. */
     private final UserService userService;
 
     public RegisteringCommand(Command delegate, UserService userService) {

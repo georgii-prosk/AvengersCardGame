@@ -1,6 +1,6 @@
 package com.avengers.cardgame.bot;
 
-import com.avengers.cardgame.command.Command;
+import com.avengers.cardgame.command.ResolvedCommand;
 import com.avengers.cardgame.command.CommandRegistry;
 import com.avengers.cardgame.command.CommandRequest;
 import com.avengers.cardgame.command.Reply;
@@ -19,12 +19,21 @@ import java.util.Optional;
  */
 public class TelegramBot implements LongPollingSingleThreadUpdateConsumer {
 
+    /** Текст ответа на неизвестную команду. */
     private static final String UNKNOWN_COMMAND_MESSAGE =
             "Неизвестная команда. Введите /help для списка команд.";
 
+    /** Текст ответа при ошибке обработки. */
+    private static final String ERROR_MESSAGE =
+            "Произошла ошибка при обработке команды.";
+
+    /** Логгер. */
     private final Logger log = LoggerFactory.getLogger(TelegramBot.class);
 
+    /** Клиент для отправки сообщений в Telegram. */
     private final TelegramClient telegramClient;
+
+    /** Реестр команд. */
     private final CommandRegistry commandRegistry;
 
     public TelegramBot(TelegramClient telegramClient, CommandRegistry commandRegistry) {
@@ -57,16 +66,17 @@ public class TelegramBot implements LongPollingSingleThreadUpdateConsumer {
     }
 
     private Reply dispatch(long userId, String userName, String text) {
-        Optional<Command> command = commandRegistry.resolve(text);
-        if (command.isEmpty()) {
+        Optional<ResolvedCommand> resolved = commandRegistry.resolve(text);
+        if (resolved.isEmpty()) {
             return new Reply(UNKNOWN_COMMAND_MESSAGE);
         }
 
+        ResolvedCommand rc = resolved.get();
         try {
-            return command.get().handle(new CommandRequest(userId, userName, text));
+            return rc.command().handle(new CommandRequest(userId, userName, rc.argument()));
         } catch (Exception e) {
             log.error("Error while executing command {}", text, e);
-            return new Reply("Произошла ошибка при обработке команды.");
+            return new Reply(ERROR_MESSAGE);
         }
     }
 }
