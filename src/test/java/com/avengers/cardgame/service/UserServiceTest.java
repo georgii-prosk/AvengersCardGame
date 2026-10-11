@@ -3,11 +3,7 @@ package com.avengers.cardgame.service;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserRepository;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,28 +13,18 @@ import java.util.Optional;
  * Тесты для {@link UserService}.
  * <p>
  * Используется фейковый репозиторий в памяти — без Mockito и без Docker.
- * Тестируется вся бизнес-логика сервиса: регистрация, поиск, обновления.
  */
 class UserServiceTest {
 
-    /** Фейковый репозиторий пользователей в памяти. */
     private FakeUserRepository userRepository;
-
-    /** Тестируемый сервис. */
     private UserService userService;
 
-    /**
-     * Создаёт фейковый репозиторий и сервис перед каждым тестом.
-     */
     @BeforeEach
     void setUp() {
         userRepository = new FakeUserRepository();
         userService = new UserService(userRepository);
     }
 
-    /**
-     * Тесты для {@link UserService#registerIfAbsent(long, String)}.
-     */
     @Nested
     @DisplayName("registerIfAbsent")
     class RegisterIfAbsentTest {
@@ -49,9 +35,9 @@ class UserServiceTest {
             User created = userService.registerIfAbsent(1L, "Tony");
 
             Assertions.assertNotNull(created);
-            Assertions.assertEquals(1L, created.getTelegramId());
-            Assertions.assertEquals("Tony", created.getDisplayName());
-            Assertions.assertTrue(userRepository.findByTelegramId(1L).isPresent());
+            Assertions.assertEquals(1L, created.userId());
+            Assertions.assertEquals("Tony", created.displayName());
+            Assertions.assertTrue(userRepository.findByUserId(1L).isPresent());
         }
 
         @Test
@@ -61,9 +47,9 @@ class UserServiceTest {
 
             User result = userService.registerIfAbsent(1L, "Tony");
 
-            Assertions.assertEquals("Original", result.getDisplayName());
+            Assertions.assertEquals("Original", result.displayName());
             Assertions.assertEquals("Original",
-                    userRepository.findByTelegramId(1L).orElseThrow().getDisplayName());
+                    userRepository.findByUserId(1L).orElseThrow().displayName());
         }
 
         @Test
@@ -73,9 +59,9 @@ class UserServiceTest {
             userService.registerIfAbsent(2L, "Steve");
 
             Assertions.assertEquals("Tony",
-                    userRepository.findByTelegramId(1L).orElseThrow().getDisplayName());
+                    userRepository.findByUserId(1L).orElseThrow().displayName());
             Assertions.assertEquals("Steve",
-                    userRepository.findByTelegramId(2L).orElseThrow().getDisplayName());
+                    userRepository.findByUserId(2L).orElseThrow().displayName());
         }
 
         @Test
@@ -92,7 +78,7 @@ class UserServiceTest {
         void registersWithEmptyName() {
             User created = userService.registerIfAbsent(1L, "");
 
-            Assertions.assertEquals("", created.getDisplayName());
+            Assertions.assertEquals("", created.displayName());
         }
 
         @Test
@@ -100,53 +86,50 @@ class UserServiceTest {
         void registersWithCyrillicName() {
             User created = userService.registerIfAbsent(1L, "Нарек");
 
-            Assertions.assertEquals("Нарек", created.getDisplayName());
+            Assertions.assertEquals("Нарек", created.displayName());
         }
     }
 
-    /**
-     * Тесты для {@link UserService#getByTelegramId(long)}.
-     */
     @Nested
-    @DisplayName("getByTelegramId")
-    class GetByTelegramIdTest {
+    @DisplayName("getByUserId")
+    class GetByUserIdTest {
 
         @Test
         @DisplayName("Возвращает сохранённого пользователя")
         void returnsSavedUser() {
             userRepository.save(new User(1L, "Tony"));
 
-            User found = userService.getByTelegramId(1L);
+            User found = userService.getByUserId(1L);
 
-            Assertions.assertEquals(1L, found.getTelegramId());
-            Assertions.assertEquals("Tony", found.getDisplayName());
+            Assertions.assertEquals(1L, found.userId());
+            Assertions.assertEquals("Tony", found.displayName());
         }
 
         @Test
         @DisplayName("Бросает UserNotFoundException, если пользователя нет")
         void throwsUserNotFoundExceptionWhenUserNotFound() {
             Assertions.assertThrows(UserNotFoundException.class,
-                    () -> userService.getByTelegramId(999L));
+                    () -> userService.getByUserId(999L));
         }
 
         @Test
-        @DisplayName("Сообщение об ошибке содержит Telegram ID")
-        void errorMessageContainsTelegramId() {
+        @DisplayName("Сообщение об ошибке содержит идентификатор")
+        void errorMessageContainsUserId() {
             UserNotFoundException ex = Assertions.assertThrows(
                     UserNotFoundException.class,
-                    () -> userService.getByTelegramId(42L));
+                    () -> userService.getByUserId(42L));
 
             Assertions.assertTrue(ex.getMessage().contains("42"));
         }
 
         @Test
-        @DisplayName("Исключение содержит правильный Telegram ID")
-        void exceptionCarriesTelegramId() {
+        @DisplayName("Исключение содержит правильный идентификатор")
+        void exceptionCarriesUserId() {
             UserNotFoundException ex = Assertions.assertThrows(
                     UserNotFoundException.class,
-                    () -> userService.getByTelegramId(42L));
+                    () -> userService.getByUserId(42L));
 
-            Assertions.assertEquals(42L, ex.getTelegramId());
+            Assertions.assertEquals(42L, ex.userId());
         }
 
         @Test
@@ -154,7 +137,7 @@ class UserServiceTest {
         void exceptionIsRuntimeException() {
             UserNotFoundException ex = Assertions.assertThrows(
                     UserNotFoundException.class,
-                    () -> userService.getByTelegramId(1L));
+                    () -> userService.getByUserId(1L));
 
             Assertions.assertInstanceOf(RuntimeException.class, ex);
         }
@@ -166,13 +149,10 @@ class UserServiceTest {
             userRepository.save(new User(2L, "Steve"));
             userRepository.save(new User(3L, "Natasha"));
 
-            Assertions.assertEquals("Steve", userService.getByTelegramId(2L).getDisplayName());
+            Assertions.assertEquals("Steve", userService.getByUserId(2L).displayName());
         }
     }
 
-    /**
-     * Тесты для {@link UserService#updateDisplayName(long, String)}.
-     */
     @Nested
     @DisplayName("updateDisplayName")
     class UpdateDisplayNameTest {
@@ -185,7 +165,7 @@ class UserServiceTest {
             userService.updateDisplayName(1L, "Iron Man");
 
             Assertions.assertEquals("Iron Man",
-                    userRepository.findByTelegramId(1L).orElseThrow().getDisplayName());
+                    userRepository.findByUserId(1L).orElseThrow().displayName());
         }
 
         @Test
@@ -196,13 +176,13 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("Исключение содержит правильный Telegram ID")
-        void exceptionCarriesTelegramId() {
+        @DisplayName("Исключение содержит правильный идентификатор")
+        void exceptionCarriesUserId() {
             UserNotFoundException ex = Assertions.assertThrows(
                     UserNotFoundException.class,
                     () -> userService.updateDisplayName(999L, "Iron Man"));
 
-            Assertions.assertEquals(999L, ex.getTelegramId());
+            Assertions.assertEquals(999L, ex.userId());
         }
 
         @Test
@@ -211,46 +191,43 @@ class UserServiceTest {
             Assertions.assertThrows(UserNotFoundException.class,
                     () -> userService.updateDisplayName(1L, "Iron Man"));
 
-            Assertions.assertTrue(userRepository.findByTelegramId(1L).isEmpty());
+            Assertions.assertTrue(userRepository.findByUserId(1L).isEmpty());
         }
 
         @Test
         @DisplayName("Сохраняет bio при обновлении имени")
         void keepsBioUnchanged() {
-            User user = new User(1L, "Tony");
-            user.setBio("Genius");
+            User user = new User(1L, "Tony", "Genius", 0, 0, null, null);
             userRepository.save(user);
 
             userService.updateDisplayName(1L, "Iron Man");
 
             Assertions.assertEquals("Genius",
-                    userRepository.findByTelegramId(1L).orElseThrow().getBio());
+                    userRepository.findByUserId(1L).orElseThrow().bio());
         }
 
         @Test
         @DisplayName("Сохраняет balance при обновлении имени")
         void keepsBalanceUnchanged() {
-            User user = new User(1L, "Tony");
-            user.setBalance(500);
+            User user = new User(1L, "Tony", "", 500, 0, null, null);
             userRepository.save(user);
 
             userService.updateDisplayName(1L, "Iron Man");
 
             Assertions.assertEquals(500,
-                    userRepository.findByTelegramId(1L).orElseThrow().getBalance());
+                    userRepository.findByUserId(1L).orElseThrow().balance());
         }
 
         @Test
         @DisplayName("Сохраняет cardCount при обновлении имени")
         void keepsCardCountUnchanged() {
-            User user = new User(1L, "Tony");
-            user.setCardCount(10);
+            User user = new User(1L, "Tony", "", 0, 10, null, null);
             userRepository.save(user);
 
             userService.updateDisplayName(1L, "Iron Man");
 
             Assertions.assertEquals(10,
-                    userRepository.findByTelegramId(1L).orElseThrow().getCardCount());
+                    userRepository.findByUserId(1L).orElseThrow().cardCount());
         }
 
         @Test
@@ -261,13 +238,10 @@ class UserServiceTest {
             userService.updateDisplayName(1L, "Нарек");
 
             Assertions.assertEquals("Нарек",
-                    userRepository.findByTelegramId(1L).orElseThrow().getDisplayName());
+                    userRepository.findByUserId(1L).orElseThrow().displayName());
         }
     }
 
-    /**
-     * Тесты для {@link UserService#updateBio(long, String)}.
-     */
     @Nested
     @DisplayName("updateBio")
     class UpdateBioTest {
@@ -280,7 +254,7 @@ class UserServiceTest {
             userService.updateBio(1L, "Genius, billionaire, playboy, philanthropist");
 
             Assertions.assertEquals("Genius, billionaire, playboy, philanthropist",
-                    userRepository.findByTelegramId(1L).orElseThrow().getBio());
+                    userRepository.findByUserId(1L).orElseThrow().bio());
         }
 
         @Test
@@ -291,13 +265,13 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("Исключение содержит правильный Telegram ID")
-        void exceptionCarriesTelegramId() {
+        @DisplayName("Исключение содержит правильный идентификатор")
+        void exceptionCarriesUserId() {
             UserNotFoundException ex = Assertions.assertThrows(
                     UserNotFoundException.class,
                     () -> userService.updateBio(777L, "New bio"));
 
-            Assertions.assertEquals(777L, ex.getTelegramId());
+            Assertions.assertEquals(777L, ex.userId());
         }
 
         @Test
@@ -306,7 +280,7 @@ class UserServiceTest {
             Assertions.assertThrows(UserNotFoundException.class,
                     () -> userService.updateBio(1L, "New bio"));
 
-            Assertions.assertTrue(userRepository.findByTelegramId(1L).isEmpty());
+            Assertions.assertTrue(userRepository.findByUserId(1L).isEmpty());
         }
 
         @Test
@@ -317,20 +291,19 @@ class UserServiceTest {
             userService.updateBio(1L, "New bio");
 
             Assertions.assertEquals("Tony",
-                    userRepository.findByTelegramId(1L).orElseThrow().getDisplayName());
+                    userRepository.findByUserId(1L).orElseThrow().displayName());
         }
 
         @Test
         @DisplayName("Сохраняет balance при обновлении bio")
         void keepsBalanceUnchanged() {
-            User user = new User(1L, "Tony");
-            user.setBalance(500);
+            User user = new User(1L, "Tony", "", 500, 0, null, null);
             userRepository.save(user);
 
             userService.updateBio(1L, "New bio");
 
             Assertions.assertEquals(500,
-                    userRepository.findByTelegramId(1L).orElseThrow().getBalance());
+                    userRepository.findByUserId(1L).orElseThrow().balance());
         }
 
         @Test
@@ -341,7 +314,7 @@ class UserServiceTest {
             userService.updateBio(1L, "Привет! 🦸‍♂️");
 
             Assertions.assertEquals("Привет! 🦸‍♂️",
-                    userRepository.findByTelegramId(1L).orElseThrow().getBio());
+                    userRepository.findByUserId(1L).orElseThrow().bio());
         }
 
         @Test
@@ -352,7 +325,7 @@ class UserServiceTest {
             userService.updateBio(1L, "");
 
             Assertions.assertEquals("",
-                    userRepository.findByTelegramId(1L).orElseThrow().getBio());
+                    userRepository.findByUserId(1L).orElseThrow().bio());
         }
 
         @Test
@@ -363,7 +336,7 @@ class UserServiceTest {
             userService.updateBio(1L, "Line one\nLine two\nLine three");
 
             Assertions.assertEquals("Line one\nLine two\nLine three",
-                    userRepository.findByTelegramId(1L).orElseThrow().getBio());
+                    userRepository.findByUserId(1L).orElseThrow().bio());
         }
 
         @Test
@@ -375,42 +348,32 @@ class UserServiceTest {
             userService.updateBio(1L, longBio);
 
             Assertions.assertEquals(longBio,
-                    userRepository.findByTelegramId(1L).orElseThrow().getBio());
+                    userRepository.findByUserId(1L).orElseThrow().bio());
         }
     }
 
     /**
      * Фейковый репозиторий пользователей в памяти.
-     * <p>
-     * Полноценная реализация {@link UserRepository} без обращения к БД.
-     * Не мок — все методы реально выполняются над {@link HashMap}.
      */
     private class FakeUserRepository implements UserRepository {
 
-        /** Хранилище пользователей по Telegram ID. */
         private final Map<Long, User> storage = new HashMap<>();
 
         @Override
-        public Optional<User> findByTelegramId(long telegramId) {
-            return Optional.ofNullable(storage.get(telegramId));
+        public Optional<User> findByUserId(long userId) {
+            return Optional.ofNullable(storage.get(userId));
         }
 
         @Override
         public void save(User user) {
-            storage.put(user.getTelegramId(), user);
+            storage.put(user.userId(), user);
         }
 
         @Override
         public void update(User user) {
-            storage.put(user.getTelegramId(), user);
+            storage.put(user.userId(), user);
         }
 
-        /**
-         * Возвращает количество сохранённых пользователей.
-         * Используется в тестах для проверки, что запись действительно произошла.
-         *
-         * @return количество пользователей в хранилище
-         */
         int size() {
             return storage.size();
         }

@@ -1,9 +1,12 @@
 package com.avengers.cardgame;
 
-import com.avengers.cardgame.bot.AvengersBot;
+import com.avengers.cardgame.bot.TelegramBot;
 import com.avengers.cardgame.command.CommandRegistry;
-import com.avengers.cardgame.config.DatabaseConfig;
-import com.avengers.cardgame.config.FlywayConfig;
+import com.avengers.cardgame.command.CommandRegistryFactory;
+import com.avengers.cardgame.config.ConnectionFactory;
+import com.avengers.cardgame.config.DatabaseMigrator;
+import com.avengers.cardgame.config.EnvironmentConfig;
+import com.avengers.cardgame.config.EnvironmentConfigReader;
 import com.avengers.cardgame.repository.UserRepository;
 import com.avengers.cardgame.repository.impl.UserRepositoryImpl;
 import com.avengers.cardgame.service.UserService;
@@ -16,45 +19,37 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 /**
- * Точка входа приложения и composition root.
- * <p>
- * Здесь собирается весь граф зависимостей: конфигурация БД, миграции,
- * репозитории, сервисы, реестр команд, Telegram-клиент и сам бот.
- * <p>
- * Ни один класс ниже по потоку не знает, как создаются его зависимости —
- * они получают их готовыми через конструктор.
+ * Точка входа приложения.
  */
 public class AvengersCardGameApplication {
 
+    /** Логгер. */
     private final Logger log = LoggerFactory.getLogger(AvengersCardGameApplication.class);
 
     void main() {
-        String botToken = System.getenv("BOT_TOKEN");
-        if (botToken == null || botToken.isBlank()) {
-            log.error("Environment variable BOT_TOKEN is not set");
-            return;
-        }
+        EnvironmentConfig env = new EnvironmentConfigReader().read();
 
         // 1. Инфраструктура: миграции и подключение к БД
-        new FlywayConfig().migrate();
-        DatabaseConfig dbConfig = new DatabaseConfig();
+        new DatabaseMigrator(env.database()).migrate();
+        ConnectionFactory connectionFactory = new ConnectionFactory(env.database());
 
         // 2. Слой доступа к данным
-        UserRepository userRepository = new UserRepositoryImpl(dbConfig);
+        UserRepository userRepository = new UserRepositoryImpl(connectionFactory);
 
         // 3. Бизнес-логика
         UserService userService = new UserService(userRepository);
         ValidationService validationService = new ValidationService();
 
         // 4. Слой команд
-        CommandRegistry commandRegistry = new CommandRegistry(userService, validationService);
+        CommandRegistry commandRegistry =
+                new CommandRegistryFactory(userService, validationService).create();
 
-        // 5. Транспорт: клиент Telegram и сам бот
-        TelegramClient telegramClient = new OkHttpTelegramClient(botToken);
-        AvengersBot bot = new AvengersBot(telegramClient, commandRegistry);
+        // 5. Транспорт
+        TelegramClient telegramClient = new OkHttpTelegramClient(env.botToken());
+        TelegramBot bot = new TelegramBot(telegramClient, commandRegistry);
 
-        // 6. Запуск long polling
-        startBot(botToken, bot);
+        // 6. Запуск
+        startBot(env.botToken(), bot);
     }
 
     /**
@@ -63,7 +58,7 @@ public class AvengersCardGameApplication {
      * @param botToken токен бота
      * @param bot      объект-обработчик апдейтов
      */
-    private void startBot(String botToken, AvengersBot bot) {
+    private void startBot(String botToken, TelegramBot bot) {
         try (TelegramBotsLongPollingApplication botsApplication =
                      new TelegramBotsLongPollingApplication()) {
 

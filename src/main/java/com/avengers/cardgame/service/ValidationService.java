@@ -10,20 +10,26 @@ import java.util.regex.Pattern;
  */
 public class ValidationService {
 
-    /** Максимальная длина отображаемого имени. */
+    /**
+     * Максимальная длина отображаемого имени.
+     */
     private static final int NAME_MAX_LENGTH = 128;
 
-    /** Максимальная длина описания профиля. */
+    /**
+     * Максимальная длина описания профиля.
+     */
     private static final int BIO_MAX_LENGTH = 256;
 
-    /** Шаблон допустимого имени: только латинские буквы. */
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z]+$");
+    /**
+     * Шаблон допустимого имени: только латинские буквы.
+     */
+    private final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z]+$");
 
     /**
      * Шаблон допустимого описания профиля: латиница, кириллица, цифры,
      * пробелы, эмодзи, знаки препинания и ряд спецсимволов.
      */
-    private static final Pattern BIO_PATTERN = Pattern.compile(
+    private final Pattern BIO_PATTERN = Pattern.compile(
             "^[a-zA-Zа-яА-ЯёЁ0-9\\s" +
                     "\\p{So}\\p{Sk}\\p{Sc}" +                       // эмодзи, модификаторы, валютные символы
                     "/|\\\\<>@#$%^&*(){}`~;:'\"\\-_=+\\[\\].,!?]+$"

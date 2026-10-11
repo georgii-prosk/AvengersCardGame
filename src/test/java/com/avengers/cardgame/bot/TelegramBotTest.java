@@ -1,6 +1,8 @@
 package com.avengers.cardgame.bot;
 
+
 import com.avengers.cardgame.command.CommandRegistry;
+import com.avengers.cardgame.command.CommandRegistryFactory;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserRepository;
 import com.avengers.cardgame.service.UserService;
@@ -10,8 +12,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.chat.Chat;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.chat.Chat;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -24,16 +26,13 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Тесты для {@link AvengersBot}.
- * <p>
- * Проверяют маршрутизацию апдейтов и обработку некорректных сообщений.
- * Без БД, без сети — только фейковый {@link TelegramClient}.
+ * Тесты для {@link TelegramBot}.
  */
-class AvengersBotTest {
+class TelegramBotTest {
 
     private List<String> sentTexts;
     private TelegramClient client;
-    private AvengersBot bot;
+    private TelegramBot bot;
 
     @BeforeEach
     void setUp() {
@@ -43,9 +42,11 @@ class AvengersBotTest {
         UserRepository userRepository = new FakeUserRepository();
         UserService userService = new UserService(userRepository);
         ValidationService validationService = new ValidationService();
-        CommandRegistry registry = new CommandRegistry(userService, validationService);
 
-        bot = new AvengersBot(client, registry);
+        CommandRegistry registry =
+                new CommandRegistryFactory(userService, validationService).create();
+
+        bot = new TelegramBot(client, registry);
     }
 
     @Test
@@ -68,31 +69,27 @@ class AvengersBotTest {
     }
 
     @Test
-    @DisplayName("Обрабатывает неизвестную команду")
+    @DisplayName("Отправляет сообщение о неизвестной команде")
     void consume_unknownCommand_sendsUnknownMessage() {
         bot.consume(createUpdate(1L, 10L, "Tony", "/unknowncmd"));
 
         Assertions.assertFalse(sentTexts.isEmpty());
         Assertions.assertTrue(sentTexts.getLast().contains("Неизвестная команда"));
+        Assertions.assertTrue(sentTexts.getLast().contains("/help"));
     }
 
     @Test
     @DisplayName("Игнорирует Update без сообщения")
     void consume_updateWithoutMessage_doesNothing() {
         Update update = new Update();
-
         bot.consume(update);
-
         Assertions.assertTrue(sentTexts.isEmpty());
     }
 
     @Test
     @DisplayName("Игнорирует сообщение без текста")
     void consume_messageWithoutText_doesNothing() {
-        Chat chat = Chat.builder()
-                .id(10L)
-                .type("private")
-                .build();
+        Chat chat = Chat.builder().id(10L).type("private").build();
         Message message = Message.builder().chat(chat).build();
 
         Update update = new Update();
@@ -136,32 +133,41 @@ class AvengersBotTest {
         bot.consume(createUpdate(1L, 10L, "Tony", "/profile"));
 
         Assertions.assertFalse(sentTexts.isEmpty());
+        Assertions.assertTrue(sentTexts.getLast().contains("Tony"));
+    }
+
+    @Test
+    @DisplayName("Использует Avenger при отсутствии username")
+    void consume_profile_withoutUsername_usesDefaultName() {
+        bot.consume(createUpdate(1L, 10L, null, "/profile"));
+
+        Assertions.assertFalse(sentTexts.isEmpty());
         Assertions.assertTrue(sentTexts.getLast().contains("Avenger"));
     }
 
-    // ===== Хелперы =====
+    @Test
+    @DisplayName("/setnameX foo не считается командой /setname")
+    void consume_setNameWithoutSpace_isUnknown() {
+        bot.consume(createUpdate(1L, 10L, "Tony", "/setnameX foo"));
 
-    /**
-     * Создаёт Update с текстовым сообщением от указанного пользователя.
-     * <p>
-     * В TelegramBots 7.10.0 у {@code User} обязательны поля {@code id}, {@code firstName}
-     * и {@code isBot}, у {@link Chat} — {@code id} и {@code type}.
-     * Без них builder падает с NullPointerException.
-     *
-     * @param userId   Telegram ID пользователя
-     * @param chatId   ID чата
-     * @param userName username и firstName пользователя
-     * @param text     текст сообщения
-     * @return готовый Update
-     */
+        Assertions.assertFalse(sentTexts.isEmpty());
+        Assertions.assertTrue(sentTexts.getLast().contains("Неизвестная команда"));
+    }
+
     private Update createUpdate(long userId, long chatId, String userName, String text) {
-        org.telegram.telegrambots.meta.api.objects.User from =
+        String safeFirstName = (userName == null || userName.isBlank()) ? "Unknown" : userName;
+
+        org.telegram.telegrambots.meta.api.objects.User.UserBuilder userBuilder =
                 org.telegram.telegrambots.meta.api.objects.User.builder()
                         .id(userId)
-                        .firstName(userName)
-                        .userName(userName)
-                        .isBot(false)
-                        .build();
+                        .firstName(safeFirstName)
+                        .isBot(false);
+
+        if (userName != null && !userName.isBlank()) {
+            userBuilder.userName(userName);
+        }
+
+        org.telegram.telegrambots.meta.api.objects.User from = userBuilder.build();
 
         Chat chat = Chat.builder()
                 .id(chatId)
@@ -179,16 +185,6 @@ class AvengersBotTest {
         return update;
     }
 
-    /**
-     * Создаёт фейковый клиент Telegram через динамический прокси.
-     * <p>
-     * Перехватывает вызовы {@code execute} и {@code executeAsync},
-     * сохраняет текст {@link SendMessage} в переданный список
-     * и возвращает заглушку.
-     *
-     * @param sentTexts список, куда складывать отправленные тексты
-     * @return прокси-объект, реализующий {@link TelegramClient}
-     */
     private static TelegramClient createFakeTelegramClient(List<String> sentTexts) {
         return (TelegramClient) Proxy.newProxyInstance(
                 TelegramClient.class.getClassLoader(),
@@ -208,29 +204,23 @@ class AvengersBotTest {
         );
     }
 
-    /**
-     * Фейковый репозиторий пользователей в памяти.
-     * <p>
-     * Полноценная реализация {@link UserRepository} без обращения к БД.
-     */
     private class FakeUserRepository implements UserRepository {
 
-        /** Хранилище пользователей по Telegram ID. */
         private final Map<Long, User> storage = new HashMap<>();
 
         @Override
-        public Optional<User> findByTelegramId(long telegramId) {
-            return Optional.ofNullable(storage.get(telegramId));
+        public Optional<User> findByUserId(long userId) {
+            return Optional.ofNullable(storage.get(userId));
         }
 
         @Override
         public void save(User user) {
-            storage.put(user.getTelegramId(), user);
+            storage.put(user.userId(), user);
         }
 
         @Override
         public void update(User user) {
-            storage.put(user.getTelegramId(), user);
+            storage.put(user.userId(), user);
         }
     }
 }

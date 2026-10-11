@@ -1,60 +1,45 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.service.UserService;
-import com.avengers.cardgame.service.ValidationService;
-
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
- * Реестр команд Telegram-бота.
- * <p>
- * Хранит команды в виде отображения «имя → команда», регистрирует их в конструкторе
- * и разрешает входящий текст в соответствующую реализацию {@link Command}.
+ * Реестр команд бота.
  */
 public class CommandRegistry {
 
-    /** Карта зарегистрированных команд: имя команды → реализация. */
+    /** Карта зарегистрированных команд: имя → реализация. */
     private final Map<String, Command> commands = new HashMap<>();
 
     /**
-     * Создаёт реестр и регистрирует все доступные команды.
+     * Регистрирует команду под указанным именем.
      *
-     * @param userService       сервис для работы с пользователями
-     * @param validationService сервис валидации входных данных
+     * @param name    имя команды вида {@code "/start"}
+     * @param command реализация команды
      */
-    public CommandRegistry(UserService userService, ValidationService validationService) {
-        register(new StartCommand(userService));
-        register(new HelpCommand());
-        register(new ProfileCommand(userService));
-        register(new SetNameCommand(userService, validationService));
-        register(new SetBioCommand(userService, validationService));
-    }
-
-    /**
-     * Регистрирует команду в реестре.
-     *
-     * @param command команда для регистрации
-     */
-    private void register(Command command) {
-        commands.put(command.name(), command);
+    public void register(String name, Command command) {
+        commands.put(name, command);
     }
 
     /**
      * Определяет команду по тексту сообщения.
-     * <p>
-     * Из текста берётся первое слово, приводится к нижнему регистру и ищется
-     * в реестре. Если текст пустой или команда не найдена — возвращается
-     * {@link UnknownCommand}.
      *
-     * @param text текст входящего сообщения
-     * @return найденная команда или {@link UnknownCommand}
+     * @param text полный текст сообщения
+     * @return команда с аргументом, если найдена
      */
-    public Command resolve(String text) {
+    public Optional<ResolvedCommand> resolve(String text) {
         if (text == null || text.isBlank()) {
-            return new UnknownCommand();
+            return Optional.empty();
         }
-        String commandName = text.trim().split("\\s+")[0].toLowerCase();
-        return commands.getOrDefault(commandName, new UnknownCommand());
+        String trimmed = text.trim();
+        int spaceIndex = trimmed.indexOf(' ');
+        String name = (spaceIndex == -1 ? trimmed : trimmed.substring(0, spaceIndex)).toLowerCase();
+        Command command = commands.get(name);
+        if (command == null) {
+            return Optional.empty();
+        }
+        String argument = (spaceIndex == -1) ? "" : trimmed.substring(spaceIndex + 1).trim();
+        return Optional.of(new ResolvedCommand(command, argument));
     }
 }

@@ -1,5 +1,6 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserRepository;
 import com.avengers.cardgame.service.UserService;
@@ -9,156 +10,63 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
-import java.lang.reflect.Proxy;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 /**
- * Тесты для команд Telegram-бота.
- * <p>
- * Используются ручные фейковые реализации {@link TelegramClient},
- * {@link UserRepository} и {@link ValidationService} — без Mockito.
+ * Тесты для команд бота.
  */
 class CommandTest {
 
-    /** Фейковый клиент Telegram (динамический прокси). */
-    private TelegramClient client;
-
-    /** Список текстов, отправленных через фейковый клиент. */
-    private final List<String> sentTexts = new ArrayList<>();
-
-    /** Фейковый репозиторий пользователей в памяти. */
     private FakeUserRepository userRepository;
-
-    /** Сервис пользователей поверх фейкового репозитория. */
     private UserService userService;
-
-    /** Фейковый сервис валидации с настраиваемыми результатами. */
     private FakeValidationService validationService;
 
-    /**
-     * Создаёт фейки и сервисы перед каждым тестом.
-     */
     @BeforeEach
     void setUp() {
-        sentTexts.clear();
-        client = createFakeTelegramClient(sentTexts);
         userRepository = new FakeUserRepository();
         userService = new UserService(userRepository);
         validationService = new FakeValidationService();
     }
 
-    /**
-     * Возвращает текст последнего отправленного сообщения.
-     *
-     * @return текст последнего сообщения
-     */
-    private String lastText() {
-        Assertions.assertFalse(sentTexts.isEmpty(), "Сообщение не было отправлено");
-        return sentTexts.getLast();
-    }
-
-    /**
-     * Создаёт фейковый клиент Telegram через динамический прокси.
-     * <p>
-     * Прокси перехватывает вызовы {@code execute} и {@code executeAsync},
-     * сохраняет текст {@link SendMessage} в переданный список
-     * и возвращает заглушку.
-     *
-     * @param sentTexts список, куда складывать отправленные тексты
-     * @return прокси-объект, реализующий {@link TelegramClient}
-     */
-    private static TelegramClient createFakeTelegramClient(List<String> sentTexts) {
-        return (TelegramClient) Proxy.newProxyInstance(
-                TelegramClient.class.getClassLoader(),
-                new Class<?>[]{TelegramClient.class},
-                (proxy, method, args) -> {
-                    String name = method.getName();
-                    if (("execute".equals(name) || "executeAsync".equals(name))
-                            && args != null && args.length > 0
-                            && args[0] instanceof SendMessage sendMessage) {
-                        sentTexts.add(sendMessage.getText());
-                    }
-                    if (CompletableFuture.class.isAssignableFrom(method.getReturnType())) {
-                        return CompletableFuture.completedFuture(null);
-                    }
-                    return null;
-                }
-        );
-    }
-
-    /**
-     * Тесты для {@link StartCommand}.
-     */
     @Nested
     @DisplayName("StartCommand")
     class StartCommandTest {
 
         @Test
-        @DisplayName("Возвращает имя /start")
-        void shouldReturnName() {
-            Assertions.assertEquals("/start", new StartCommand(userService).name());
+        @DisplayName("Возвращает приветствие")
+        void shouldReturnGreeting() {
+            Reply reply = new StartCommand()
+                    .handle(new CommandRequest(1L, "Tony", ""));
+
+            Assertions.assertTrue(reply.text().contains("AvengersCardGame"));
         }
 
         @Test
-        @DisplayName("Регистрирует пользователя и отправляет приветствие")
-        void shouldRegisterAndSendGreeting() throws TelegramApiException {
-            new StartCommand(userService).execute(client, 10L, 1L, "Tony", "/start");
+        @DisplayName("Не зависит от данных пользователя")
+        void doesNotDependOnUserData() {
+            Reply withName = new StartCommand()
+                    .handle(new CommandRequest(1L, "Tony", ""));
+            Reply withoutName = new StartCommand()
+                    .handle(new CommandRequest(2L, null, ""));
 
-            Assertions.assertTrue(userRepository.findByTelegramId(1L).isPresent());
-            Assertions.assertEquals("Tony",
-                    userRepository.findByTelegramId(1L).orElseThrow().getDisplayName());
-            Assertions.assertTrue(lastText().contains("AvengersCardGame"));
-        }
-
-        @Test
-        @DisplayName("Использует Avenger при отсутствии username")
-        void shouldUseDefaultNameWhenUsernameMissing() throws TelegramApiException {
-            new StartCommand(userService).execute(client, 10L, 1L, null, "/start");
-
-            Assertions.assertEquals("Avenger",
-                    userRepository.findByTelegramId(1L).orElseThrow().getDisplayName());
-        }
-
-        @Test
-        @DisplayName("Не перезаписывает существующего пользователя")
-        void shouldNotOverwriteExistingUser() throws TelegramApiException {
-            userRepository.save(new User(1L, "Original"));
-
-            new StartCommand(userService).execute(client, 10L, 1L, "Tony", "/start");
-
-            Assertions.assertEquals("Original",
-                    userRepository.findByTelegramId(1L).orElseThrow().getDisplayName());
+            Assertions.assertEquals(withName.text(), withoutName.text());
         }
     }
 
-    /**
-     * Тесты для {@link HelpCommand}.
-     */
     @Nested
     @DisplayName("HelpCommand")
     class HelpCommandTest {
 
         @Test
-        @DisplayName("Возвращает имя /help")
-        void shouldReturnName() {
-            Assertions.assertEquals("/help", new HelpCommand().name());
-        }
+        @DisplayName("Содержит все команды в ответе")
+        void shouldContainAllCommands() {
+            Reply reply = new HelpCommand()
+                    .handle(new CommandRequest(1L, "Tony", ""));
 
-        @Test
-        @DisplayName("Отправляет список команд")
-        void shouldSendHelpMessage() throws TelegramApiException {
-            new HelpCommand().execute(client, 10L, 1L, "Tony", "/help");
-
-            String text = lastText();
+            String text = reply.text();
             Assertions.assertTrue(text.contains("/start"));
             Assertions.assertTrue(text.contains("/help"));
             Assertions.assertTrue(text.contains("/profile"));
@@ -167,27 +75,19 @@ class CommandTest {
         }
     }
 
-    /**
-     * Тесты для {@link ProfileCommand}.
-     */
     @Nested
     @DisplayName("ProfileCommand")
     class ProfileCommandTest {
 
         @Test
-        @DisplayName("Возвращает имя /profile")
-        void shouldReturnName() {
-            Assertions.assertEquals("/profile", new ProfileCommand(userService).name());
-        }
-
-        @Test
-        @DisplayName("Отправляет данные профиля")
-        void shouldSendProfileData() throws TelegramApiException {
+        @DisplayName("Содержит данные профиля")
+        void shouldReturnProfileData() {
             userRepository.save(new User(1L, "Tony", "Genius", 100, 5, null, null));
 
-            new ProfileCommand(userService).execute(client, 10L, 1L, "Tony", "/profile");
+            Reply reply = new ProfileCommand(userService)
+                    .handle(new CommandRequest(1L, "Tony", ""));
 
-            String text = lastText();
+            String text = reply.text();
             Assertions.assertTrue(text.contains("Tony"));
             Assertions.assertTrue(text.contains("Genius"));
             Assertions.assertTrue(text.contains("100"));
@@ -195,258 +95,226 @@ class CommandTest {
         }
 
         @Test
-        @DisplayName("Отображает «не задано» для пустых полей")
-        void shouldShowDefaultForEmptyFields() throws TelegramApiException {
+        @DisplayName("Показывает «не задано» для пустых полей")
+        void shouldShowDefaultForEmptyFields() {
             userRepository.save(new User(1L, "", "", 0, 0, null, null));
 
-            new ProfileCommand(userService).execute(client, 10L, 1L, "Tony", "/profile");
+            Reply reply = new ProfileCommand(userService)
+                    .handle(new CommandRequest(1L, "Tony", ""));
 
-            Assertions.assertTrue(lastText().contains("не задано"));
+            Assertions.assertTrue(reply.text().contains("не задано"));
         }
 
         @Test
-        @DisplayName("Регистрирует пользователя при отсутствии")
-        void shouldRegisterIfAbsent() throws TelegramApiException {
-            new ProfileCommand(userService).execute(client, 10L, 1L, "Tony", "/profile");
-
-            Assertions.assertTrue(userRepository.findByTelegramId(1L).isPresent());
+        @DisplayName("Бросает UserNotFoundException, если пользователя нет")
+        void shouldThrowWhenUserNotFound() {
+            Assertions.assertThrows(UserNotFoundException.class,
+                    () -> new ProfileCommand(userService)
+                            .handle(new CommandRequest(1L, "Tony", "")));
         }
     }
 
-    /**
-     * Тесты для {@link SetNameCommand}.
-     */
     @Nested
     @DisplayName("SetNameCommand")
     class SetNameCommandTest {
 
         @Test
-        @DisplayName("Возвращает имя /setname")
-        void shouldReturnName() {
-            Assertions.assertEquals("/setname",
-                    new SetNameCommand(userService, validationService).name());
-        }
-
-        @Test
-        @DisplayName("Обновляет имя при корректном вводе")
-        void shouldUpdateNameWhenValid() throws TelegramApiException {
+        @DisplayName("Обновляет имя при валидном вводе")
+        void shouldUpdateNameWhenValid() {
+            userRepository.save(new User(1L, "OldName"));
             validationService.validName = true;
 
-            new SetNameCommand(userService, validationService)
-                    .execute(client, 10L, 1L, "Tony", "/setname Tony");
+            Reply reply = new SetNameCommand(userService, validationService)
+                    .handle(new CommandRequest(1L, "Tony", "Narek"));
 
-            Assertions.assertEquals("Tony",
-                    userRepository.findByTelegramId(1L).orElseThrow().getDisplayName());
-            Assertions.assertTrue(lastText().contains("Tony"));
+            Assertions.assertEquals("Narek",
+                    userRepository.findByUserId(1L).orElseThrow().displayName());
+            Assertions.assertTrue(reply.text().contains("Narek"));
         }
 
         @Test
-        @DisplayName("Не обновляет имя при невалидном вводе")
-        void shouldNotUpdateNameWhenInvalid() throws TelegramApiException {
+        @DisplayName("Не обновляет при невалидном вводе")
+        void shouldNotUpdateNameWhenInvalid() {
+            userRepository.save(new User(1L, "OldName"));
             validationService.validName = false;
 
-            new SetNameCommand(userService, validationService)
-                    .execute(client, 10L, 1L, "Tony", "/setname bad name");
+            Reply reply = new SetNameCommand(userService, validationService)
+                    .handle(new CommandRequest(1L, "Tony", "bad name"));
 
-            Assertions.assertTrue(userRepository.findByTelegramId(1L).isEmpty());
-            Assertions.assertTrue(lastText().contains("некорректное имя"));
+            Assertions.assertEquals("OldName",
+                    userRepository.findByUserId(1L).orElseThrow().displayName());
+            Assertions.assertTrue(reply.text().contains("некорректное имя"));
         }
 
         @Test
         @DisplayName("Обрабатывает пустой аргумент")
-        void shouldHandleEmptyArgument() throws TelegramApiException {
-            new SetNameCommand(userService, validationService)
-                    .execute(client, 10L, 1L, "Tony", "/setname");
+        void shouldHandleEmptyArgument() {
+            userRepository.save(new User(1L, "OldName"));
 
-            Assertions.assertTrue(userRepository.findByTelegramId(1L).isEmpty());
-            Assertions.assertTrue(lastText().contains("некорректное имя"));
+            Reply reply = new SetNameCommand(userService, validationService)
+                    .handle(new CommandRequest(1L, "Tony", ""));
+
+            Assertions.assertEquals("OldName",
+                    userRepository.findByUserId(1L).orElseThrow().displayName());
+            Assertions.assertTrue(reply.text().contains("некорректное имя"));
         }
     }
 
-    /**
-     * Тесты для {@link SetBioCommand}.
-     */
     @Nested
     @DisplayName("SetBioCommand")
     class SetBioCommandTest {
 
         @Test
-        @DisplayName("Возвращает имя /setbio")
-        void shouldReturnName() {
-            Assertions.assertEquals("/setbio",
-                    new SetBioCommand(userService, validationService).name());
-        }
-
-        @Test
-        @DisplayName("Обновляет bio при корректном вводе")
-        void shouldUpdateBioWhenValid() throws TelegramApiException {
+        @DisplayName("Обновляет bio при валидном вводе")
+        void shouldUpdateBioWhenValid() {
+            userRepository.save(new User(1L, "Tony"));
             validationService.validBio = true;
 
-            new SetBioCommand(userService, validationService)
-                    .execute(client, 10L, 1L, "Tony", "/setbio new bio");
+            Reply reply = new SetBioCommand(userService, validationService)
+                    .handle(new CommandRequest(1L, "Tony", "new bio"));
 
             Assertions.assertEquals("new bio",
-                    userRepository.findByTelegramId(1L).orElseThrow().getBio());
-            Assertions.assertTrue(lastText().contains("new bio"));
+                    userRepository.findByUserId(1L).orElseThrow().bio());
+            Assertions.assertTrue(reply.text().contains("new bio"));
         }
 
         @Test
-        @DisplayName("Не обновляет bio при невалидном вводе")
-        void shouldNotUpdateBioWhenInvalid() throws TelegramApiException {
+        @DisplayName("Не обновляет при невалидном вводе")
+        void shouldNotUpdateBioWhenInvalid() {
+            userRepository.save(new User(1L, "Tony"));
             validationService.validBio = false;
 
-            new SetBioCommand(userService, validationService)
-                    .execute(client, 10L, 1L, "Tony", "/setbio bad bio");
+            Reply reply = new SetBioCommand(userService, validationService)
+                    .handle(new CommandRequest(1L, "Tony", "bad bio"));
 
-            Assertions.assertTrue(userRepository.findByTelegramId(1L).isEmpty());
-            Assertions.assertTrue(lastText().contains("некорректное описание"));
+            Assertions.assertEquals("",
+                    userRepository.findByUserId(1L).orElseThrow().bio());
+            Assertions.assertTrue(reply.text().contains("некорректное описание"));
         }
 
         @Test
         @DisplayName("Обрабатывает пустой аргумент")
-        void shouldHandleEmptyArgument() throws TelegramApiException {
-            new SetBioCommand(userService, validationService)
-                    .execute(client, 10L, 1L, "Tony", "/setbio");
+        void shouldHandleEmptyArgument() {
+            userRepository.save(new User(1L, "Tony"));
 
-            Assertions.assertTrue(userRepository.findByTelegramId(1L).isEmpty());
-            Assertions.assertTrue(lastText().contains("некорректное описание"));
+            Reply reply = new SetBioCommand(userService, validationService)
+                    .handle(new CommandRequest(1L, "Tony", ""));
+
+            Assertions.assertEquals("",
+                    userRepository.findByUserId(1L).orElseThrow().bio());
+            Assertions.assertTrue(reply.text().contains("некорректное описание"));
         }
     }
 
-    /**
-     * Тесты для {@link UnknownCommand}.
-     */
-    @Nested
-    @DisplayName("UnknownCommand")
-    class UnknownCommandTest {
-
-        @Test
-        @DisplayName("Возвращает имя /unknown")
-        void shouldReturnName() {
-            Assertions.assertEquals("/unknown", new UnknownCommand().name());
-        }
-
-        @Test
-        @DisplayName("Отправляет сообщение о неизвестной команде")
-        void shouldSendUnknownMessage() throws TelegramApiException {
-            new UnknownCommand().execute(client, 10L, 1L, "Tony", "/foo");
-
-            String text = lastText();
-            Assertions.assertTrue(text.contains("Неизвестная команда"));
-            Assertions.assertTrue(text.contains("/help"));
-        }
-    }
-
-    /**
-     * Тесты для {@link CommandRegistry}.
-     */
     @Nested
     @DisplayName("CommandRegistry")
     class CommandRegistryTest {
 
-        /** Тестируемый реестр команд. */
         private CommandRegistry registry;
 
         @BeforeEach
         void setUp() {
-            registry = new CommandRegistry(userService, validationService);
+            registry = new CommandRegistry();
+            registry.register("/start", new StartCommand());
+            registry.register("/help", new HelpCommand());
+            registry.register("/profile", new ProfileCommand(userService));
+            registry.register("/setname", new SetNameCommand(userService, validationService));
+            registry.register("/setbio", new SetBioCommand(userService, validationService));
         }
 
         @Test
-        @DisplayName("Разрешает /start")
-        void shouldResolveStart() {
-            Assertions.assertInstanceOf(StartCommand.class, registry.resolve("/start"));
+        @DisplayName("Разрешает /start без аргумента")
+        void shouldResolveStartWithoutArgument() {
+            Optional<ResolvedCommand> resolved = registry.resolve("/start");
+
+            Assertions.assertTrue(resolved.isPresent());
+            Assertions.assertInstanceOf(StartCommand.class, resolved.get().command());
+            Assertions.assertEquals("", resolved.get().argument());
         }
 
         @Test
-        @DisplayName("Разрешает /help")
-        void shouldResolveHelp() {
-            Assertions.assertInstanceOf(HelpCommand.class, registry.resolve("/help"));
+        @DisplayName("Разрешает /setname с аргументом")
+        void shouldResolveSetNameWithArgument() {
+            Optional<ResolvedCommand> resolved = registry.resolve("/setname Narek");
+
+            Assertions.assertTrue(resolved.isPresent());
+            Assertions.assertInstanceOf(SetNameCommand.class, resolved.get().command());
+            Assertions.assertEquals("Narek", resolved.get().argument());
         }
 
         @Test
-        @DisplayName("Разрешает /profile")
-        void shouldResolveProfile() {
-            Assertions.assertInstanceOf(ProfileCommand.class, registry.resolve("/profile"));
+        @DisplayName("Разрешает /setbio с многословным аргументом")
+        void shouldResolveSetBioWithMultiWordArgument() {
+            Optional<ResolvedCommand> resolved = registry.resolve("/setbio Привет мир 🦸");
+
+            Assertions.assertTrue(resolved.isPresent());
+            Assertions.assertEquals("Привет мир 🦸", resolved.get().argument());
         }
 
         @Test
-        @DisplayName("Разрешает /setname")
-        void shouldResolveSetName() {
-            Assertions.assertInstanceOf(SetNameCommand.class, registry.resolve("/setname"));
-        }
-
-        @Test
-        @DisplayName("Разрешает /setbio")
-        void shouldResolveSetBio() {
-            Assertions.assertInstanceOf(SetBioCommand.class, registry.resolve("/setbio"));
-        }
-
-        @Test
-        @DisplayName("Разрешает команду в любом регистре")
+        @DisplayName("Регистронезависимость имени команды")
         void shouldResolveCaseInsensitive() {
-            Assertions.assertInstanceOf(StartCommand.class, registry.resolve("/START"));
+            Assertions.assertTrue(registry.resolve("/START").isPresent());
+            Assertions.assertTrue(registry.resolve("/SetName Narek").isPresent());
         }
 
         @Test
-        @DisplayName("Игнорирует аргументы команды")
-        void shouldIgnoreArguments() {
-            Assertions.assertInstanceOf(SetNameCommand.class,
-                    registry.resolve("/setname Tony"));
+        @DisplayName("Пустой Optional для неизвестной команды")
+        void shouldReturnEmptyForUnknown() {
+            Assertions.assertTrue(registry.resolve("/foo").isEmpty());
         }
 
         @Test
-        @DisplayName("Возвращает UnknownCommand для неизвестной команды")
-        void shouldReturnUnknownForUnknownCommand() {
-            Assertions.assertInstanceOf(UnknownCommand.class, registry.resolve("/foo"));
+        @DisplayName("Пустой Optional для null")
+        void shouldReturnEmptyForNull() {
+            Assertions.assertTrue(registry.resolve(null).isEmpty());
         }
 
         @Test
-        @DisplayName("Возвращает UnknownCommand для null")
-        void shouldReturnUnknownForNull() {
-            Assertions.assertInstanceOf(UnknownCommand.class, registry.resolve(null));
+        @DisplayName("Пустой Optional для пробелов")
+        void shouldReturnEmptyForBlank() {
+            Assertions.assertTrue(registry.resolve("   ").isEmpty());
         }
 
         @Test
-        @DisplayName("Возвращает UnknownCommand для пустой строки")
-        void shouldResolveBlankAsUnknown() {
-            Assertions.assertInstanceOf(UnknownCommand.class, registry.resolve("   "));
+        @DisplayName("Команда без пробела после имени не распознаётся")
+        void shouldNotMatchCommandWithoutSpace() {
+            Assertions.assertTrue(registry.resolve("/setnameX foo").isEmpty());
+        }
+
+        @Test
+        @DisplayName("Ведущие и хвостовые пробелы не мешают")
+        void shouldTrimWhitespace() {
+            Optional<ResolvedCommand> resolved = registry.resolve("   /setname Narek   ");
+
+            Assertions.assertTrue(resolved.isPresent());
+            Assertions.assertEquals("Narek", resolved.get().argument());
         }
     }
 
-    /**
-     * Фейковый репозиторий пользователей в памяти.
-     */
     private class FakeUserRepository implements UserRepository {
 
-        /** Хранилище пользователей по Telegram ID. */
         private final Map<Long, User> storage = new HashMap<>();
 
         @Override
-        public Optional<User> findByTelegramId(long telegramId) {
-            return Optional.ofNullable(storage.get(telegramId));
+        public Optional<User> findByUserId(long userId) {
+            return Optional.ofNullable(storage.get(userId));
         }
 
         @Override
         public void save(User user) {
-            storage.put(user.getTelegramId(), user);
+            storage.put(user.userId(), user);
         }
 
         @Override
         public void update(User user) {
-            storage.put(user.getTelegramId(), user);
+            storage.put(user.userId(), user);
         }
     }
 
-    /**
-     * Фейковый сервис валидации с настраиваемыми результатами.
-     */
     private class FakeValidationService extends ValidationService {
 
-        /** Результат для {@link ValidationService#isValidName(String)}. */
         boolean validName = false;
-
-        /** Результат для {@link ValidationService#isValidBio(String)}. */
         boolean validBio = false;
 
         @Override

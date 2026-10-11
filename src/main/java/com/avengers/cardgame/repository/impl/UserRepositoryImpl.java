@@ -1,49 +1,51 @@
 package com.avengers.cardgame.repository.impl;
 
-import com.avengers.cardgame.config.DatabaseConfig;
+import com.avengers.cardgame.config.ConnectionFactory;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserRepository;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Optional;
 
 /**
  * Реализация {@link UserRepository} на основе JDBC.
- * <p>
- * Выполняет операции чтения и записи пользователей в таблице {@code users}.
- * Соединение с БД получается через {@link DatabaseConfig}.
- * <p>
- * Все методы при ошибках SQL оборачивают {@link SQLException} в
- * {@link RuntimeException}.
  */
 public class UserRepositoryImpl implements UserRepository {
 
-    /** Конфигурация подключения к базе данных. */
-    private final DatabaseConfig dbConfig;
+    private static final String SQL_FIND_BY_ID =
+            "SELECT * FROM users WHERE telegram_id = ?";
 
-    /**
-     * Создаёт репозиторий пользователей.
-     *
-     * @param dbConfig конфигурация подключения к БД
-     */
-    public UserRepositoryImpl(DatabaseConfig dbConfig) {
-        this.dbConfig = dbConfig;
+    private static final String SQL_INSERT =
+            "INSERT INTO users (telegram_id, display_name, bio) VALUES (?, ?, ?)";
+
+    private static final String SQL_UPDATE =
+            "UPDATE users SET display_name = ?, bio = ? WHERE telegram_id = ?";
+
+    private final ConnectionFactory connectionFactory;
+
+    public UserRepositoryImpl(ConnectionFactory connectionFactory) {
+        this.connectionFactory = connectionFactory;
     }
 
+
     /**
-     * {@inheritDoc}
+     * Находит пользователя по идентификатору.
      *
-     * @throws RuntimeException при ошибке выполнения SQL-запроса
+     * @param userId идентификатор
+     * @return пользователь, если найден
      */
     @Override
-    public Optional<User> findByTelegramId(long telegramId) {
-        String sql = "SELECT * FROM users WHERE telegram_id = ?";
-        try (Connection conn = dbConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setLong(1, telegramId);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return Optional.of(mapRowToUser(rs));
+    public Optional<User> findByUserId(long userId) {
+        try (Connection conn = connectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(SQL_FIND_BY_ID)) {
+            stmt.setLong(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRowToUser(rs));
+                }
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error finding user", e);
@@ -51,43 +53,38 @@ public class UserRepositoryImpl implements UserRepository {
         return Optional.empty();
     }
 
+
     /**
-     * {@inheritDoc}
-     * <p>
-     * Вставляет новую запись в таблицу {@code users}, сохраняя
-     * {@code telegram_id}, {@code display_name} и {@code bio}.
+     * Сохраняет нового пользователя.
      *
-     * @throws RuntimeException при ошибке выполнения SQL-запроса
+     * @param user пользователь
      */
     @Override
     public void save(User user) {
-        String sql = "INSERT INTO users (telegram_id, display_name, bio) VALUES (?, ?, ?)";
-        try (Connection conn = dbConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setLong(1, user.getTelegramId());
-            stmt.setString(2, user.getDisplayName());
-            stmt.setString(3, user.getBio());
+        try (Connection conn = connectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(SQL_INSERT)) {
+            stmt.setLong(1, user.userId());
+            stmt.setString(2, user.displayName());
+            stmt.setString(3, user.bio());
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Error saving user", e);
         }
     }
 
+
     /**
-     * {@inheritDoc}
-     * <p>
-     * Обновляет {@code display_name} и {@code bio} по {@code telegram_id}.
+     * Обновляет данные пользователя.
      *
-     * @throws RuntimeException при ошибке выполнения SQL-запроса
+     * @param user пользователь с новыми данными
      */
     @Override
     public void update(User user) {
-        String sql = "UPDATE users SET display_name = ?, bio = ? WHERE telegram_id = ?";
-        try (Connection conn = dbConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, user.getDisplayName());
-            stmt.setString(2, user.getBio());
-            stmt.setLong(3, user.getTelegramId());
+        try (Connection conn = connectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(SQL_UPDATE)) {
+            stmt.setString(1, user.displayName());
+            stmt.setString(2, user.bio());
+            stmt.setLong(3, user.userId());
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Error updating user", e);
@@ -97,9 +94,9 @@ public class UserRepositoryImpl implements UserRepository {
     /**
      * Преобразует текущую строку {@link ResultSet} в объект {@link User}.
      *
-     * @param rs результат SQL-запроса, позиционированный на строке с данными
-     * @return заполненный объект {@link User}
-     * @throws SQLException при ошибке чтения полей из {@link ResultSet}
+     * @param rs результат SQL-запроса
+     * @return заполненный объект
+     * @throws SQLException при ошибке чтения полей
      */
     private User mapRowToUser(ResultSet rs) throws SQLException {
         return new User(

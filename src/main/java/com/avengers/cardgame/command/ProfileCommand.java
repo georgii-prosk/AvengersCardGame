@@ -2,73 +2,49 @@ package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.service.UserService;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 /**
- * Команда {@code /profile} — показывает профиль пользователя: имя, описание,
- * баланс щитов и количество карточек в коллекции.
- * <p>
- * Если пользователь ещё не зарегистрирован, он создаётся автоматически
- * с именем по умолчанию {@code "Avenger"}.
+ * Команда /profile.
  */
 public class ProfileCommand implements Command {
 
-    /** Сервис для работы с пользователями. */
+    /** Заглушка для пустого поля профиля. */
+    private static final String NOT_SET = "не задано";
+
+    /** Сервис пользователей. */
     private final UserService userService;
 
+
     /**
-     * Создаёт команду профиля.
-     *
      * @param userService сервис пользователей
      */
     public ProfileCommand(UserService userService) {
         this.userService = userService;
     }
 
-    @Override
-    public String name() {
-        return "/profile";
-    }
 
     /**
-     * Регистрирует пользователя (при необходимости) и отправляет его профиль в чат.
+     * Возвращает данные профиля пользователя.
      *
-     * @param client   клиент Telegram
-     * @param chatId   идентификатор чата
-     * @param userId   идентификатор пользователя
-     * @param userName имя пользователя
-     * @param text     текст сообщения
-     * @throws TelegramApiException при ошибке отправки сообщения
+     * @param request запрос с идентификатором пользователя
+     * @return ответ с именем, bio, балансом и количеством карточек
      */
     @Override
-    public void execute(TelegramClient client, long chatId, long userId, String userName, String text)
-            throws TelegramApiException {
+    public Reply handle(CommandRequest request) {
+        User user = userService.getByUserId(request.userId());
 
-        User user = userService.registerIfAbsent(userId, "Avenger");
+        String displayName = (user.displayName() == null || user.displayName().isBlank())
+                ? NOT_SET
+                : user.displayName();
+        String bio = (user.bio() == null || user.bio().isBlank())
+                ? NOT_SET
+                : user.bio();
 
-        String displayName = user.getDisplayName() == null || user.getDisplayName().isBlank()
-                ? "не задано"
-                : user.getDisplayName();
-
-        String bio = user.getBio() == null || user.getBio().isBlank()
-                ? "не задано"
-                : user.getBio();
-
-        String message = """
-                Имя: *%s*
-                Описание: *%s*
-                Твой баланс: *%d* щитов
-                В твоей коллекции: *%d* карточек
-                """.formatted(displayName, bio, user.getBalance(), user.getCardCount());
-
-        SendMessage sendMessage = SendMessage.builder()
-                .chatId(chatId)
-                .text(message)
-                .parseMode("Markdown")
-                .build();
-
-        client.execute(sendMessage);
+        return new Reply("""
+                Имя: %s
+                Описание: %s
+                Твой баланс: %d щитов
+                В твоей коллекции: %d карточек
+                """.formatted(displayName, bio, user.balance(), user.cardCount()));
     }
 }
