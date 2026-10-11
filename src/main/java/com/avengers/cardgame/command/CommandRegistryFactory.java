@@ -14,6 +14,11 @@ public class CommandRegistryFactory {
     /** Сервис валидации. */
     private final ValidationService validationService;
 
+
+    /**
+     * @param userService       сервис пользователей
+     * @param validationService сервис валидации
+     */
     public CommandRegistryFactory(UserService userService, ValidationService validationService) {
         this.userService = userService;
         this.validationService = validationService;

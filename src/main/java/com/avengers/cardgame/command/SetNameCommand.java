@@ -26,6 +26,13 @@ public class SetNameCommand implements Command {
         this.validationService = validationService;
     }
 
+
+    /**
+     * Валидирует новое имя и обновляет его в профиле.
+     *
+     * @param request запрос с новым именем в аргументе
+     * @return ответ об успехе или ошибке валидации
+     */
     @Override
     public Reply handle(CommandRequest request) {
         String newName = request.argument();

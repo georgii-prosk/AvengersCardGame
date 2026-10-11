@@ -12,6 +12,13 @@ public class StartCommand implements Command {
             обмениваться карточками с другими игроками и устраивать сражения.
             """;
 
+
+    /**
+     * Возвращает приветствие.
+     *
+     * @param request данные запроса
+     * @return ответ с приветствием
+     */
     @Override
     public Reply handle(CommandRequest request) {
         return new Reply(GREETING);

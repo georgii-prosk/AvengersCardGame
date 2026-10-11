@@ -28,6 +28,13 @@ public class SetBioCommand implements Command {
         this.validationService = validationService;
     }
 
+
+    /**
+     * Валидирует новое bio и обновляет его в профиле.
+     *
+     * @param request запрос с новым bio в аргументе
+     * @return ответ об успехе или ошибке валидации
+     */
     @Override
     public Reply handle(CommandRequest request) {
         String newBio = request.argument();

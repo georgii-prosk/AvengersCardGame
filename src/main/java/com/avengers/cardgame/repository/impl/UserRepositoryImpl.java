@@ -30,6 +30,13 @@ public class UserRepositoryImpl implements UserRepository {
         this.connectionFactory = connectionFactory;
     }
 
+
+    /**
+     * Находит пользователя по идентификатору.
+     *
+     * @param userId идентификатор
+     * @return пользователь, если найден
+     */
     @Override
     public Optional<User> findByUserId(long userId) {
         try (Connection conn = connectionFactory.getConnection();
@@ -46,6 +53,12 @@ public class UserRepositoryImpl implements UserRepository {
         return Optional.empty();
     }
 
+
+    /**
+     * Сохраняет нового пользователя.
+     *
+     * @param user пользователь
+     */
     @Override
     public void save(User user) {
         try (Connection conn = connectionFactory.getConnection();
@@ -59,6 +72,12 @@ public class UserRepositoryImpl implements UserRepository {
         }
     }
 
+
+    /**
+     * Обновляет данные пользователя.
+     *
+     * @param user пользователь с новыми данными
+     */
     @Override
     public void update(User user) {
         try (Connection conn = connectionFactory.getConnection();

@@ -11,6 +11,10 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+
+    /**
+     * @param userRepository репозиторий пользователей
+     */
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }

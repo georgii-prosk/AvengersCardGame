@@ -12,6 +12,10 @@ public class ConnectionFactory {
     /** Параметры подключения к базе данных. */
     private final DatabaseConfig config;
 
+
+    /**
+     * @param config параметры подключения
+     */
     public ConnectionFactory(DatabaseConfig config) {
         this.config = config;
     }

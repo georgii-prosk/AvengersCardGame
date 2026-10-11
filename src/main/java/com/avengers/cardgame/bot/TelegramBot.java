@@ -36,11 +36,22 @@ public class TelegramBot implements LongPollingSingleThreadUpdateConsumer {
     /** Реестр команд. */
     private final CommandRegistry commandRegistry;
 
+
+    /**
+     * @param telegramClient клиент для отправки сообщений в Telegram
+     * @param commandRegistry реестр команд
+     */
     public TelegramBot(TelegramClient telegramClient, CommandRegistry commandRegistry) {
         this.telegramClient = telegramClient;
         this.commandRegistry = commandRegistry;
     }
 
+
+    /**
+     * Обрабатывает входящее обновление от Telegram.
+     *
+     * @param update обновление от Telegram API
+     */
     @Override
     public void consume(Update update) {
         if (!update.hasMessage() || !update.getMessage().hasText()) {
@@ -65,6 +76,15 @@ public class TelegramBot implements LongPollingSingleThreadUpdateConsumer {
         }
     }
 
+
+    /**
+     * Определяет команду по тексту и вызывает её.
+     *
+     * @param userId   идентификатор пользователя
+     * @param userName username пользователя
+     * @param text     полный текст сообщения
+     * @return ответ команды или сообщение об ошибке
+     */
     private Reply dispatch(long userId, String userName, String text) {
         Optional<ResolvedCommand> resolved = commandRegistry.resolve(text);
         if (resolved.isEmpty()) {

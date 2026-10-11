@@ -23,13 +23,13 @@ public class ValidationService {
     /**
      * Шаблон допустимого имени: только латинские буквы.
      */
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z]+$");
+    private final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z]+$");
 
     /**
      * Шаблон допустимого описания профиля: латиница, кириллица, цифры,
      * пробелы, эмодзи, знаки препинания и ряд спецсимволов.
      */
-    private static final Pattern BIO_PATTERN = Pattern.compile(
+    private final Pattern BIO_PATTERN = Pattern.compile(
             "^[a-zA-Zа-яА-ЯёЁ0-9\\s" +
                     "\\p{So}\\p{Sk}\\p{Sc}" +                       // эмодзи, модификаторы, валютные символы
                     "/|\\\\<>@#$%^&*(){}`~;:'\"\\-_=+\\[\\].,!?]+$"
