@@ -6,30 +6,27 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Тесты для {@link UserNotFoundException}.
- * <p>
- * Проверяют, что исключение несёт корректный Telegram ID
- * и формирует понятное сообщение.
  */
 class UserNotFoundExceptionTest {
 
     @Test
-    @DisplayName("Сообщение содержит Telegram ID")
-    void messageContainsTelegramId() {
+    @DisplayName("Сообщение содержит идентификатор пользователя")
+    void messageContainsUserId() {
         UserNotFoundException ex = new UserNotFoundException(42L);
 
         Assertions.assertTrue(ex.getMessage().contains("42"));
     }
 
     @Test
-    @DisplayName("getTelegramId возвращает переданный ID")
-    void getTelegramIdReturnsCorrectValue() {
+    @DisplayName("userId() возвращает переданный идентификатор")
+    void userIdReturnsCorrectValue() {
         UserNotFoundException ex = new UserNotFoundException(123L);
 
-        Assertions.assertEquals(123L, ex.getTelegramId());
+        Assertions.assertEquals(123L, ex.userId());
     }
 
     @Test
-    @DisplayName("Является RuntimeException (не checked)")
+    @DisplayName("Является RuntimeException")
     void isRuntimeException() {
         UserNotFoundException ex = new UserNotFoundException(1L);
 
@@ -37,20 +34,20 @@ class UserNotFoundExceptionTest {
     }
 
     @Test
-    @DisplayName("Работает с большим Telegram ID")
-    void worksWithLargeTelegramId() {
+    @DisplayName("Работает с большим идентификатором")
+    void worksWithLargeUserId() {
         long bigId = 9_999_999_999_999L;
         UserNotFoundException ex = new UserNotFoundException(bigId);
 
-        Assertions.assertEquals(bigId, ex.getTelegramId());
+        Assertions.assertEquals(bigId, ex.userId());
         Assertions.assertTrue(ex.getMessage().contains(String.valueOf(bigId)));
     }
 
     @Test
-    @DisplayName("Работает с нулевым Telegram ID")
-    void worksWithZeroTelegramId() {
+    @DisplayName("Работает с нулевым идентификатором")
+    void worksWithZeroUserId() {
         UserNotFoundException ex = new UserNotFoundException(0L);
 
-        Assertions.assertEquals(0L, ex.getTelegramId());
+        Assertions.assertEquals(0L, ex.userId());
     }
 }

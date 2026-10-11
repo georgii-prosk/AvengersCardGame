@@ -1,34 +1,30 @@
 package com.avengers.cardgame.exception;
 
 /**
- * Исключение, выбрасываемое когда пользователь не найден в базе данных.
+ * Доменная ошибка: пользователь не найден.
  * <p>
- * Наследуется от {@link RuntimeException}, чтобы не заставлять вызывающий код
- * обрабатывать checked-исключение — ситуация «пользователя нет» обычно
- * означает программную ошибку (забыли зарегистрировать), а не ожидаемое
- * событие бизнес-логики.
+ * Возникает, когда операция требует существующего пользователя,
+ * но его нет в хранилище.
  */
 public class UserNotFoundException extends RuntimeException {
 
-    /** Идентификатор пользователя в Telegram, которого не нашли. */
-    private final long telegramId;
+    /**
+     * Идентификатор ненайденного пользователя.
+     */
+    private final long userId;
 
     /**
-     * Создаёт исключение с указанием Telegram ID ненайденного пользователя.
-     *
-     * @param telegramId идентификатор пользователя в Telegram
+     * @param userId идентификатор ненайденного пользователя
      */
-    public UserNotFoundException(long telegramId) {
-        super("User not found: telegramId=" + telegramId);
-        this.telegramId = telegramId;
+    public UserNotFoundException(long userId) {
+        super("User not found: userId=" + userId);
+        this.userId = userId;
     }
 
     /**
-     * Возвращает Telegram ID пользователя, которого не нашли.
-     *
-     * @return Telegram ID
+     * @return идентификатор ненайденного пользователя
      */
-    public long getTelegramId() {
-        return telegramId;
+    public long userId() {
+        return userId;
     }
 }

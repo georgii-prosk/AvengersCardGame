@@ -7,8 +7,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <!-- Координаты проекта -->
-    <groupId>com.avengers</groupId>
-    <artifactId>cardgame</artifactId>
+    <groupId>io.github.georgii-prosk</groupId>
+    <artifactId>avengers-card-game</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
@@ -21,21 +21,23 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- Версии зависимостей -->
-        <telegrambots.version>7.10.0</telegrambots.version>
+        <telegrambots.version>10.3.0</telegrambots.version>
+        <jackson.version>2.17.2</jackson.version>
         <postgresql.version>42.7.4</postgresql.version>
         <flyway.version>11.3.4</flyway.version>
         <slf4j.version>2.0.16</slf4j.version>
         <logback.version>1.5.15</logback.version>
         <junit.version>5.11.4</junit.version>
-        <testcontainers.version>2.0.3</testcontainers.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
     </properties>
 
+    <!-- Управление версиями транзитивных зависимостей -->
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
-                <version>2.17.2</version>
+                <version>${jackson.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -44,36 +46,35 @@
 
     <!-- Зависимости -->
     <dependencies>
-        <!-- TelegramBots Long Polling Starter -->
+        <!-- TelegramBots: long polling + HTTP-клиент -->
         <dependency>
             <groupId>org.telegram</groupId>
             <artifactId>telegrambots-longpolling</artifactId>
-            <version>7.10.0</version>
+            <version>${telegrambots.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.telegram</groupId>
             <artifactId>telegrambots-client</artifactId>
-            <version>7.10.0</version>
+            <version>${telegrambots.version}</version>
         </dependency>
 
         <!-- PostgreSQL JDBC Driver -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.4</version>
+            <version>${postgresql.version}</version>
         </dependency>
 
         <!-- Flyway: ядро + поддержка PostgreSQL -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
-            <version>11.3.4</version>
+            <version>${flyway.version}</version>
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
-            <version>11.3.4</version>
+            <version>${flyway.version}</version>
         </dependency>
 
         <!-- Логирование -->
@@ -92,7 +93,7 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.11.4</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -100,13 +101,13 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
-            <version>1.21.4</version>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
-            <version>1.21.4</version>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

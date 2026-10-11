@@ -1,25 +1,21 @@
 package com.avengers.cardgame.repository;
 
 import com.avengers.cardgame.model.User;
+
 import java.util.Optional;
 
 /**
  * Репозиторий для работы с пользователями.
- * <p>
- * Определяет контракт доступа к данным пользователей. Реализации могут
- * использовать различные источники хранения (БД, in-memory и т.п.).
- *
- * @see com.avengers.cardgame.repository.impl.UserRepositoryImpl
  */
 public interface UserRepository {
 
     /**
-     * Находит пользователя по его идентификатору в Telegram.
+     * Находит пользователя по идентификатору.
      *
-     * @param telegramId идентификатор пользователя в Telegram
-     * @return {@link Optional} с пользователем, если он найден, иначе пустой {@link Optional}
+     * @param userId идентификатор пользователя
+     * @return пользователь, если найден
      */
-    Optional<User> findByTelegramId(long telegramId);
+    Optional<User> findByUserId(long userId);
 
     /**
      * Сохраняет нового пользователя.
