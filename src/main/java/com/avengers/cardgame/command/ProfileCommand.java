@@ -22,6 +22,15 @@ public class ProfileCommand implements CommandHandler {
         this.userService = userService;
     }
 
+    /**
+     * Возвращает данные профиля пользователя.
+     *
+     * @param userId   идентификатор пользователя
+     * @param userName имя пользователя
+     * @param argument аргумент команды
+     * @return ответ с именем, bio, балансом и количеством карточек
+     * @throws UserNotFoundException если пользователь не найден
+     */
     @Override
     public Reply handle(long userId, String userName, String argument)
             throws UserNotFoundException {

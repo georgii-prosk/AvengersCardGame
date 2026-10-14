@@ -28,6 +28,15 @@ public class SetBioCommand implements CommandHandler {
         this.userService = userService;
     }
 
+    /**
+     * Валидирует новое описание и обновляет его в профиле пользователя.
+     *
+     * @param userId   идентификатор пользователя
+     * @param userName имя пользователя
+     * @param argument новое описание профиля
+     * @return ответ об успехе или ошибке валидации
+     * @throws UserNotFoundException если пользователь не найден
+     */
     @Override
     public Reply handle(long userId, String userName, String argument)
             throws UserNotFoundException {

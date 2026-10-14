@@ -15,6 +15,9 @@ public class DatabaseMigrator {
     /** Параметры подключения к базе данных. */
     private final DatabaseConfig config;
 
+    /**
+     * @param config параметры подключения к базе данных
+     */
     public DatabaseMigrator(DatabaseConfig config) {
         this.config = config;
     }

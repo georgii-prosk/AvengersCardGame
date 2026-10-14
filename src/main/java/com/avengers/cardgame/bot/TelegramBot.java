@@ -35,6 +35,11 @@ public class TelegramBot implements LongPollingSingleThreadUpdateConsumer {
         this.dispatcher = dispatcher;
     }
 
+    /**
+     * Обрабатывает обновление от Telegram.
+     *
+     * @param update обновление
+     */
     @Override
     public void consume(Update update) {
         if (!update.hasMessage() || !update.getMessage().hasText()) {

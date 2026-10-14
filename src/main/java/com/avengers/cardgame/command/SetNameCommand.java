@@ -26,6 +26,15 @@ public class SetNameCommand implements CommandHandler {
         this.userService = userService;
     }
 
+    /**
+     * Валидирует новое имя и обновляет его в профиле пользователя.
+     *
+     * @param userId   идентификатор пользователя
+     * @param userName имя пользователя
+     * @param argument новое имя
+     * @return ответ об успехе или ошибке валидации
+     * @throws UserNotFoundException если пользователь не найден
+     */
     @Override
     public Reply handle(long userId, String userName, String argument)
             throws UserNotFoundException {

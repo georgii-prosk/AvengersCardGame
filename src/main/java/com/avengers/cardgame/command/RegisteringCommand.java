@@ -26,6 +26,18 @@ public class RegisteringCommand implements CommandHandler {
         this.userService = userService;
     }
 
+    /**
+     * Регистрирует пользователя, если его ещё нет, и вызывает делегата.
+     *
+     * @param userId   идентификатор пользователя
+     * @param userName имя пользователя, может быть {@code null}
+     * @param argument аргумент команды
+     * @return ответ делегата
+     * @throws UserNotFoundException      если операция делегата требует
+     *                                    существующего пользователя
+     * @throws UserAlreadyExistsException если пользователь уже создан
+     *                                    параллельным запросом
+     */
     @Override
     public Reply handle(long userId, String userName, String argument)
             throws UserNotFoundException, UserAlreadyExistsException {

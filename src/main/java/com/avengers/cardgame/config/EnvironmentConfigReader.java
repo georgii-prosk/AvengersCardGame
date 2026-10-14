@@ -39,6 +39,14 @@ public class EnvironmentConfigReader implements ConfigProvider {
         this.envSource = envSource;
     }
 
+    /**
+     * Читает конфигурацию приложения из источника переменных окружения
+     * и проверяет, что все обязательные переменные заданы.
+     *
+     * @return конфигурация приложения
+     * @throws IllegalStateException если хотя бы одна переменная не задана
+     *                               или пуста
+     */
     @Override
     public AppConfig read() {
         DatabaseConfig database = new DatabaseConfig(
