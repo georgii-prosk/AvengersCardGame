@@ -3,7 +3,7 @@ package com.avengers.cardgame.command;
 /**
  * Команда /start.
  */
-public class StartCommand implements Command {
+public class StartCommand implements CommandHandler {
 
     /** Текст приветствия. */
     private static final String GREETING = """
@@ -12,15 +12,8 @@ public class StartCommand implements Command {
             обмениваться карточками с другими игроками и устраивать сражения.
             """;
 
-
-    /**
-     * Возвращает приветствие.
-     *
-     * @param request данные запроса
-     * @return ответ с приветствием
-     */
     @Override
-    public Reply handle(CommandRequest request) {
+    public Reply handle(long userId, String userName, String argument) {
         return new Reply(GREETING);
     }
 }

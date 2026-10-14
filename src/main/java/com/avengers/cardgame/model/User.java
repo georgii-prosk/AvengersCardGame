@@ -6,17 +6,17 @@ import java.time.LocalDateTime;
  * Профиль игрока.
  *
  * @param userId      идентификатор пользователя на платформе
- * @param displayName отображаемое имя
- * @param bio         описание профиля
- * @param balance     баланс игровой валюты («щиты»)
+ * @param playerName  отображаемое имя
+ * @param bio         описание профиля, может быть {@code null}
+ * @param balance     баланс игровой валюты
  * @param cardCount   количество карточек в коллекции
  * @param createdAt   дата и время создания записи
  * @param updatedAt   дата и время последнего обновления записи
  */
 public record User(
         long userId,
-        String displayName,
-        String bio,
+        PlayerName playerName,
+        Bio bio,
         int balance,
         int cardCount,
         LocalDateTime createdAt,
@@ -26,11 +26,11 @@ public record User(
     /**
      * Создаёт нового игрока с минимальными данными.
      *
-     * @param userId      идентификатор пользователя
-     * @param displayName отображаемое имя
+     * @param userId     идентификатор пользователя
+     * @param playerName отображаемое имя
      */
-    public User(long userId, String displayName) {
-        this(userId, displayName, "", 0, 0, null, null);
+    public User(long userId, PlayerName playerName) {
+        this(userId, playerName, null, 0, 0, null, null);
     }
 
     /**
@@ -39,7 +39,7 @@ public record User(
      * @param newName новое имя
      * @return копия пользователя
      */
-    public User withDisplayName(String newName) {
+    public User withPlayerName(PlayerName newName) {
         return new User(userId, newName, bio, balance, cardCount, createdAt, updatedAt);
     }
 
@@ -49,7 +49,7 @@ public record User(
      * @param newBio новое описание
      * @return копия пользователя
      */
-    public User withBio(String newBio) {
-        return new User(userId, displayName, newBio, balance, cardCount, createdAt, updatedAt);
+    public User withBio(Bio newBio) {
+        return new User(userId, playerName, newBio, balance, cardCount, createdAt, updatedAt);
     }
 }

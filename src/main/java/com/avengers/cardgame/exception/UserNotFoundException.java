@@ -2,15 +2,10 @@ package com.avengers.cardgame.exception;
 
 /**
  * Доменная ошибка: пользователь не найден.
- * <p>
- * Возникает, когда операция требует существующего пользователя,
- * но его нет в хранилище.
  */
-public class UserNotFoundException extends RuntimeException {
+public class UserNotFoundException extends Exception {
 
-    /**
-     * Идентификатор ненайденного пользователя.
-     */
+    /** Идентификатор ненайденного пользователя. */
     private final long userId;
 
     /**

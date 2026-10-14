@@ -1,12 +1,13 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.exception.UserNotFoundException;
+import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.service.UserService;
-import com.avengers.cardgame.service.ValidationService;
 
 /**
  * Команда /setname.
  */
-public class SetNameCommand implements Command {
+public class SetNameCommand implements CommandHandler {
 
     /** Текст ошибки при невалидном имени. */
     private static final String ERROR = "Вы ввели некорректное имя. "
@@ -18,30 +19,24 @@ public class SetNameCommand implements Command {
     /** Сервис пользователей. */
     private final UserService userService;
 
-    /** Сервис валидации. */
-    private final ValidationService validationService;
-
-    public SetNameCommand(UserService userService, ValidationService validationService) {
+    /**
+     * @param userService сервис пользователей
+     */
+    public SetNameCommand(UserService userService) {
         this.userService = userService;
-        this.validationService = validationService;
     }
 
-
-    /**
-     * Валидирует новое имя и обновляет его в профиле.
-     *
-     * @param request запрос с новым именем в аргументе
-     * @return ответ об успехе или ошибке валидации
-     */
     @Override
-    public Reply handle(CommandRequest request) {
-        String newName = request.argument();
-
-        if (newName.isEmpty() || !validationService.isValidName(newName)) {
+    public Reply handle(long userId, String userName, String argument)
+            throws UserNotFoundException {
+        PlayerName newName;
+        try {
+            newName = new PlayerName(argument);
+        } catch (IllegalArgumentException e) {
             return new Reply(ERROR);
         }
 
-        userService.updateDisplayName(request.userId(), newName);
-        return new Reply(SUCCESS_PREFIX + newName);
+        userService.updateDisplayName(userId, newName);
+        return new Reply(SUCCESS_PREFIX + newName.value());
     }
 }

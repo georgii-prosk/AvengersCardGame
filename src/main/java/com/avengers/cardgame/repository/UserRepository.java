@@ -1,5 +1,7 @@
 package com.avengers.cardgame.repository;
 
+import com.avengers.cardgame.exception.UserAlreadyExistsException;
+import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
 
 import java.util.Optional;
@@ -21,13 +23,15 @@ public interface UserRepository {
      * Сохраняет нового пользователя.
      *
      * @param user пользователь для сохранения
+     * @throws UserAlreadyExistsException если пользователь с таким идентификатором уже существует
      */
-    void save(User user);
+    void save(User user) throws UserAlreadyExistsException;
 
     /**
      * Обновляет данные существующего пользователя.
      *
      * @param user пользователь с обновлёнными данными
+     * @throws UserNotFoundException если пользователя с таким идентификатором нет
      */
-    void update(User user);
+    void update(User user) throws UserNotFoundException;
 }

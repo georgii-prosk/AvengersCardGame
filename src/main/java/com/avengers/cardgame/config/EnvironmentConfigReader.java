@@ -1,9 +1,11 @@
 package com.avengers.cardgame.config;
 
+import java.util.function.Function;
+
 /**
- * Читает {@link EnvironmentConfig} из переменных окружения.
+ * Читает {@link AppConfig} из переменных окружения.
  */
-public class EnvironmentConfigReader {
+public class EnvironmentConfigReader implements ConfigProvider {
 
     /** Имя переменной окружения с токеном бота. */
     private static final String BOT_TOKEN = "BOT_TOKEN";
@@ -17,30 +19,45 @@ public class EnvironmentConfigReader {
     /** Имя переменной окружения с паролем БД. */
     private static final String DB_PASSWORD = "DB_PASSWORD";
 
+    /** Источник значений переменных. */
+    private final Function<String, String> envSource;
+
     /**
-     * Читает конфигурацию и проверяет, что все обязательные переменные заданы.
-     *
-     * @return конфигурация приложения
-     * @throws IllegalStateException если переменная не задана или пуста
+     * Создаёт reader, читающий из {@code System.getenv()}.
      */
-    public EnvironmentConfig read() {
+    public EnvironmentConfigReader() {
+        this(System::getenv);
+    }
+
+    /**
+     * Создаёт reader с указанным источником значений.
+     * Используется в тестах.
+     *
+     * @param envSource функция, возвращающая значение по имени переменной
+     */
+    public EnvironmentConfigReader(Function<String, String> envSource) {
+        this.envSource = envSource;
+    }
+
+    @Override
+    public AppConfig read() {
         DatabaseConfig database = new DatabaseConfig(
                 require(DB_URL),
                 require(DB_USER),
                 require(DB_PASSWORD)
         );
-        return new EnvironmentConfig(require(BOT_TOKEN), database);
+        return new AppConfig(require(BOT_TOKEN), database);
     }
 
     /**
-     * Возвращает значение переменной окружения или падает, если её нет.
+     * Возвращает значение переменной или падает, если её нет.
      *
      * @param name имя переменной
      * @return значение переменной
      * @throws IllegalStateException если переменная не задана или пуста
      */
     private String require(String name) {
-        String value = System.getenv(name);
+        String value = envSource.apply(name);
         if (value == null || value.isBlank()) {
             throw new IllegalStateException("Environment variable " + name + " is not set");
         }

@@ -1,7 +1,6 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.service.UserService;
-import com.avengers.cardgame.service.ValidationService;
 
 /**
  * Создаёт {@link CommandRegistry} со всеми командами бота.
@@ -11,17 +10,11 @@ public class CommandRegistryFactory {
     /** Сервис пользователей. */
     private final UserService userService;
 
-    /** Сервис валидации. */
-    private final ValidationService validationService;
-
-
     /**
-     * @param userService       сервис пользователей
-     * @param validationService сервис валидации
+     * @param userService сервис пользователей
      */
-    public CommandRegistryFactory(UserService userService, ValidationService validationService) {
+    public CommandRegistryFactory(UserService userService) {
         this.userService = userService;
-        this.validationService = validationService;
     }
 
     /**
@@ -35,10 +28,8 @@ public class CommandRegistryFactory {
         registry.register("/start", wrap(new StartCommand()));
         registry.register("/help", new HelpCommand());
         registry.register("/profile", wrap(new ProfileCommand(userService)));
-        registry.register("/setname",
-                wrap(new SetNameCommand(userService, validationService)));
-        registry.register("/setbio",
-                wrap(new SetBioCommand(userService, validationService)));
+        registry.register("/setname", wrap(new SetNameCommand(userService)));
+        registry.register("/setbio", wrap(new SetBioCommand(userService)));
 
         return registry;
     }
@@ -47,9 +38,9 @@ public class CommandRegistryFactory {
      * Оборачивает команду в {@link RegisteringCommand}.
      *
      * @param command команда
-     * @return обёрнутая команда
+     * @return обёрнутый обработчик
      */
-    private Command wrap(Command command) {
+    private CommandHandler wrap(CommandHandler command) {
         return new RegisteringCommand(command, userService);
     }
 }

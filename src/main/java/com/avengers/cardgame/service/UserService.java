@@ -1,23 +1,15 @@
 package com.avengers.cardgame.service;
 
+import com.avengers.cardgame.exception.UserAlreadyExistsException;
 import com.avengers.cardgame.exception.UserNotFoundException;
+import com.avengers.cardgame.model.Bio;
+import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.model.User;
-import com.avengers.cardgame.repository.UserRepository;
 
 /**
  * Сервис для работы с пользователями.
  */
-public class UserService {
-
-    private final UserRepository userRepository;
-
-
-    /**
-     * @param userRepository репозиторий пользователей
-     */
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+public interface UserService {
 
     /**
      * Возвращает пользователя по идентификатору, регистрируя нового,
@@ -26,15 +18,10 @@ public class UserService {
      * @param userId      идентификатор пользователя
      * @param defaultName имя по умолчанию для нового пользователя
      * @return существующий или только что созданный пользователь
+     * @throws UserAlreadyExistsException если параллельно пользователь уже создан
      */
-    public User registerIfAbsent(long userId, String defaultName) {
-        return userRepository.findByUserId(userId)
-                .orElseGet(() -> {
-                    User newUser = new User(userId, defaultName);
-                    userRepository.save(newUser);
-                    return newUser;
-                });
-    }
+    User registerIfAbsent(long userId, PlayerName defaultName)
+            throws UserAlreadyExistsException;
 
     /**
      * Возвращает пользователя по идентификатору.
@@ -43,10 +30,7 @@ public class UserService {
      * @return найденный пользователь
      * @throws UserNotFoundException если пользователь не найден
      */
-    public User getByUserId(long userId) {
-        return userRepository.findByUserId(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-    }
+    User getByUserId(long userId) throws UserNotFoundException;
 
     /**
      * Обновляет отображаемое имя пользователя.
@@ -55,11 +39,8 @@ public class UserService {
      * @param newName новое отображаемое имя
      * @throws UserNotFoundException если пользователь не найден
      */
-    public void updateDisplayName(long userId, String newName) {
-        User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-        userRepository.update(user.withDisplayName(newName));
-    }
+    void updateDisplayName(long userId, PlayerName newName)
+            throws UserNotFoundException;
 
     /**
      * Обновляет описание профиля пользователя.
@@ -68,9 +49,5 @@ public class UserService {
      * @param newBio новое описание профиля
      * @throws UserNotFoundException если пользователь не найден
      */
-    public void updateBio(long userId, String newBio) {
-        User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-        userRepository.update(user.withBio(newBio));
-    }
+    void updateBio(long userId, Bio newBio) throws UserNotFoundException;
 }

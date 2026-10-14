@@ -1,113 +1,112 @@
 package com.avengers.cardgame.service;
 
 import com.avengers.cardgame.exception.UserNotFoundException;
+import com.avengers.cardgame.fakes.FakeUserRepository;
+import com.avengers.cardgame.model.Bio;
+import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.model.User;
-import com.avengers.cardgame.repository.UserRepository;
-import org.junit.jupiter.api.*;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import com.avengers.cardgame.service.impl.UserServiceImpl;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 /**
- * Тесты для {@link UserService}.
+ * Тесты для {@link UserServiceImpl}.
  * <p>
  * Используется фейковый репозиторий в памяти — без Mockito и без Docker.
  */
 class UserServiceTest {
 
+    /** Фейковый репозиторий пользователей. */
     private FakeUserRepository userRepository;
-    private UserService userService;
 
+    /** Тестируемый сервис. */
+    private UserServiceImpl userService;
+
+    /**
+     * Создаёт фейковый репозиторий и сервис перед каждым тестом.
+     */
     @BeforeEach
     void setUp() {
         userRepository = new FakeUserRepository();
-        userService = new UserService(userRepository);
+        userService = new UserServiceImpl(userRepository);
     }
 
+    /**
+     * Тесты для {@link UserServiceImpl#registerIfAbsent(long, PlayerName)}.
+     */
     @Nested
     @DisplayName("registerIfAbsent")
     class RegisterIfAbsentTest {
 
         @Test
         @DisplayName("Регистрирует нового пользователя")
-        void registersNewUser() {
-            User created = userService.registerIfAbsent(1L, "Tony");
+        void registersNewUser() throws Exception {
+            User created = userService.registerIfAbsent(1L, new PlayerName("Tony"));
 
             Assertions.assertNotNull(created);
             Assertions.assertEquals(1L, created.userId());
-            Assertions.assertEquals("Tony", created.displayName());
+            Assertions.assertEquals("Tony", created.playerName().value());
             Assertions.assertTrue(userRepository.findByUserId(1L).isPresent());
         }
 
         @Test
         @DisplayName("Возвращает существующего пользователя без перезаписи")
-        void returnsExistingUserWithoutOverwrite() {
-            userRepository.save(new User(1L, "Original"));
+        void returnsExistingUserWithoutOverwrite() throws Exception {
+            userRepository.save(new User(1L, new PlayerName("Original")));
 
-            User result = userService.registerIfAbsent(1L, "Tony");
+            User result = userService.registerIfAbsent(1L, new PlayerName("Tony"));
 
-            Assertions.assertEquals("Original", result.displayName());
+            Assertions.assertEquals("Original", result.playerName().value());
             Assertions.assertEquals("Original",
-                    userRepository.findByUserId(1L).orElseThrow().displayName());
+                    userRepository.findByUserId(1L).orElseThrow().playerName().value());
         }
 
         @Test
         @DisplayName("Создаёт двух разных пользователей")
-        void createsTwoDifferentUsers() {
-            userService.registerIfAbsent(1L, "Tony");
-            userService.registerIfAbsent(2L, "Steve");
+        void createsTwoDifferentUsers() throws Exception {
+            userService.registerIfAbsent(1L, new PlayerName("Tony"));
+            userService.registerIfAbsent(2L, new PlayerName("Steve"));
 
             Assertions.assertEquals("Tony",
-                    userRepository.findByUserId(1L).orElseThrow().displayName());
+                    userRepository.findByUserId(1L).orElseThrow().playerName().value());
             Assertions.assertEquals("Steve",
-                    userRepository.findByUserId(2L).orElseThrow().displayName());
+                    userRepository.findByUserId(2L).orElseThrow().playerName().value());
         }
 
         @Test
         @DisplayName("Не увеличивает количество пользователей при повторной регистрации")
-        void doesNotIncreaseCountOnSecondRegister() {
-            userService.registerIfAbsent(1L, "Tony");
-            userService.registerIfAbsent(1L, "Tony");
+        void doesNotIncreaseCountOnSecondRegister() throws Exception {
+            userService.registerIfAbsent(1L, new PlayerName("Tony"));
+            userService.registerIfAbsent(1L, new PlayerName("Tony"));
 
             Assertions.assertEquals(1, userRepository.size());
         }
-
-        @Test
-        @DisplayName("Регистрирует с пустым именем — разрешено на уровне сервиса")
-        void registersWithEmptyName() {
-            User created = userService.registerIfAbsent(1L, "");
-
-            Assertions.assertEquals("", created.displayName());
-        }
-
-        @Test
-        @DisplayName("Регистрирует с кириллическим именем")
-        void registersWithCyrillicName() {
-            User created = userService.registerIfAbsent(1L, "Нарек");
-
-            Assertions.assertEquals("Нарек", created.displayName());
-        }
     }
 
+    /**
+     * Тесты для {@link UserServiceImpl#getByUserId(long)}.
+     */
     @Nested
     @DisplayName("getByUserId")
     class GetByUserIdTest {
 
         @Test
         @DisplayName("Возвращает сохранённого пользователя")
-        void returnsSavedUser() {
-            userRepository.save(new User(1L, "Tony"));
+        void returnsSavedUser() throws Exception {
+            userRepository.save(new User(1L, new PlayerName("Tony")));
 
             User found = userService.getByUserId(1L);
 
             Assertions.assertEquals(1L, found.userId());
-            Assertions.assertEquals("Tony", found.displayName());
+            Assertions.assertEquals("Tony", found.playerName().value());
         }
 
         @Test
         @DisplayName("Бросает UserNotFoundException, если пользователя нет")
-        void throwsUserNotFoundExceptionWhenUserNotFound() {
+        void throwsWhenUserNotFound() {
             Assertions.assertThrows(UserNotFoundException.class,
                     () -> userService.getByUserId(999L));
         }
@@ -133,46 +132,40 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("Исключение является RuntimeException")
-        void exceptionIsRuntimeException() {
-            UserNotFoundException ex = Assertions.assertThrows(
-                    UserNotFoundException.class,
-                    () -> userService.getByUserId(1L));
-
-            Assertions.assertInstanceOf(RuntimeException.class, ex);
-        }
-
-        @Test
         @DisplayName("Находит правильного пользователя среди нескольких")
-        void findsCorrectUserAmongMany() {
-            userRepository.save(new User(1L, "Tony"));
-            userRepository.save(new User(2L, "Steve"));
-            userRepository.save(new User(3L, "Natasha"));
+        void findsCorrectUserAmongMany() throws Exception {
+            userRepository.save(new User(1L, new PlayerName("Tony")));
+            userRepository.save(new User(2L, new PlayerName("Steve")));
+            userRepository.save(new User(3L, new PlayerName("Natasha")));
 
-            Assertions.assertEquals("Steve", userService.getByUserId(2L).displayName());
+            Assertions.assertEquals("Steve",
+                    userService.getByUserId(2L).playerName().value());
         }
     }
 
+    /**
+     * Тесты для {@link UserServiceImpl#updateDisplayName(long, PlayerName)}.
+     */
     @Nested
     @DisplayName("updateDisplayName")
     class UpdateDisplayNameTest {
 
         @Test
         @DisplayName("Обновляет имя существующего пользователя")
-        void updatesExistingUser() {
-            userRepository.save(new User(1L, "Tony"));
+        void updatesExistingUser() throws Exception {
+            userRepository.save(new User(1L, new PlayerName("Tony")));
 
-            userService.updateDisplayName(1L, "Iron Man");
+            userService.updateDisplayName(1L, new PlayerName("IronMan"));
 
-            Assertions.assertEquals("Iron Man",
-                    userRepository.findByUserId(1L).orElseThrow().displayName());
+            Assertions.assertEquals("IronMan",
+                    userRepository.findByUserId(1L).orElseThrow().playerName().value());
         }
 
         @Test
         @DisplayName("Бросает UserNotFoundException, если пользователя нет")
-        void throwsUserNotFoundExceptionWhenUserNotFound() {
+        void throwsWhenUserNotFound() {
             Assertions.assertThrows(UserNotFoundException.class,
-                    () -> userService.updateDisplayName(999L, "Iron Man"));
+                    () -> userService.updateDisplayName(999L, new PlayerName("IronMan")));
         }
 
         @Test
@@ -180,7 +173,7 @@ class UserServiceTest {
         void exceptionCarriesUserId() {
             UserNotFoundException ex = Assertions.assertThrows(
                     UserNotFoundException.class,
-                    () -> userService.updateDisplayName(999L, "Iron Man"));
+                    () -> userService.updateDisplayName(999L, new PlayerName("IronMan")));
 
             Assertions.assertEquals(999L, ex.userId());
         }
@@ -189,30 +182,31 @@ class UserServiceTest {
         @DisplayName("Не создаёт нового пользователя при обновлении")
         void doesNotCreateNewUser() {
             Assertions.assertThrows(UserNotFoundException.class,
-                    () -> userService.updateDisplayName(1L, "Iron Man"));
+                    () -> userService.updateDisplayName(1L, new PlayerName("IronMan")));
 
             Assertions.assertTrue(userRepository.findByUserId(1L).isEmpty());
         }
 
         @Test
         @DisplayName("Сохраняет bio при обновлении имени")
-        void keepsBioUnchanged() {
-            User user = new User(1L, "Tony", "Genius", 0, 0, null, null);
+        void keepsBioUnchanged() throws Exception {
+            User user = new User(1L, new PlayerName("Tony"), new Bio("Genius"),
+                    0, 0, null, null);
             userRepository.save(user);
 
-            userService.updateDisplayName(1L, "Iron Man");
+            userService.updateDisplayName(1L, new PlayerName("IronMan"));
 
             Assertions.assertEquals("Genius",
-                    userRepository.findByUserId(1L).orElseThrow().bio());
+                    userRepository.findByUserId(1L).orElseThrow().bio().value());
         }
 
         @Test
         @DisplayName("Сохраняет balance при обновлении имени")
-        void keepsBalanceUnchanged() {
-            User user = new User(1L, "Tony", "", 500, 0, null, null);
+        void keepsBalanceUnchanged() throws Exception {
+            User user = new User(1L, new PlayerName("Tony"), null, 500, 0, null, null);
             userRepository.save(user);
 
-            userService.updateDisplayName(1L, "Iron Man");
+            userService.updateDisplayName(1L, new PlayerName("IronMan"));
 
             Assertions.assertEquals(500,
                     userRepository.findByUserId(1L).orElseThrow().balance());
@@ -220,48 +214,40 @@ class UserServiceTest {
 
         @Test
         @DisplayName("Сохраняет cardCount при обновлении имени")
-        void keepsCardCountUnchanged() {
-            User user = new User(1L, "Tony", "", 0, 10, null, null);
+        void keepsCardCountUnchanged() throws Exception {
+            User user = new User(1L, new PlayerName("Tony"), null, 0, 10, null, null);
             userRepository.save(user);
 
-            userService.updateDisplayName(1L, "Iron Man");
+            userService.updateDisplayName(1L, new PlayerName("IronMan"));
 
             Assertions.assertEquals(10,
                     userRepository.findByUserId(1L).orElseThrow().cardCount());
         }
-
-        @Test
-        @DisplayName("Обновляет имя на кириллицу — без валидации на уровне сервиса")
-        void updatesToCyrillicName() {
-            userRepository.save(new User(1L, "Tony"));
-
-            userService.updateDisplayName(1L, "Нарек");
-
-            Assertions.assertEquals("Нарек",
-                    userRepository.findByUserId(1L).orElseThrow().displayName());
-        }
     }
 
+    /**
+     * Тесты для {@link UserServiceImpl#updateBio(long, Bio)}.
+     */
     @Nested
     @DisplayName("updateBio")
     class UpdateBioTest {
 
         @Test
         @DisplayName("Обновляет bio существующего пользователя")
-        void updatesExistingUserBio() {
-            userRepository.save(new User(1L, "Tony"));
+        void updatesExistingUserBio() throws Exception {
+            userRepository.save(new User(1L, new PlayerName("Tony")));
 
-            userService.updateBio(1L, "Genius, billionaire, playboy, philanthropist");
+            userService.updateBio(1L, new Bio("Genius billionaire"));
 
-            Assertions.assertEquals("Genius, billionaire, playboy, philanthropist",
-                    userRepository.findByUserId(1L).orElseThrow().bio());
+            Assertions.assertEquals("Genius billionaire",
+                    userRepository.findByUserId(1L).orElseThrow().bio().value());
         }
 
         @Test
         @DisplayName("Бросает UserNotFoundException, если пользователя нет")
-        void throwsUserNotFoundExceptionWhenUserNotFound() {
+        void throwsWhenUserNotFound() {
             Assertions.assertThrows(UserNotFoundException.class,
-                    () -> userService.updateBio(999L, "New bio"));
+                    () -> userService.updateBio(999L, new Bio("New bio")));
         }
 
         @Test
@@ -269,7 +255,7 @@ class UserServiceTest {
         void exceptionCarriesUserId() {
             UserNotFoundException ex = Assertions.assertThrows(
                     UserNotFoundException.class,
-                    () -> userService.updateBio(777L, "New bio"));
+                    () -> userService.updateBio(777L, new Bio("New bio")));
 
             Assertions.assertEquals(777L, ex.userId());
         }
@@ -278,29 +264,29 @@ class UserServiceTest {
         @DisplayName("Не создаёт нового пользователя при обновлении")
         void doesNotCreateNewUser() {
             Assertions.assertThrows(UserNotFoundException.class,
-                    () -> userService.updateBio(1L, "New bio"));
+                    () -> userService.updateBio(1L, new Bio("New bio")));
 
             Assertions.assertTrue(userRepository.findByUserId(1L).isEmpty());
         }
 
         @Test
         @DisplayName("Сохраняет имя при обновлении bio")
-        void keepsDisplayNameUnchanged() {
-            userRepository.save(new User(1L, "Tony"));
+        void keepsDisplayNameUnchanged() throws Exception {
+            userRepository.save(new User(1L, new PlayerName("Tony")));
 
-            userService.updateBio(1L, "New bio");
+            userService.updateBio(1L, new Bio("New bio"));
 
             Assertions.assertEquals("Tony",
-                    userRepository.findByUserId(1L).orElseThrow().displayName());
+                    userRepository.findByUserId(1L).orElseThrow().playerName().value());
         }
 
         @Test
         @DisplayName("Сохраняет balance при обновлении bio")
-        void keepsBalanceUnchanged() {
-            User user = new User(1L, "Tony", "", 500, 0, null, null);
+        void keepsBalanceUnchanged() throws Exception {
+            User user = new User(1L, new PlayerName("Tony"), null, 500, 0, null, null);
             userRepository.save(user);
 
-            userService.updateBio(1L, "New bio");
+            userService.updateBio(1L, new Bio("New bio"));
 
             Assertions.assertEquals(500,
                     userRepository.findByUserId(1L).orElseThrow().balance());
@@ -308,74 +294,36 @@ class UserServiceTest {
 
         @Test
         @DisplayName("Сохраняет кириллицу и эмодзи")
-        void savesCyrillicAndEmoji() {
-            userRepository.save(new User(1L, "Tony"));
+        void savesCyrillicAndEmoji() throws Exception {
+            userRepository.save(new User(1L, new PlayerName("Tony")));
 
-            userService.updateBio(1L, "Привет! 🦸‍♂️");
+            userService.updateBio(1L, new Bio("Привет! 🦸"));
 
-            Assertions.assertEquals("Привет! 🦸‍♂️",
-                    userRepository.findByUserId(1L).orElseThrow().bio());
-        }
-
-        @Test
-        @DisplayName("Пустое bio сохраняется как пустая строка")
-        void savesEmptyBio() {
-            userRepository.save(new User(1L, "Tony"));
-
-            userService.updateBio(1L, "");
-
-            Assertions.assertEquals("",
-                    userRepository.findByUserId(1L).orElseThrow().bio());
+            Assertions.assertEquals("Привет! 🦸",
+                    userRepository.findByUserId(1L).orElseThrow().bio().value());
         }
 
         @Test
         @DisplayName("Многострочное bio сохраняется корректно")
-        void savesMultilineBio() {
-            userRepository.save(new User(1L, "Tony"));
+        void savesMultilineBio() throws Exception {
+            userRepository.save(new User(1L, new PlayerName("Tony")));
 
-            userService.updateBio(1L, "Line one\nLine two\nLine three");
+            userService.updateBio(1L, new Bio("Line one\nLine two\nLine three"));
 
             Assertions.assertEquals("Line one\nLine two\nLine three",
-                    userRepository.findByUserId(1L).orElseThrow().bio());
+                    userRepository.findByUserId(1L).orElseThrow().bio().value());
         }
 
         @Test
         @DisplayName("Длинное bio (256 символов) сохраняется")
-        void savesMaxLengthBio() {
-            userRepository.save(new User(1L, "Tony"));
-            String longBio = "b".repeat(256);
+        void savesMaxLengthBio() throws Exception {
+            userRepository.save(new User(1L, new PlayerName("Tony")));
+            String longBioText = "b".repeat(256);
 
-            userService.updateBio(1L, longBio);
+            userService.updateBio(1L, new Bio(longBioText));
 
-            Assertions.assertEquals(longBio,
-                    userRepository.findByUserId(1L).orElseThrow().bio());
-        }
-    }
-
-    /**
-     * Фейковый репозиторий пользователей в памяти.
-     */
-    private class FakeUserRepository implements UserRepository {
-
-        private final Map<Long, User> storage = new HashMap<>();
-
-        @Override
-        public Optional<User> findByUserId(long userId) {
-            return Optional.ofNullable(storage.get(userId));
-        }
-
-        @Override
-        public void save(User user) {
-            storage.put(user.userId(), user);
-        }
-
-        @Override
-        public void update(User user) {
-            storage.put(user.userId(), user);
-        }
-
-        int size() {
-            return storage.size();
+            Assertions.assertEquals(longBioText,
+                    userRepository.findByUserId(1L).orElseThrow().bio().value());
         }
     }
 }

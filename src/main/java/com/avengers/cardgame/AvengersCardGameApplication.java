@@ -1,16 +1,19 @@
 package com.avengers.cardgame;
 
+import com.avengers.cardgame.bot.CommandDispatcher;
+import com.avengers.cardgame.bot.MessageDispatcher;
 import com.avengers.cardgame.bot.TelegramBot;
 import com.avengers.cardgame.command.CommandRegistry;
 import com.avengers.cardgame.command.CommandRegistryFactory;
+import com.avengers.cardgame.config.AppConfig;
+import com.avengers.cardgame.config.ConfigProvider;
 import com.avengers.cardgame.config.ConnectionFactory;
 import com.avengers.cardgame.config.DatabaseMigrator;
-import com.avengers.cardgame.config.EnvironmentConfig;
 import com.avengers.cardgame.config.EnvironmentConfigReader;
 import com.avengers.cardgame.repository.UserRepository;
 import com.avengers.cardgame.repository.impl.UserRepositoryImpl;
 import com.avengers.cardgame.service.UserService;
-import com.avengers.cardgame.service.ValidationService;
+import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
@@ -27,7 +30,8 @@ public class AvengersCardGameApplication {
     private final Logger log = LoggerFactory.getLogger(AvengersCardGameApplication.class);
 
     void main() {
-        EnvironmentConfig env = new EnvironmentConfigReader().read();
+        ConfigProvider configProvider = new EnvironmentConfigReader();
+        AppConfig env = configProvider.read();
 
         // 1. Инфраструктура: миграции и подключение к БД
         new DatabaseMigrator(env.database()).migrate();
@@ -37,16 +41,15 @@ public class AvengersCardGameApplication {
         UserRepository userRepository = new UserRepositoryImpl(connectionFactory);
 
         // 3. Бизнес-логика
-        UserService userService = new UserService(userRepository);
-        ValidationService validationService = new ValidationService();
+        UserService userService = new UserServiceImpl(userRepository);
 
         // 4. Слой команд
-        CommandRegistry commandRegistry =
-                new CommandRegistryFactory(userService, validationService).create();
+        CommandRegistry commandRegistry = new CommandRegistryFactory(userService).create();
+        MessageDispatcher dispatcher = new CommandDispatcher(commandRegistry);
 
         // 5. Транспорт
         TelegramClient telegramClient = new OkHttpTelegramClient(env.botToken());
-        TelegramBot bot = new TelegramBot(telegramClient, commandRegistry);
+        TelegramBot bot = new TelegramBot(telegramClient, dispatcher);
 
         // 6. Запуск
         startBot(env.botToken(), bot);

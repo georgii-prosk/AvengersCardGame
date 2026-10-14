@@ -9,16 +9,16 @@ import java.util.Optional;
  */
 public class CommandRegistry {
 
-    /** Карта зарегистрированных команд: имя → реализация. */
-    private final Map<String, Command> commands = new HashMap<>();
+    /** Карта зарегистрированных команд: имя → обработчик. */
+    private final Map<String, CommandHandler> commands = new HashMap<>();
 
     /**
      * Регистрирует команду под указанным именем.
      *
      * @param name    имя команды вида {@code "/start"}
-     * @param command реализация команды
+     * @param command обработчик
      */
-    public void register(String name, Command command) {
+    public void register(String name, CommandHandler command) {
         commands.put(name, command);
     }
 
@@ -35,7 +35,7 @@ public class CommandRegistry {
         String trimmed = text.trim();
         int spaceIndex = trimmed.indexOf(' ');
         String name = (spaceIndex == -1 ? trimmed : trimmed.substring(0, spaceIndex)).toLowerCase();
-        Command command = commands.get(name);
+        CommandHandler command = commands.get(name);
         if (command == null) {
             return Optional.empty();
         }

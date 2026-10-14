@@ -26,14 +26,6 @@ class UserNotFoundExceptionTest {
     }
 
     @Test
-    @DisplayName("Является RuntimeException")
-    void isRuntimeException() {
-        UserNotFoundException ex = new UserNotFoundException(1L);
-
-        Assertions.assertInstanceOf(RuntimeException.class, ex);
-    }
-
-    @Test
     @DisplayName("Работает с большим идентификатором")
     void worksWithLargeUserId() {
         long bigId = 9_999_999_999_999L;

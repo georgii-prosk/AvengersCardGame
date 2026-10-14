@@ -3,7 +3,7 @@ package com.avengers.cardgame.command;
 /**
  * Команда /help.
  */
-public class HelpCommand implements Command {
+public class HelpCommand implements CommandHandler {
 
     /** Текст справки. */
     private static final String HELP_TEXT = """
@@ -14,15 +14,8 @@ public class HelpCommand implements Command {
             /setbio <bio> - позволяет обновить короткое описание профиля. Максимум 256 символов латиницей или кириллицей + эмодзи и знаков препинания, пробелов, цифр, спецсимволы (/|\\<>@#$%^&*(){}[]`~;:'"-_=+).
             """;
 
-
-    /**
-     * Возвращает список доступных команд.
-     *
-     * @param request данные запроса
-     * @return ответ со списком команд
-     */
     @Override
-    public Reply handle(CommandRequest request) {
+    public Reply handle(long userId, String userName, String argument) {
         return new Reply(HELP_TEXT);
     }
 }

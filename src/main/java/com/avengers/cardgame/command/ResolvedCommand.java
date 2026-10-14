@@ -3,8 +3,8 @@ package com.avengers.cardgame.command;
 /**
  * Найденная команда вместе с аргументом запроса.
  *
- * @param command  найденная команда
+ * @param command  найденный обработчик
  * @param argument текст после имени команды
  */
-public record ResolvedCommand(Command command, String argument) {
+public record ResolvedCommand(CommandHandler command, String argument) {
 }
