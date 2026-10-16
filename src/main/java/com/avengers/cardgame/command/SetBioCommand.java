@@ -1,0 +1,54 @@
+package com.avengers.cardgame.command;
+
+import com.avengers.cardgame.exception.AppException;
+import com.avengers.cardgame.model.Bio;
+import com.avengers.cardgame.service.Message;
+import com.avengers.cardgame.service.UserService;
+
+/**
+ * Команда /setbio.
+ */
+public class SetBioCommand extends SafeCommandHandler {
+
+    /** Текст ошибки при невалидном bio. */
+    private static final String ERROR = "Вы ввели некорректное описание профиля. "
+            + "Допустимо использовать до 256 символов латиницей или кириллицей "
+            + "+ эмодзи и знаков препинания, пробелов, цифр, спецсимволы "
+            + "(/|\\<>@#$%^&*(){}[]`~;:'\"-_=+).";
+
+    /** Префикс успешного ответа. */
+    private static final String SUCCESS_PREFIX = "Вы обновили описание своего профиля на ";
+
+    /** Сервис пользователей. */
+    private final UserService userService;
+
+    /**
+     * @param userService сервис пользователей
+     */
+    public SetBioCommand(UserService userService) {
+        this.userService = userService;
+    }
+
+    /**
+     * Валидирует новое описание и обновляет его в профиле.
+     *
+     * @param context контекст выполнения команды
+     * @throws AppException если пользователь не найден
+     */
+    @Override
+    protected void doHandle(CommandContext context) throws AppException {
+        Bio newBio;
+        try {
+            newBio = new Bio(context.argument());
+        } catch (IllegalArgumentException e) {
+            context.bot().sendMessage(new Message(ERROR), context.chatId());
+            return;
+        }
+
+        userService.updateBio(context.userId(), newBio);
+        context.bot().sendMessage(
+                new Message(SUCCESS_PREFIX + newBio.value()),
+                context.chatId()
+        );
+    }
+}
