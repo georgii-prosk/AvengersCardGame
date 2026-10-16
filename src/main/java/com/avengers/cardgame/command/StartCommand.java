@@ -1,9 +1,11 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.service.Message;
+
 /**
  * Команда /start.
  */
-public class StartCommand implements CommandHandler {
+public class StartCommand extends SafeCommandHandler {
 
     /** Текст приветствия. */
     private static final String GREETING = """
@@ -13,15 +15,12 @@ public class StartCommand implements CommandHandler {
             """;
 
     /**
-     * Возвращает фиксированное приветственное сообщение.
+     * Отправляет приветственное сообщение.
      *
-     * @param userId   идентификатор пользователя
-     * @param userName имя пользователя
-     * @param argument аргумент команды
-     * @return ответ с приветствием
+     * @param context контекст выполнения команды
      */
     @Override
-    public Reply handle(long userId, String userName, String argument) {
-        return new Reply(GREETING);
+    protected void doHandle(CommandContext context) {
+        context.bot().sendMessage(new Message(GREETING), context.chatId());
     }
 }

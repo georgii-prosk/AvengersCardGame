@@ -1,7 +1,6 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.exception.UserAlreadyExistsException;
-import com.avengers.cardgame.exception.UserNotFoundException;
+import com.avengers.cardgame.exception.AppException;
 import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.service.UserService;
 import com.avengers.cardgame.util.Constants;
@@ -9,7 +8,7 @@ import com.avengers.cardgame.util.Constants;
 /**
  * Декоратор команды: регистрирует пользователя перед обработкой.
  */
-public class RegisteringCommand implements CommandHandler {
+public class RegisteringCommand extends SafeCommandHandler {
 
     /** Оборачиваемый обработчик. */
     private final CommandHandler delegate;
@@ -27,23 +26,16 @@ public class RegisteringCommand implements CommandHandler {
     }
 
     /**
-     * Регистрирует пользователя, если его ещё нет, и вызывает делегата.
+     * Регистрирует пользователя и вызывает делегата.
      *
-     * @param userId   идентификатор пользователя
-     * @param userName имя пользователя, может быть {@code null}
-     * @param argument аргумент команды
-     * @return ответ делегата
-     * @throws UserNotFoundException      если операция делегата требует
-     *                                    существующего пользователя
-     * @throws UserAlreadyExistsException если пользователь уже создан
-     *                                    параллельным запросом
+     * @param context контекст выполнения команды
+     * @throws AppException при доменной ошибке
      */
     @Override
-    public Reply handle(long userId, String userName, String argument)
-            throws UserNotFoundException, UserAlreadyExistsException {
-        PlayerName name = resolveName(userName);
-        userService.registerIfAbsent(userId, name);
-        return delegate.handle(userId, userName, argument);
+    protected void doHandle(CommandContext context) throws AppException {
+        PlayerName name = resolveName(context.userName());
+        userService.registerIfAbsent(context.userId(), name);
+        delegate.handle(context);
     }
 
     /**

@@ -1,7 +1,7 @@
 package com.avengers.cardgame;
 
-import com.avengers.cardgame.bot.CommandDispatcher;
-import com.avengers.cardgame.bot.MessageDispatcher;
+import com.avengers.cardgame.service.impl.CommandMessageProcessingService;
+import com.avengers.cardgame.service.MessageProcessingService;
 import com.avengers.cardgame.bot.TelegramBot;
 import com.avengers.cardgame.command.CommandRegistry;
 import com.avengers.cardgame.command.CommandRegistryFactory;
@@ -16,19 +16,23 @@ import com.avengers.cardgame.service.UserService;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 /**
  * Точка входа приложения.
+ * <p>
+ * Composition root: здесь собирается весь граф зависимостей — конфигурация,
+ * подключение к БД, репозитории, сервисы, реестр команд, обработчик сообщений
+ * и Telegram-адаптер.
  */
 public class AvengersCardGameApplication {
 
     /** Логгер. */
     private final Logger log = LoggerFactory.getLogger(AvengersCardGameApplication.class);
 
+    /**
+     * Запускает приложение.
+     */
     void main() {
         ConfigProvider configProvider = new EnvironmentConfigReader();
         AppConfig env = configProvider.read();
@@ -45,11 +49,10 @@ public class AvengersCardGameApplication {
 
         // 4. Слой команд
         CommandRegistry commandRegistry = new CommandRegistryFactory(userService).create();
-        MessageDispatcher dispatcher = new CommandDispatcher(commandRegistry);
+        MessageProcessingService logic = new CommandMessageProcessingService(commandRegistry);
 
         // 5. Транспорт
-        TelegramClient telegramClient = new OkHttpTelegramClient(env.botToken());
-        TelegramBot bot = new TelegramBot(telegramClient, dispatcher);
+        TelegramBot bot = new TelegramBot(env.botToken(), logic);
 
         // 6. Запуск
         startBot(env.botToken(), bot);
@@ -59,19 +62,17 @@ public class AvengersCardGameApplication {
      * Регистрирует бота в Telegram и держит приложение запущенным.
      *
      * @param botToken токен бота
-     * @param bot      объект-обработчик апдейтов
+     * @param bot      адаптер бота
      */
     private void startBot(String botToken, TelegramBot bot) {
-        try (TelegramBotsLongPollingApplication botsApplication =
+        try (TelegramBotsLongPollingApplication application =
                      new TelegramBotsLongPollingApplication()) {
 
-            botsApplication.registerBot(botToken, bot);
+            application.registerBot(botToken, bot);
             log.info("AvengersCardGame bot started");
 
             Thread.currentThread().join();
 
-        } catch (TelegramApiException e) {
-            log.error("Failed to register the bot", e);
         } catch (InterruptedException e) {
             log.warn("Main thread was interrupted", e);
             Thread.currentThread().interrupt();
