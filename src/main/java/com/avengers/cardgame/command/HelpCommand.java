@@ -1,9 +1,11 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.service.Message;
+
 /**
  * Команда /help.
  */
-public class HelpCommand implements CommandHandler {
+public class HelpCommand extends SafeCommandHandler {
 
     /** Текст справки. */
     private static final String HELP_TEXT = """
@@ -15,15 +17,12 @@ public class HelpCommand implements CommandHandler {
             """;
 
     /**
-     * Возвращает текст справки со списком команд.
+     * Отправляет список доступных команд.
      *
-     * @param userId   идентификатор пользователя
-     * @param userName имя пользователя
-     * @param argument аргумент команды
-     * @return ответ со списком команд
+     * @param context контекст выполнения команды
      */
     @Override
-    public Reply handle(long userId, String userName, String argument) {
-        return new Reply(HELP_TEXT);
+    protected void doHandle(CommandContext context) {
+        context.bot().sendMessage(new Message(HELP_TEXT), context.chatId());
     }
 }

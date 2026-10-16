@@ -1,6 +1,6 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.exception.UserNotFoundException;
+import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.FakeUserRepository;
 import com.avengers.cardgame.model.Bio;
 import com.avengers.cardgame.model.PlayerName;
@@ -16,28 +16,27 @@ import org.junit.jupiter.api.Test;
  */
 class ProfileCommandTest {
 
-    /** Фейковый репозиторий пользователей. */
-    private FakeUserRepository userRepository;
+    private static final long USER_ID = 1L;
+    private static final long CHAT_ID = 10L;
 
-    /** Тестируемая команда. */
+    private FakeUserRepository userRepository;
+    private FakeBot bot;
     private ProfileCommand command;
 
-    /**
-     * Создаёт фейковый репозиторий и команду перед каждым тестом.
-     */
     @BeforeEach
-    void setUp() {
+    void setUp(){
         userRepository = new FakeUserRepository();
+        bot = new FakeBot();
         command = new ProfileCommand(new UserServiceImpl(userRepository));
     }
 
     @Test
-    @DisplayName("Возвращает полные данные профиля")
-    void returnsFullProfile() throws Exception {
-        userRepository.save(new User(1L, new PlayerName("Tony"), new Bio("Genius"),
+    @DisplayName("Отправляет полные данные профиля")
+    void sendsFullProfile() throws Exception {
+        userRepository.save(new User(USER_ID, new PlayerName("Tony"), new Bio("Genius"),
                 100, 5, null, null));
 
-        Reply reply = command.handle(1L, "Tony", "");
+        command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         String expected = """
                 Имя: Tony
@@ -45,15 +44,15 @@ class ProfileCommandTest {
                 Твой баланс: 100 щитов
                 В твоей коллекции: 5 карточек
                 """;
-        Assertions.assertEquals(expected, reply.text());
+        Assertions.assertEquals(expected, bot.lastText());
     }
 
     @Test
-    @DisplayName("Показывает «не задано» для пустого bio")
-    void showsNotSetForEmptyBio() throws Exception {
-        userRepository.save(new User(1L, new PlayerName("Tony")));
+    @DisplayName("Отправляет «не задано» для пустого bio")
+    void sendsNotSetForEmptyBio() throws Exception {
+        userRepository.save(new User(USER_ID, new PlayerName("Tony")));
 
-        Reply reply = command.handle(1L, "Tony", "");
+        command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         String expected = """
                 Имя: Tony
@@ -61,13 +60,14 @@ class ProfileCommandTest {
                 Твой баланс: 0 щитов
                 В твоей коллекции: 0 карточек
                 """;
-        Assertions.assertEquals(expected, reply.text());
+        Assertions.assertEquals(expected, bot.lastText());
     }
 
     @Test
-    @DisplayName("Бросает UserNotFoundException, если пользователя нет")
-    void throwsWhenUserNotFound() {
-        Assertions.assertThrows(UserNotFoundException.class,
-                () -> command.handle(1L, "Tony", ""));
+    @DisplayName("Отправляет сообщение об ошибке, если пользователя нет")
+    void sendsErrorWhenUserNotFound() {
+        command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
+
+        Assertions.assertEquals(SafeCommandHandler.ERROR_MESSAGE, bot.lastText());
     }
 }

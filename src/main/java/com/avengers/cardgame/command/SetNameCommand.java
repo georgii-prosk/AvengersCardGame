@@ -1,13 +1,14 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.exception.UserNotFoundException;
+import com.avengers.cardgame.exception.AppException;
 import com.avengers.cardgame.model.PlayerName;
+import com.avengers.cardgame.service.Message;
 import com.avengers.cardgame.service.UserService;
 
 /**
  * Команда /setname.
  */
-public class SetNameCommand implements CommandHandler {
+public class SetNameCommand extends SafeCommandHandler {
 
     /** Текст ошибки при невалидном имени. */
     private static final String ERROR = "Вы ввели некорректное имя. "
@@ -27,25 +28,25 @@ public class SetNameCommand implements CommandHandler {
     }
 
     /**
-     * Валидирует новое имя и обновляет его в профиле пользователя.
+     * Валидирует новое имя и обновляет его в профиле.
      *
-     * @param userId   идентификатор пользователя
-     * @param userName имя пользователя
-     * @param argument новое имя
-     * @return ответ об успехе или ошибке валидации
-     * @throws UserNotFoundException если пользователь не найден
+     * @param context контекст выполнения команды
+     * @throws AppException если пользователь не найден
      */
     @Override
-    public Reply handle(long userId, String userName, String argument)
-            throws UserNotFoundException {
+    protected void doHandle(CommandContext context) throws AppException {
         PlayerName newName;
         try {
-            newName = new PlayerName(argument);
+            newName = new PlayerName(context.argument());
         } catch (IllegalArgumentException e) {
-            return new Reply(ERROR);
+            context.bot().sendMessage(new Message(ERROR), context.chatId());
+            return;
         }
 
-        userService.updateDisplayName(userId, newName);
-        return new Reply(SUCCESS_PREFIX + newName.value());
+        userService.updateDisplayName(context.userId(), newName);
+        context.bot().sendMessage(
+                new Message(SUCCESS_PREFIX + newName.value()),
+                context.chatId()
+        );
     }
 }

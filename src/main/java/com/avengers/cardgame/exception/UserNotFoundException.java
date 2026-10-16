@@ -3,7 +3,7 @@ package com.avengers.cardgame.exception;
 /**
  * Доменная ошибка: пользователь не найден.
  */
-public class UserNotFoundException extends Exception {
+public class UserNotFoundException extends AppException {
 
     /** Идентификатор ненайденного пользователя. */
     private final long userId;

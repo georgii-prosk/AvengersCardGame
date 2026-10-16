@@ -3,7 +3,7 @@ package com.avengers.cardgame.exception;
 /**
  * Доменная ошибка: пользователь с таким идентификатором уже существует.
  */
-public class UserAlreadyExistsException extends Exception {
+public class UserAlreadyExistsException extends AppException {
 
     /** Идентификатор существующего пользователя. */
     private final long userId;

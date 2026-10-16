@@ -1,13 +1,14 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.exception.UserNotFoundException;
+import com.avengers.cardgame.exception.AppException;
 import com.avengers.cardgame.model.Bio;
+import com.avengers.cardgame.service.Message;
 import com.avengers.cardgame.service.UserService;
 
 /**
  * Команда /setbio.
  */
-public class SetBioCommand implements CommandHandler {
+public class SetBioCommand extends SafeCommandHandler {
 
     /** Текст ошибки при невалидном bio. */
     private static final String ERROR = "Вы ввели некорректное описание профиля. "
@@ -29,25 +30,25 @@ public class SetBioCommand implements CommandHandler {
     }
 
     /**
-     * Валидирует новое описание и обновляет его в профиле пользователя.
+     * Валидирует новое описание и обновляет его в профиле.
      *
-     * @param userId   идентификатор пользователя
-     * @param userName имя пользователя
-     * @param argument новое описание профиля
-     * @return ответ об успехе или ошибке валидации
-     * @throws UserNotFoundException если пользователь не найден
+     * @param context контекст выполнения команды
+     * @throws AppException если пользователь не найден
      */
     @Override
-    public Reply handle(long userId, String userName, String argument)
-            throws UserNotFoundException {
+    protected void doHandle(CommandContext context) throws AppException {
         Bio newBio;
         try {
-            newBio = new Bio(argument);
+            newBio = new Bio(context.argument());
         } catch (IllegalArgumentException e) {
-            return new Reply(ERROR);
+            context.bot().sendMessage(new Message(ERROR), context.chatId());
+            return;
         }
 
-        userService.updateBio(userId, newBio);
-        return new Reply(SUCCESS_PREFIX + newBio.value());
+        userService.updateBio(context.userId(), newBio);
+        context.bot().sendMessage(
+                new Message(SUCCESS_PREFIX + newBio.value()),
+                context.chatId()
+        );
     }
 }

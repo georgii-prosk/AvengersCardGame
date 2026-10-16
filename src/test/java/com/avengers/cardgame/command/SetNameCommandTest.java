@@ -1,6 +1,6 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.exception.UserNotFoundException;
+import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.FakeUserRepository;
 import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.model.User;
@@ -15,65 +15,63 @@ import org.junit.jupiter.api.Test;
  */
 class SetNameCommandTest {
 
-    /** Фейковый репозиторий пользователей. */
-    private FakeUserRepository userRepository;
+    private static final long USER_ID = 1L;
+    private static final long CHAT_ID = 10L;
 
-    /** Тестируемая команда. */
+    private FakeUserRepository userRepository;
+    private FakeBot bot;
     private SetNameCommand command;
 
-    /**
-     * Создаёт фейковый репозиторий и команду перед каждым тестом.
-     */
     @BeforeEach
     void setUp() {
         userRepository = new FakeUserRepository();
+        bot = new FakeBot();
         command = new SetNameCommand(new UserServiceImpl(userRepository));
     }
 
     @Test
     @DisplayName("Обновляет имя при валидном вводе")
     void updatesNameWhenValid() throws Exception {
-        userRepository.save(new User(1L, new PlayerName("OldName")));
+        userRepository.save(new User(USER_ID, new PlayerName("OldName")));
 
-        Reply reply = command.handle(1L, "Tony", "Narek");
+        command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "Narek", bot));
 
-        Assertions.assertEquals("Вы сменили отображаемое имя на Narek", reply.text());
+        Assertions.assertEquals("Вы сменили отображаемое имя на Narek", bot.lastText());
         Assertions.assertEquals("Narek",
-                userRepository.findByUserId(1L).orElseThrow().playerName().value());
+                userRepository.findByUserId(USER_ID).orElseThrow().playerName().value());
     }
 
     @Test
-    @DisplayName("Возвращает ошибку при невалидном имени")
-    void returnsErrorWhenInvalid() throws Exception {
-        userRepository.save(new User(1L, new PlayerName("OldName")));
+    @DisplayName("Отправляет ошибку при невалидном имени")
+    void sendsErrorWhenInvalid() throws Exception {
+        userRepository.save(new User(USER_ID, new PlayerName("OldName")));
 
-        Reply reply = command.handle(1L, "Tony", "bad name");
+        command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "bad name", bot));
 
         Assertions.assertEquals(
                 "Вы ввели некорректное имя. Допустимо использовать до 128 символов латиницей.",
-                reply.text());
+                bot.lastText());
         Assertions.assertEquals("OldName",
-                userRepository.findByUserId(1L).orElseThrow().playerName().value());
+                userRepository.findByUserId(USER_ID).orElseThrow().playerName().value());
     }
 
     @Test
-    @DisplayName("Возвращает ошибку при пустом аргументе")
-    void returnsErrorWhenEmptyArgument() throws Exception {
-        userRepository.save(new User(1L, new PlayerName("OldName")));
+    @DisplayName("Отправляет ошибку при пустом аргументе")
+    void sendsErrorWhenEmptyArgument() throws Exception {
+        userRepository.save(new User(USER_ID, new PlayerName("OldName")));
 
-        Reply reply = command.handle(1L, "Tony", "");
+        command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         Assertions.assertEquals(
                 "Вы ввели некорректное имя. Допустимо использовать до 128 символов латиницей.",
-                reply.text());
-        Assertions.assertEquals("OldName",
-                userRepository.findByUserId(1L).orElseThrow().playerName().value());
+                bot.lastText());
     }
 
     @Test
-    @DisplayName("Бросает UserNotFoundException, если пользователя нет")
-    void throwsWhenUserNotFound() {
-        Assertions.assertThrows(UserNotFoundException.class,
-                () -> command.handle(1L, "Tony", "Narek"));
+    @DisplayName("Отправляет ERROR_MESSAGE, если пользователя нет")
+    void sendsErrorWhenUserNotFound() {
+        command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "Narek", bot));
+
+        Assertions.assertEquals(SafeCommandHandler.ERROR_MESSAGE, bot.lastText());
     }
 }

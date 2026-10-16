@@ -1,13 +1,14 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.exception.UserNotFoundException;
+import com.avengers.cardgame.exception.AppException;
 import com.avengers.cardgame.model.User;
+import com.avengers.cardgame.service.Message;
 import com.avengers.cardgame.service.UserService;
 
 /**
  * Команда /profile.
  */
-public class ProfileCommand implements CommandHandler {
+public class ProfileCommand extends SafeCommandHandler {
 
     /** Заглушка для пустого поля профиля. */
     private static final String NOT_SET = "не задано";
@@ -23,27 +24,25 @@ public class ProfileCommand implements CommandHandler {
     }
 
     /**
-     * Возвращает данные профиля пользователя.
+     * Отправляет данные профиля пользователя.
      *
-     * @param userId   идентификатор пользователя
-     * @param userName имя пользователя
-     * @param argument аргумент команды
-     * @return ответ с именем, bio, балансом и количеством карточек
-     * @throws UserNotFoundException если пользователь не найден
+     * @param context контекст выполнения команды
+     * @throws AppException если пользователь не найден
      */
     @Override
-    public Reply handle(long userId, String userName, String argument)
-            throws UserNotFoundException {
-        User user = userService.getByUserId(userId);
+    protected void doHandle(CommandContext context) throws AppException {
+        User user = userService.getByUserId(context.userId());
 
         String displayName = user.playerName().value();
         String bio = user.bio() == null ? NOT_SET : user.bio().value();
 
-        return new Reply("""
+        String text = """
                 Имя: %s
                 Описание: %s
                 Твой баланс: %d щитов
                 В твоей коллекции: %d карточек
-                """.formatted(displayName, bio, user.balance(), user.cardCount()));
+                """.formatted(displayName, bio, user.balance(), user.cardCount());
+
+        context.bot().sendMessage(new Message(text), context.chatId());
     }
 }

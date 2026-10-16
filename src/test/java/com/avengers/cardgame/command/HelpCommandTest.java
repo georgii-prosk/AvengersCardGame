@@ -1,6 +1,8 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.fakes.FakeBot;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -9,10 +11,22 @@ import org.junit.jupiter.api.Test;
  */
 class HelpCommandTest {
 
+    private static final long USER_ID = 1L;
+    private static final long CHAT_ID = 10L;
+
+    private FakeBot bot;
+    private HelpCommand command;
+
+    @BeforeEach
+    void setUp() {
+        bot = new FakeBot();
+        command = new HelpCommand();
+    }
+
     @Test
-    @DisplayName("Возвращает полный текст справки")
-    void returnsFullHelpText() {
-        Reply reply = new HelpCommand().handle(1L, "Tony", "");
+    @DisplayName("Отправляет полный текст справки")
+    void sendsFullHelpText() {
+        command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         String expected = """
                 /start - запуск бота.
@@ -21,15 +35,14 @@ class HelpCommandTest {
                 /setname <name> - позволяет сменить отображаемое для других пользователей имя. Максимум 128 символов латиницей.
                 /setbio <bio> - позволяет обновить короткое описание профиля. Максимум 256 символов латиницей или кириллицей + эмодзи и знаков препинания, пробелов, цифр, спецсимволы (/|\\<>@#$%^&*(){}[]`~;:'"-_=+).
                 """;
-        Assertions.assertEquals(expected, reply.text());
+        Assertions.assertEquals(expected, bot.lastText());
     }
 
     @Test
-    @DisplayName("Не зависит от данных пользователя")
-    void doesNotDependOnUserData() {
-        Reply withName = new HelpCommand().handle(1L, "Tony", "");
-        Reply withoutName = new HelpCommand().handle(2L, null, "");
+    @DisplayName("Отправляет ровно одно сообщение")
+    void sendsExactlyOneMessage() {
+        command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
-        Assertions.assertEquals(withName.text(), withoutName.text());
+        Assertions.assertEquals(1, bot.count());
     }
 }
