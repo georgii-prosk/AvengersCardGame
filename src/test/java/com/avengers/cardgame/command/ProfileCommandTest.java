@@ -1,10 +1,12 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.fakes.FakeBot;
-import com.avengers.cardgame.fakes.FakeUserRepository;
+import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.Bio;
 import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.model.User;
+import com.avengers.cardgame.model.UserBuilder;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,13 +21,13 @@ class ProfileCommandTest {
     private static final long USER_ID = 1L;
     private static final long CHAT_ID = 10L;
 
-    private FakeUserRepository userRepository;
+    private InMemoryUserRepository userRepository;
     private FakeBot bot;
     private ProfileCommand command;
 
     @BeforeEach
     void setUp(){
-        userRepository = new FakeUserRepository();
+        userRepository = new InMemoryUserRepository();
         bot = new FakeBot();
         command = new ProfileCommand(new UserServiceImpl(userRepository));
     }
@@ -33,8 +35,14 @@ class ProfileCommandTest {
     @Test
     @DisplayName("Отправляет полные данные профиля")
     void sendsFullProfile() throws Exception {
-        userRepository.save(new User(USER_ID, new PlayerName("Tony"), new Bio("Genius"),
-                100, 5, null, null));
+        User user = new UserBuilder()
+                .userId(USER_ID)
+                .playerName(PlayerName.of("Tony"))
+                .bio(new Bio("Genius"))
+                .balance(100)
+                .cardCount(5)
+                .build();
+        userRepository.save(user);
 
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
@@ -63,11 +71,13 @@ class ProfileCommandTest {
         Assertions.assertEquals(expected, bot.lastText());
     }
 
+    /**
+     * Проверяет, что команда бросает UserNotFoundException, если пользователя нет.
+     */
     @Test
-    @DisplayName("Отправляет сообщение об ошибке, если пользователя нет")
-    void sendsErrorWhenUserNotFound() {
-        command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
-
-        Assertions.assertEquals(SafeCommandHandler.ERROR_MESSAGE, bot.lastText());
+    @DisplayName("Бросает UserNotFoundException, если пользователя нет")
+    void throwsWhenUserNotFound() {
+        Assertions.assertThrows(UserNotFoundException.class,
+                () -> command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot)));
     }
 }

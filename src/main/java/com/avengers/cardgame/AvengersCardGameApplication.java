@@ -11,7 +11,7 @@ import com.avengers.cardgame.config.ConnectionFactory;
 import com.avengers.cardgame.config.DatabaseMigrator;
 import com.avengers.cardgame.config.EnvironmentConfigReader;
 import com.avengers.cardgame.repository.UserRepository;
-import com.avengers.cardgame.repository.impl.UserRepositoryImpl;
+import com.avengers.cardgame.repository.impl.PostgresUserRepository;
 import com.avengers.cardgame.service.UserService;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.slf4j.Logger;
@@ -42,7 +42,7 @@ public class AvengersCardGameApplication {
         ConnectionFactory connectionFactory = new ConnectionFactory(env.database());
 
         // 2. Слой доступа к данным
-        UserRepository userRepository = new UserRepositoryImpl(connectionFactory);
+        UserRepository userRepository = new PostgresUserRepository(connectionFactory);
 
         // 3. Бизнес-логика
         UserService userService = new UserServiceImpl(userRepository);

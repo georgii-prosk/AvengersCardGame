@@ -1,6 +1,6 @@
 package com.avengers.cardgame.config;
 
-import java.util.function.Function;
+import java.util.Map;
 
 /**
  * Читает {@link AppConfig} из переменных окружения.
@@ -20,33 +20,25 @@ public class EnvironmentConfigReader implements ConfigProvider {
     private static final String DB_PASSWORD = "DB_PASSWORD";
 
     /** Источник значений переменных. */
-    private final Function<String, String> envSource;
+    private final Map<String, String> envSource;
 
     /**
      * Создаёт reader, читающий из {@code System.getenv()}.
      */
     public EnvironmentConfigReader() {
-        this(System::getenv);
+        this(System.getenv());
     }
 
     /**
      * Создаёт reader с указанным источником значений.
      * Используется в тестах.
      *
-     * @param envSource функция, возвращающая значение по имени переменной
+     * @param envSource карта с переменными окружения
      */
-    public EnvironmentConfigReader(Function<String, String> envSource) {
+    public EnvironmentConfigReader(Map<String, String> envSource) {
         this.envSource = envSource;
     }
 
-    /**
-     * Читает конфигурацию приложения из источника переменных окружения
-     * и проверяет, что все обязательные переменные заданы.
-     *
-     * @return конфигурация приложения
-     * @throws IllegalStateException если хотя бы одна переменная не задана
-     *                               или пуста
-     */
     @Override
     public AppConfig read() {
         DatabaseConfig database = new DatabaseConfig(
@@ -65,7 +57,7 @@ public class EnvironmentConfigReader implements ConfigProvider {
      * @throws IllegalStateException если переменная не задана или пуста
      */
     private String require(String name) {
-        String value = envSource.apply(name);
+        String value = envSource.get(name);
         if (value == null || value.isBlank()) {
             throw new IllegalStateException("Environment variable " + name + " is not set");
         }

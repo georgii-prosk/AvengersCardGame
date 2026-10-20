@@ -1,6 +1,6 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.exception.AppException;
+import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.service.Message;
 import com.avengers.cardgame.service.UserService;
@@ -8,7 +8,7 @@ import com.avengers.cardgame.service.UserService;
 /**
  * Команда /setname.
  */
-public class SetNameCommand extends SafeCommandHandler {
+public class SetNameCommand implements CommandHandler {
 
     /** Текст ошибки при невалидном имени. */
     private static final String ERROR = "Вы ввели некорректное имя. "
@@ -27,14 +27,8 @@ public class SetNameCommand extends SafeCommandHandler {
         this.userService = userService;
     }
 
-    /**
-     * Валидирует новое имя и обновляет его в профиле.
-     *
-     * @param context контекст выполнения команды
-     * @throws AppException если пользователь не найден
-     */
     @Override
-    protected void doHandle(CommandContext context) throws AppException {
+    public void handle(CommandContext context) throws UserNotFoundException {
         PlayerName newName;
         try {
             newName = new PlayerName(context.argument());
@@ -44,9 +38,6 @@ public class SetNameCommand extends SafeCommandHandler {
         }
 
         userService.updateDisplayName(context.userId(), newName);
-        context.bot().sendMessage(
-                new Message(SUCCESS_PREFIX + newName.value()),
-                context.chatId()
-        );
+        context.bot().sendMessage(new Message(SUCCESS_PREFIX + newName.value()), context.chatId());
     }
 }

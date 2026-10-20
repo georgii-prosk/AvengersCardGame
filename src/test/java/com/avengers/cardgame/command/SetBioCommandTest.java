@@ -1,7 +1,8 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.fakes.FakeBot;
-import com.avengers.cardgame.fakes.FakeUserRepository;
+import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
@@ -18,13 +19,13 @@ class SetBioCommandTest {
     private static final long USER_ID = 1L;
     private static final long CHAT_ID = 10L;
 
-    private FakeUserRepository userRepository;
+    private InMemoryUserRepository userRepository;
     private FakeBot bot;
     private SetBioCommand command;
 
     @BeforeEach
     void setUp() {
-        userRepository = new FakeUserRepository();
+        userRepository = new InMemoryUserRepository();
         bot = new FakeBot();
         command = new SetBioCommand(new UserServiceImpl(userRepository));
     }
@@ -72,11 +73,13 @@ class SetBioCommandTest {
         Assertions.assertEquals(expected, bot.lastText());
     }
 
+    /**
+     * Проверяет, что команда бросает UserNotFoundException, если пользователя нет.
+     */
     @Test
-    @DisplayName("Отправляет ERROR_MESSAGE, если пользователя нет")
-    void sendsErrorWhenUserNotFound() {
-        command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "some bio", bot));
-
-        Assertions.assertEquals(SafeCommandHandler.ERROR_MESSAGE, bot.lastText());
+    @DisplayName("Бросает UserNotFoundException, если пользователя нет")
+    void throwsWhenUserNotFound() {
+        Assertions.assertThrows(UserNotFoundException.class,
+                () -> command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "some bio", bot)));
     }
 }

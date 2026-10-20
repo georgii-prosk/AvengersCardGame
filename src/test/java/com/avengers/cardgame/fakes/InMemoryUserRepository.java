@@ -15,7 +15,7 @@ import java.util.Optional;
  * Полноценная реализация {@link UserRepository} без обращения к БД.
  * Используется в тестах.
  */
-public class FakeUserRepository implements UserRepository {
+public class InMemoryUserRepository implements UserRepository {
 
     /** Хранилище пользователей по идентификатору. */
     private final Map<Long, User> storage = new HashMap<>();

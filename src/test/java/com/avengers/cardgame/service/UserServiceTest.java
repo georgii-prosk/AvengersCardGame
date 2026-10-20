@@ -1,10 +1,11 @@
 package com.avengers.cardgame.service;
 
 import com.avengers.cardgame.exception.UserNotFoundException;
-import com.avengers.cardgame.fakes.FakeUserRepository;
+import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.Bio;
 import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.model.User;
+import com.avengers.cardgame.model.UserBuilder;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +21,7 @@ import org.junit.jupiter.api.Test;
 class UserServiceTest {
 
     /** Фейковый репозиторий пользователей. */
-    private FakeUserRepository userRepository;
+    private InMemoryUserRepository userRepository;
 
     /** Тестируемый сервис. */
     private UserServiceImpl userService;
@@ -30,7 +31,7 @@ class UserServiceTest {
      */
     @BeforeEach
     void setUp() {
-        userRepository = new FakeUserRepository();
+        userRepository = new InMemoryUserRepository();
         userService = new UserServiceImpl(userRepository);
     }
 
@@ -190,8 +191,11 @@ class UserServiceTest {
         @Test
         @DisplayName("Сохраняет bio при обновлении имени")
         void keepsBioUnchanged() throws Exception {
-            User user = new User(1L, new PlayerName("Tony"), new Bio("Genius"),
-                    0, 0, null, null);
+            User user = new UserBuilder()
+                    .userId(1L)
+                    .playerName(PlayerName.of("Tony"))
+                    .bio(new Bio("Genius"))
+                    .build();
             userRepository.save(user);
 
             userService.updateDisplayName(1L, new PlayerName("IronMan"));
@@ -203,7 +207,11 @@ class UserServiceTest {
         @Test
         @DisplayName("Сохраняет balance при обновлении имени")
         void keepsBalanceUnchanged() throws Exception {
-            User user = new User(1L, new PlayerName("Tony"), null, 500, 0, null, null);
+            User user = new UserBuilder()
+                    .userId(1L)
+                    .playerName(PlayerName.of("Tony"))
+                    .balance(500)
+                    .build();
             userRepository.save(user);
 
             userService.updateDisplayName(1L, new PlayerName("IronMan"));
@@ -215,7 +223,11 @@ class UserServiceTest {
         @Test
         @DisplayName("Сохраняет cardCount при обновлении имени")
         void keepsCardCountUnchanged() throws Exception {
-            User user = new User(1L, new PlayerName("Tony"), null, 0, 10, null, null);
+            User user = new UserBuilder()
+                    .userId(1L)
+                    .playerName(PlayerName.of("Tony"))
+                    .cardCount(10)
+                    .build();
             userRepository.save(user);
 
             userService.updateDisplayName(1L, new PlayerName("IronMan"));
@@ -283,7 +295,11 @@ class UserServiceTest {
         @Test
         @DisplayName("Сохраняет balance при обновлении bio")
         void keepsBalanceUnchanged() throws Exception {
-            User user = new User(1L, new PlayerName("Tony"), null, 500, 0, null, null);
+            User user = new UserBuilder()
+                    .userId(1L)
+                    .playerName(PlayerName.of("Tony"))
+                    .balance(500)
+                    .build();
             userRepository.save(user);
 
             userService.updateBio(1L, new Bio("New bio"));

@@ -1,0 +1,2 @@
+ALTER TABLE users ADD COLUMN last_daily_at TIMESTAMP;
+ALTER TABLE users ADD COLUMN daily_notified_at TIMESTAMP;

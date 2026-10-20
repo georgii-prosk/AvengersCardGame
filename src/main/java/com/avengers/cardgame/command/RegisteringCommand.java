@@ -1,14 +1,17 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.exception.AppException;
+import com.avengers.cardgame.exception.InvalidPlayerNameException;
 import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.service.UserService;
-import com.avengers.cardgame.util.Constants;
 
 /**
  * Декоратор команды: регистрирует пользователя перед обработкой.
  */
-public class RegisteringCommand extends SafeCommandHandler {
+public class RegisteringCommand implements CommandHandler {
+
+    /** Имя пользователя по умолчанию. */
+    private static final String DEFAULT_USER_NAME = "Avenger";
 
     /** Оборачиваемый обработчик. */
     private final CommandHandler delegate;
@@ -25,14 +28,8 @@ public class RegisteringCommand extends SafeCommandHandler {
         this.userService = userService;
     }
 
-    /**
-     * Регистрирует пользователя и вызывает делегата.
-     *
-     * @param context контекст выполнения команды
-     * @throws AppException при доменной ошибке
-     */
     @Override
-    protected void doHandle(CommandContext context) throws AppException {
+    public void handle(CommandContext context) throws AppException {
         PlayerName name = resolveName(context.userName());
         userService.registerIfAbsent(context.userId(), name);
         delegate.handle(context);
@@ -48,11 +45,15 @@ public class RegisteringCommand extends SafeCommandHandler {
     private PlayerName resolveName(String userName) {
         if (userName != null && !userName.isBlank()) {
             try {
-                return new PlayerName(userName);
-            } catch (IllegalArgumentException ignored) {
+                return PlayerName.of(userName);
+            } catch (InvalidPlayerNameException ignored) {
                 // имя от пользователя невалидно — используем значение по умолчанию
             }
         }
-        return new PlayerName(Constants.DEFAULT_USER_NAME);
+        try {
+            return PlayerName.of(DEFAULT_USER_NAME);
+        } catch (InvalidPlayerNameException e) {
+            throw new IllegalStateException("Default name is invalid", e);
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.avengers.cardgame.model;
 
+import com.avengers.cardgame.exception.InvalidPlayerNameException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,18 +21,18 @@ class PlayerNameTest {
         @ParameterizedTest
         @ValueSource(strings = {"Avenger", "IronMan", "a", "Abcdefghijklmnop"})
         @DisplayName("Принимает валидные имена")
-        void acceptsValidNames(String name) {
-            PlayerName playerName = new PlayerName(name);
+        void acceptsValidNames(String name) throws Exception {
+            PlayerName playerName = PlayerName.of(name); // <-- Используем of()
 
             Assertions.assertEquals(name, playerName.value());
         }
 
         @Test
         @DisplayName("Принимает имя ровно 128 символов")
-        void acceptsMaxLengthName() {
+        void acceptsMaxLengthName() throws Exception {
             String name = "a".repeat(128);
 
-            PlayerName playerName = new PlayerName(name);
+            PlayerName playerName = PlayerName.of(name); // <-- Используем of()
 
             Assertions.assertEquals(name, playerName.value());
         }
@@ -45,16 +46,16 @@ class PlayerNameTest {
         @NullSource
         @DisplayName("Отклоняет null")
         void rejectsNull(String name) {
-            Assertions.assertThrows(IllegalArgumentException.class,
-                    () -> new PlayerName(name));
+            Assertions.assertThrows(InvalidPlayerNameException.class,
+                    () -> PlayerName.of(name)); // <-- Используем of()
         }
 
         @ParameterizedTest
         @ValueSource(strings = {"", "   ", "Иван", "Tony Stark", "Iron-Man", "Iron123", "Iron@Man"})
         @DisplayName("Отклоняет недопустимые имена")
         void rejectsInvalidNames(String name) {
-            Assertions.assertThrows(IllegalArgumentException.class,
-                    () -> new PlayerName(name));
+            Assertions.assertThrows(InvalidPlayerNameException.class,
+                    () -> PlayerName.of(name)); // <-- Используем of()
         }
 
         @Test
@@ -62,8 +63,8 @@ class PlayerNameTest {
         void rejectsNameTooLong() {
             String name = "a".repeat(129);
 
-            Assertions.assertThrows(IllegalArgumentException.class,
-                    () -> new PlayerName(name));
+            Assertions.assertThrows(InvalidPlayerNameException.class,
+                    () -> PlayerName.of(name)); // <-- Используем of()
         }
     }
 }

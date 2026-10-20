@@ -25,14 +25,6 @@ public class UserServiceImpl implements UserService {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Возвращает пользователя или регистрирует нового.
-     *
-     * @param userId      идентификатор пользователя
-     * @param defaultName имя по умолчанию
-     * @return пользователь
-     * @throws UserAlreadyExistsException если пользователь уже создан
-     */
     @Override
     public User registerIfAbsent(long userId, PlayerName defaultName)
             throws UserAlreadyExistsException {
@@ -45,26 +37,12 @@ public class UserServiceImpl implements UserService {
         return newUser;
     }
 
-    /**
-     * Возвращает пользователя по идентификатору.
-     *
-     * @param userId идентификатор пользователя
-     * @return найденный пользователь
-     * @throws UserNotFoundException если пользователь не найден
-     */
     @Override
     public User getByUserId(long userId) throws UserNotFoundException {
         return userRepository.findByUserId(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
     }
 
-    /**
-     * Обновляет отображаемое имя существующего пользователя.
-     *
-     * @param userId  идентификатор пользователя
-     * @param newName новое имя
-     * @throws UserNotFoundException если пользователь не найден
-     */
     @Override
     public void updateDisplayName(long userId, PlayerName newName)
             throws UserNotFoundException {
@@ -73,13 +51,6 @@ public class UserServiceImpl implements UserService {
         userRepository.update(user.withPlayerName(newName));
     }
 
-    /**
-     * Обновляет описание профиля существующего пользователя.
-     *
-     * @param userId идентификатор пользователя
-     * @param newBio новое описание
-     * @throws UserNotFoundException если пользователь не найден
-     */
     @Override
     public void updateBio(long userId, Bio newBio) throws UserNotFoundException {
         User user = userRepository.findByUserId(userId)

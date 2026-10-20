@@ -1,9 +1,10 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.fakes.FakeBot;
-import com.avengers.cardgame.fakes.FakeUserRepository;
+import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.model.User;
+import com.avengers.cardgame.service.UserService;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,20 +19,20 @@ class RegisteringCommandTest {
     private static final long USER_ID = 1L;
     private static final long CHAT_ID = 10L;
 
-    private FakeUserRepository userRepository;
-    private UserServiceImpl userService;
+    private InMemoryUserRepository userRepository;
+    private UserService userService;
     private FakeBot bot;
 
     @BeforeEach
     void setUp() {
-        userRepository = new FakeUserRepository();
+        userRepository = new InMemoryUserRepository();
         userService = new UserServiceImpl(userRepository);
         bot = new FakeBot();
     }
 
     @Test
     @DisplayName("Регистрирует нового пользователя перед вызовом делегата")
-    void registersNewUserBeforeDelegate(){
+    void registersNewUserBeforeDelegate() throws Exception {
         CommandHandler delegate = _ -> { /* ничего не отправляет */ };
         CommandHandler registering = new RegisteringCommand(delegate, userService);
 
@@ -44,7 +45,7 @@ class RegisteringCommandTest {
 
     @Test
     @DisplayName("Использует Avenger при отсутствии username")
-    void usesDefaultNameWhenUsernameMissing(){
+    void usesDefaultNameWhenUsernameMissing() throws Exception {
         CommandHandler delegate = _ -> { };
         CommandHandler registering = new RegisteringCommand(delegate, userService);
 
@@ -56,7 +57,7 @@ class RegisteringCommandTest {
 
     @Test
     @DisplayName("Использует Avenger при пустом username")
-    void usesDefaultNameWhenUsernameBlank() {
+    void usesDefaultNameWhenUsernameBlank() throws Exception {
         CommandHandler delegate = _ -> { };
         CommandHandler registering = new RegisteringCommand(delegate, userService);
 
@@ -82,7 +83,7 @@ class RegisteringCommandTest {
 
     @Test
     @DisplayName("Вызывает делегата с исходным контекстом")
-    void callsDelegateWithOriginalContext(){
+    void callsDelegateWithOriginalContext() throws Exception {
         long[] capturedUserId = new long[1];
         String[] capturedUserName = new String[1];
         String[] capturedArgument = new String[1];
