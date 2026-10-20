@@ -1,29 +1,27 @@
 package com.avengers.cardgame;
 
-import com.avengers.cardgame.service.impl.CommandMessageProcessingService;
-import com.avengers.cardgame.service.MessageProcessingService;
 import com.avengers.cardgame.bot.TelegramBot;
 import com.avengers.cardgame.command.CommandRegistry;
 import com.avengers.cardgame.command.CommandRegistryFactory;
-import com.avengers.cardgame.config.AppConfig;
-import com.avengers.cardgame.config.ConfigProvider;
-import com.avengers.cardgame.config.ConnectionFactory;
-import com.avengers.cardgame.config.DatabaseMigrator;
-import com.avengers.cardgame.config.EnvironmentConfigReader;
+import com.avengers.cardgame.config.*;
+import com.avengers.cardgame.repository.HeroRepository;
+import com.avengers.cardgame.repository.UserCardRepository;
 import com.avengers.cardgame.repository.UserRepository;
+import com.avengers.cardgame.repository.impl.PostgresHeroRepository;
+import com.avengers.cardgame.repository.impl.PostgresUserCardRepository;
 import com.avengers.cardgame.repository.impl.PostgresUserRepository;
+import com.avengers.cardgame.service.HeroSyncService;
+import com.avengers.cardgame.service.MessageProcessingService;
 import com.avengers.cardgame.service.UserService;
+import com.avengers.cardgame.service.impl.CommandMessageProcessingService;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 
 /**
  * Точка входа приложения.
- * <p>
- * Composition root: здесь собирается весь граф зависимостей — конфигурация,
- * подключение к БД, репозитории, сервисы, реестр команд, обработчик сообщений
- * и Telegram-адаптер.
  */
 public class AvengersCardGameApplication {
 
@@ -36,6 +34,7 @@ public class AvengersCardGameApplication {
     void main() {
         ConfigProvider configProvider = new EnvironmentConfigReader();
         AppConfig env = configProvider.read();
+        GameConfig gameConfig = new GameConfigReader().read();
 
         // 1. Инфраструктура: миграции и подключение к БД
         new DatabaseMigrator(env.database()).migrate();
@@ -43,18 +42,25 @@ public class AvengersCardGameApplication {
 
         // 2. Слой доступа к данным
         UserRepository userRepository = new PostgresUserRepository(connectionFactory);
+        HeroRepository heroRepository = new PostgresHeroRepository(connectionFactory);
+        UserCardRepository userCardRepository = new PostgresUserCardRepository(connectionFactory);
 
-        // 3. Бизнес-логика
+        // 3. Синхронизация справочника героев (выполняется при каждом старте)
+        ObjectMapper objectMapper = new ObjectMapper();
+        new HeroSyncService(heroRepository, objectMapper).sync();
+
+        // 4. Бизнес-логика
         UserService userService = new UserServiceImpl(userRepository);
+        // Сюда позже добавим HeroService и CardService
 
-        // 4. Слой команд
+        // 5. Слой команд
         CommandRegistry commandRegistry = new CommandRegistryFactory(userService).create();
         MessageProcessingService logic = new CommandMessageProcessingService(commandRegistry);
 
-        // 5. Транспорт
+        // 6. Транспорт
         TelegramBot bot = new TelegramBot(env.botToken(), logic);
 
-        // 6. Запуск
+        // 7. Запуск
         startBot(env.botToken(), bot);
     }
 

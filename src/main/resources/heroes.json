@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "name": "Pepper Potts",
+    "rarity": "COMMON",
+    "atk": 5,
+    "def": 15,
+    "hp": 20,
+    "description": "I do anything and everything that Mr. Stark doesn't have time to do himself"
+  },
+  {
+    "id": 2,
+    "name": "James John Jameson",
+    "rarity": "COMMON",
+    "atk": 7,
+    "def": 15,
+    "hp": 15,
+    "description": "I want pictures of Spider-Man, and I want them yesterday!"
+  },
+  {
+    "id": 3,
+    "name": "Mobius",
+    "rarity": "COMMON",
+    "atk": 10,
+    "def": 25,
+    "hp": 15,
+    "description": "The timeline doesn't care about your feelings"
+  },
+  {
+    "id": 4,
+    "name": "Ned Leeds",
+    "rarity": "COMMON",
+    "atk": 5,
+    "def": 5,
+    "hp": 10,
+    "description": "CEO of the..."
+  },
+  {
+    "id": 5,
+    "name": "Marry Jane",
+    "rarity": "COMMON",
+    "atk": 10,
+    "def": 20,
+    "hp": 15,
+    "description": "You don't get to decide what's too dangerous for me to know"
+  },
+  {
+    "id": 6,
+    "name": "Winter Soldier",
+    "rarity": "RARE",
+    "atk": 45,
+    "def": 40,
+    "hp": 50,
+    "description": "Who the hell is Bucky?"
+  },
+  {
+    "id": 7,
+    "name": "Black Widow",
+    "rarity": "RARE",
+    "atk": 35,
+    "def": 25,
+    "hp": 40,
+    "description": "It's like Budapest all over again"
+  },
+  {
+    "id": 8,
+    "name": "Ant-Man",
+    "rarity": "RARE",
+    "atk": 40,
+    "def": 45,
+    "hp": 25,
+    "description": "Sometimes the smallest moves make the biggest impact"
+  },
+  {
+    "id": 9,
+    "name": "Iron Man",
+    "rarity": "EPIC",
+    "atk": 80,
+    "def": 90,
+    "hp": 50,
+    "description": "Genius, billionaire, playboy, philanthropist"
+  },
+  {
+    "id": 10,
+    "name": "Loki (The God Of Stories)",
+    "rarity": "LEGENDARY",
+    "atk": 200,
+    "def": 250,
+    "hp": 200,
+    "description": "For you. For all of us"
+  }
+]
