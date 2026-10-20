@@ -3,7 +3,7 @@ package com.avengers.cardgame.bot;
 import com.avengers.cardgame.command.CommandRegistry;
 import com.avengers.cardgame.command.CommandRegistryFactory;
 import com.avengers.cardgame.fakes.FakeBot;
-import com.avengers.cardgame.fakes.FakeUserRepository;
+import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.service.impl.CommandMessageProcessingService;
 import com.avengers.cardgame.service.MessageProcessingService;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
@@ -23,13 +23,13 @@ class CommandMessageProcessingServiceTest {
     private static final String UNKNOWN_COMMAND_MESSAGE =
             "Неизвестная команда. Введите /help для списка команд.";
 
-    private FakeUserRepository userRepository;
+    private InMemoryUserRepository userRepository;
     private FakeBot bot;
     private MessageProcessingService service;
 
     @BeforeEach
     void setUp() {
-        userRepository = new FakeUserRepository();
+        userRepository = new InMemoryUserRepository();
         bot = new FakeBot();
         UserServiceImpl userService = new UserServiceImpl(userRepository);
         CommandRegistry registry = new CommandRegistryFactory(userService).create();

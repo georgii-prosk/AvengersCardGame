@@ -19,7 +19,7 @@ class EnvironmentConfigReaderTest {
      * @return reader
      */
     private EnvironmentConfigReader readerWith(Map<String, String> env) {
-        return new EnvironmentConfigReader(env::get);
+        return new EnvironmentConfigReader(env);
     }
 
     /**

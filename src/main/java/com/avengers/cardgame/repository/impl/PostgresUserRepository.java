@@ -1,5 +1,7 @@
 package com.avengers.cardgame.repository.impl;
 
+import com.avengers.cardgame.exception.InvalidPlayerNameException;
+import com.avengers.cardgame.model.UserBuilder;
 import com.avengers.cardgame.config.ConnectionFactory;
 import com.avengers.cardgame.exception.UserAlreadyExistsException;
 import com.avengers.cardgame.exception.UserNotFoundException;
@@ -8,16 +10,13 @@ import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserRepository;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Optional;
 
 /**
  * Реализация {@link UserRepository} на основе JDBC.
  */
-public class UserRepositoryImpl implements UserRepository {
+public class PostgresUserRepository implements UserRepository {
 
     /** SQL-код нарушения уникальности в PostgreSQL. */
     private static final String UNIQUE_VIOLATION_SQL_STATE = "23505";
@@ -37,7 +36,7 @@ public class UserRepositoryImpl implements UserRepository {
     /**
      * @param connectionFactory фабрика соединений с БД
      */
-    public UserRepositoryImpl(ConnectionFactory connectionFactory) {
+    public PostgresUserRepository(ConnectionFactory connectionFactory) {
         this.connectionFactory = connectionFactory;
     }
 
@@ -101,14 +100,24 @@ public class UserRepositoryImpl implements UserRepository {
         String displayNameValue = rs.getString("display_name");
         String bioValue = rs.getString("bio");
 
-        return new User(
-                rs.getLong("telegram_id"),
-                new PlayerName(displayNameValue),
-                bioValue == null || bioValue.isEmpty() ? null : new Bio(bioValue),
-                rs.getInt("balance"),
-                rs.getInt("card_count"),
-                rs.getTimestamp("created_at").toLocalDateTime(),
-                rs.getTimestamp("updated_at").toLocalDateTime()
-        );
+        Timestamp lastDailyTs = rs.getTimestamp("last_daily_at");
+        Timestamp dailyNotifiedTs = rs.getTimestamp("daily_notified_at");
+
+        try {
+            return new UserBuilder()
+                    .userId(rs.getLong("telegram_id"))
+                    .playerName(PlayerName.of(displayNameValue))
+                    .bio(bioValue == null || bioValue.isEmpty() ? null : new Bio(bioValue))
+                    .balance(rs.getInt("balance"))
+                    .cardCount(rs.getInt("card_count"))
+                    .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
+                    .updatedAt(rs.getTimestamp("updated_at").toLocalDateTime())
+                    .lastDailyAt(lastDailyTs != null ? lastDailyTs.toLocalDateTime() : null)
+                    .dailyNotifiedAt(dailyNotifiedTs != null ? dailyNotifiedTs.toLocalDateTime() : null)
+                    .build();
+        } catch (InvalidPlayerNameException | IllegalArgumentException e) {
+            // Если в БД лежат битые данные, выбрасываем техническую ошибку
+            throw new RuntimeException("Corrupted user data in DB for ID " + rs.getLong("telegram_id"), e);
+        }
     }
 }

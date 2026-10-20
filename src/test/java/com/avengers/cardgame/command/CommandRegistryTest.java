@@ -1,6 +1,6 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.fakes.FakeUserRepository;
+import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +23,7 @@ class CommandRegistryTest {
     @BeforeEach
     void setUp() {
         registry = new CommandRegistry();
-        UserServiceImpl userService = new UserServiceImpl(new FakeUserRepository());
+        UserServiceImpl userService = new UserServiceImpl(new InMemoryUserRepository());
 
         registry.register("/start", new StartCommand());
         registry.register("/help", new HelpCommand());

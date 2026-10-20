@@ -1,6 +1,6 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.exception.AppException;
+import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.Bio;
 import com.avengers.cardgame.service.Message;
 import com.avengers.cardgame.service.UserService;
@@ -8,7 +8,7 @@ import com.avengers.cardgame.service.UserService;
 /**
  * Команда /setbio.
  */
-public class SetBioCommand extends SafeCommandHandler {
+public class SetBioCommand implements CommandHandler {
 
     /** Текст ошибки при невалидном bio. */
     private static final String ERROR = "Вы ввели некорректное описание профиля. "
@@ -29,14 +29,8 @@ public class SetBioCommand extends SafeCommandHandler {
         this.userService = userService;
     }
 
-    /**
-     * Валидирует новое описание и обновляет его в профиле.
-     *
-     * @param context контекст выполнения команды
-     * @throws AppException если пользователь не найден
-     */
     @Override
-    protected void doHandle(CommandContext context) throws AppException {
+    public void handle(CommandContext context) throws UserNotFoundException {
         Bio newBio;
         try {
             newBio = new Bio(context.argument());
@@ -46,9 +40,6 @@ public class SetBioCommand extends SafeCommandHandler {
         }
 
         userService.updateBio(context.userId(), newBio);
-        context.bot().sendMessage(
-                new Message(SUCCESS_PREFIX + newBio.value()),
-                context.chatId()
-        );
+        context.bot().sendMessage(new Message(SUCCESS_PREFIX + newBio.value()), context.chatId());
     }
 }

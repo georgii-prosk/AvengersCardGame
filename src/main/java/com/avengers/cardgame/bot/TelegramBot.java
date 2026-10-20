@@ -39,12 +39,6 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
         this.logic = logic;
     }
 
-    /**
-     * Отправляет сообщение в Telegram.
-     *
-     * @param msg    сообщение
-     * @param chatId идентификатор чата
-     */
     @Override
     public void sendMessage(@NotNull Message msg, long chatId) {
         try {
@@ -58,11 +52,6 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
         }
     }
 
-    /**
-     * Обрабатывает обновление от Telegram и передаёт его в логику.
-     *
-     * @param update обновление от Telegram API
-     */
     @Override
     public void consume(Update update) {
         if (!update.hasMessage() || !update.getMessage().hasText()) {

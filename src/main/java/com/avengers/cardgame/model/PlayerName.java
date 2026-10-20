@@ -1,9 +1,13 @@
 package com.avengers.cardgame.model;
 
+import com.avengers.cardgame.exception.InvalidPlayerNameException;
+
 import java.util.regex.Pattern;
 
 /**
  * Отображаемое имя пользователя.
+ *
+ * @param value значение имени
  */
 public record PlayerName(String value) {
 
@@ -17,20 +21,32 @@ public record PlayerName(String value) {
      * Создаёт имя с проверкой инвариантов.
      *
      * @param value значение имени
-     * @throws IllegalArgumentException если имя пустое, длиннее 128 символов
-     *                                  или содержит недопустимые символы
+     * @throws IllegalArgumentException если имя невалидно
      */
     public PlayerName {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("Display name must not be empty");
         }
         if (value.length() > MAX_LENGTH) {
-            throw new IllegalArgumentException(
-                    "Display name must be at most " + MAX_LENGTH + " characters");
+            throw new IllegalArgumentException("Display name must be at most " + MAX_LENGTH + " characters");
         }
         if (!PATTERN.matcher(value).matches()) {
-            throw new IllegalArgumentException(
-                    "Display name must contain only Latin letters");
+            throw new IllegalArgumentException("Display name must contain only Latin letters");
+        }
+    }
+
+    /**
+     * Создаёт имя с проверкой инвариантов.
+     *
+     * @param value значение имени
+     * @return валидный объект имени
+     * @throws InvalidPlayerNameException если имя невалидно
+     */
+    public static PlayerName of(String value) throws InvalidPlayerNameException {
+        try {
+            return new PlayerName(value);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidPlayerNameException(e.getMessage());
         }
     }
 }

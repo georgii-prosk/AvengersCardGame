@@ -5,7 +5,7 @@ import com.avengers.cardgame.service.Message;
 /**
  * Команда /help.
  */
-public class HelpCommand extends SafeCommandHandler {
+public class HelpCommand implements CommandHandler {
 
     /** Текст справки. */
     private static final String HELP_TEXT = """
@@ -16,13 +16,8 @@ public class HelpCommand extends SafeCommandHandler {
             /setbio <bio> - позволяет обновить короткое описание профиля. Максимум 256 символов латиницей или кириллицей + эмодзи и знаков препинания, пробелов, цифр, спецсимволы (/|\\<>@#$%^&*(){}[]`~;:'"-_=+).
             """;
 
-    /**
-     * Отправляет список доступных команд.
-     *
-     * @param context контекст выполнения команды
-     */
     @Override
-    protected void doHandle(CommandContext context) {
+    public void handle(CommandContext context) {
         context.bot().sendMessage(new Message(HELP_TEXT), context.chatId());
     }
 }
