@@ -32,7 +32,7 @@ class PlayerNameTest {
         void acceptsMaxLengthName() throws Exception {
             String name = "a".repeat(128);
 
-            PlayerName playerName = PlayerName.of(name); // <-- Используем of()
+            PlayerName playerName = PlayerName.of(name);
 
             Assertions.assertEquals(name, playerName.value());
         }
