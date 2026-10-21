@@ -3,9 +3,9 @@ package com.avengers.cardgame.command;
 import com.avengers.cardgame.service.Message;
 
 /**
- * Команда /help.
+ * Обработчик команды /help.
  */
-public class HelpCommand implements CommandHandler {
+public class HelpCommandHandler implements CommandHandler {
 
     /** Текст справки. */
     private static final String HELP_TEXT = """

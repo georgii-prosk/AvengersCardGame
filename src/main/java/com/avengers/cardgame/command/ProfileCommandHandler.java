@@ -6,9 +6,9 @@ import com.avengers.cardgame.service.Message;
 import com.avengers.cardgame.service.UserService;
 
 /**
- * Команда /profile.
+ * Обработчик команды /profile.
  */
-public class ProfileCommand implements CommandHandler {
+public class ProfileCommandHandler implements CommandHandler {
 
     /** Шаблон для вывода профиля. */
     private static final String PROFILE_TEMPLATE = """
@@ -27,7 +27,7 @@ public class ProfileCommand implements CommandHandler {
     /**
      * @param userService сервис пользователей
      */
-    public ProfileCommand(UserService userService) {
+    public ProfileCommandHandler(UserService userService) {
         this.userService = userService;
     }
 

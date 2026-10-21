@@ -1,8 +1,7 @@
 package com.avengers.cardgame.repository.impl;
 
-import com.avengers.cardgame.exception.InvalidPlayerNameException;
-import com.avengers.cardgame.model.UserBuilder;
 import com.avengers.cardgame.config.ConnectionFactory;
+import com.avengers.cardgame.exception.AppException;
 import com.avengers.cardgame.exception.UserAlreadyExistsException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.Bio;
@@ -100,22 +99,17 @@ public class PostgresUserRepository implements UserRepository {
         String displayNameValue = rs.getString("display_name");
         String bioValue = rs.getString("bio");
 
-        Timestamp lastDailyTs = rs.getTimestamp("last_daily_at");
-        Timestamp dailyNotifiedTs = rs.getTimestamp("daily_notified_at");
-
         try {
-            return new UserBuilder()
-                    .userId(rs.getLong("telegram_id"))
-                    .playerName(PlayerName.of(displayNameValue))
-                    .bio(bioValue == null || bioValue.isEmpty() ? null : new Bio(bioValue))
-                    .balance(rs.getInt("balance"))
-                    .cardCount(rs.getInt("card_count"))
-                    .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
-                    .updatedAt(rs.getTimestamp("updated_at").toLocalDateTime())
-                    .lastDailyAt(lastDailyTs != null ? lastDailyTs.toLocalDateTime() : null)
-                    .dailyNotifiedAt(dailyNotifiedTs != null ? dailyNotifiedTs.toLocalDateTime() : null)
-                    .build();
-        } catch (InvalidPlayerNameException | IllegalArgumentException e) {
+            return User.of(
+                    rs.getLong("telegram_id"),
+                    PlayerName.of(displayNameValue),
+                    bioValue == null || bioValue.isEmpty() ? null : Bio.of(bioValue),
+                    rs.getInt("balance"),
+                    rs.getInt("card_count"),
+                    rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toLocalDateTime() : null,
+                    rs.getTimestamp("updated_at") != null ? rs.getTimestamp("updated_at").toLocalDateTime() : null
+            );
+        } catch (AppException e) {
             // Если в БД лежат битые данные, выбрасываем техническую ошибку
             throw new RuntimeException("Corrupted user data in DB for ID " + rs.getLong("telegram_id"), e);
         }

@@ -19,6 +19,8 @@ public record PlayerName(String value) {
 
     /**
      * Создаёт имя с проверкой инвариантов.
+     * <p>
+     * Предпочтительнее использовать {@link #of(String)}.
      *
      * @param value значение имени
      * @throws IllegalArgumentException если имя невалидно

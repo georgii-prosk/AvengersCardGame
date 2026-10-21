@@ -21,7 +21,7 @@ public class CommandMessageProcessingService implements MessageProcessingService
     private static final String UNKNOWN_COMMAND_MESSAGE =
             "Неизвестная команда. Введите /help для списка команд.";
 
-    /** Текст ответа при доменной ошибке. */
+    /** Текст ответа при ошибке выполнения команды. */
     private static final String ERROR_MESSAGE =
             "Произошла ошибка при обработке команды.";
 
@@ -54,6 +54,9 @@ public class CommandMessageProcessingService implements MessageProcessingService
             rc.command().handle(context);
         } catch (AppException e) {
             log.error("Domain error while executing command", e);
+            bot.sendMessage(new Message(ERROR_MESSAGE), chatId);
+        } catch (Throwable e) {
+            log.error("Unexpected error while executing command", e);
             bot.sendMessage(new Message(ERROR_MESSAGE), chatId);
         }
     }

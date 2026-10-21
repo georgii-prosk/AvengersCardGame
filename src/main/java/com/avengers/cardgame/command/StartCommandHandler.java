@@ -3,9 +3,9 @@ package com.avengers.cardgame.command;
 import com.avengers.cardgame.service.Message;
 
 /**
- * Команда /start.
+ * Обработчик команды /start.
  */
-public class StartCommand implements CommandHandler {
+public class StartCommandHandler implements CommandHandler {
 
     /** Текст приветствия. */
     private static final String GREETING = """

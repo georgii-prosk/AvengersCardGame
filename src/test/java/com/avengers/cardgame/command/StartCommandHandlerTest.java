@@ -7,20 +7,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Тесты для {@link StartCommand}.
+ * Тесты для {@link StartCommandHandler}.
  */
-class StartCommandTest {
+class StartCommandHandlerTest {
 
     private static final long USER_ID = 1L;
     private static final long CHAT_ID = 10L;
 
     private FakeBot bot;
-    private StartCommand command;
+    private StartCommandHandler command;
 
     @BeforeEach
     void setUp() {
         bot = new FakeBot();
-        command = new StartCommand();
+        command = new StartCommandHandler();
     }
 
     @Test
@@ -33,7 +33,7 @@ class StartCommandTest {
                 Тут ты можешь собирать свою коллекцию карточек мстителей,
                 обмениваться карточками с другими игроками и устраивать сражения.
                 """;
-        Assertions.assertEquals(expected, bot.lastText());
+        Assertions.assertEquals(expected, bot.lastSent().message().text());
     }
 
     @Test
@@ -61,6 +61,6 @@ class StartCommandTest {
         command.handle(new CommandContext(1L, CHAT_ID, "Tony", "", bot1));
         command.handle(new CommandContext(2L, CHAT_ID, null, "", bot2));
 
-        Assertions.assertEquals(bot1.lastText(), bot2.lastText());
+        Assertions.assertEquals(bot1.lastSent().message().text(), bot2.lastSent().message().text());
     }
 }

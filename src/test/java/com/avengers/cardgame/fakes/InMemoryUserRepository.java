@@ -13,7 +13,6 @@ import java.util.Optional;
  * Фейковый репозиторий пользователей в памяти.
  * <p>
  * Полноценная реализация {@link UserRepository} без обращения к БД.
- * Используется в тестах.
  */
 public class InMemoryUserRepository implements UserRepository {
 

@@ -1,5 +1,6 @@
 package com.avengers.cardgame;
 
+import com.avengers.cardgame.exception.AppException;
 import com.avengers.cardgame.service.impl.CommandMessageProcessingService;
 import com.avengers.cardgame.service.MessageProcessingService;
 import com.avengers.cardgame.bot.TelegramBot;
@@ -35,7 +36,13 @@ public class AvengersCardGameApplication {
      */
     void main() {
         ConfigProvider configProvider = new EnvironmentConfigReader();
-        AppConfig env = configProvider.read();
+        AppConfig env;
+        try {
+            env = configProvider.read();
+        } catch (AppException e) {
+            log.error("Invalid configuration: {}", e.getMessage(), e);
+            return;
+        }
 
         // 1. Инфраструктура: миграции и подключение к БД
         new DatabaseMigrator(env.database()).migrate();

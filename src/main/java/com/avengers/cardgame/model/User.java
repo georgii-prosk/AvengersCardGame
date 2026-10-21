@@ -1,19 +1,19 @@
 package com.avengers.cardgame.model;
 
+import com.avengers.cardgame.exception.InvalidUserException;
+
 import java.time.LocalDateTime;
 
 /**
  * Профиль игрока.
  *
- * @param userId          идентификатор пользователя на платформе
- * @param playerName      отображаемое имя
- * @param bio             описание профиля, может быть {@code null}
- * @param balance         баланс игровой валюты
- * @param cardCount       количество карточек в коллекции
- * @param createdAt       дата и время создания записи
- * @param updatedAt       дата и время последнего обновления записи
- * @param lastDailyAt     дата и время последнего получения /daily
- * @param dailyNotifiedAt дата и время последнего уведомления о готовности /daily
+ * @param userId     идентификатор пользователя на платформе
+ * @param playerName отображаемое имя
+ * @param bio        описание профиля, может быть {@code null}
+ * @param balance    баланс игровой валюты
+ * @param cardCount  количество карточек в коллекции
+ * @param createdAt  дата и время создания записи
+ * @param updatedAt  дата и время последнего обновления записи
  */
 public record User(
         long userId,
@@ -22,10 +22,45 @@ public record User(
         int balance,
         int cardCount,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt,
-        LocalDateTime lastDailyAt,
-        LocalDateTime dailyNotifiedAt
+        LocalDateTime updatedAt
 ) {
+
+    /**
+     * Создаёт профиль с проверкой инвариантов.
+     * <p>
+     * Предпочтительнее использовать {@link #of(long, PlayerName, Bio, int, int, LocalDateTime, LocalDateTime)}.
+     *
+     * @throws IllegalArgumentException если баланс или количество карточек отрицательные,
+     *                                  либо время обновления раньше времени создания
+     */
+    public User {
+        if (balance < 0) {
+            throw new IllegalArgumentException("Balance must be non-negative");
+        }
+        if (cardCount < 0) {
+            throw new IllegalArgumentException("Card count must be non-negative");
+        }
+        if (createdAt != null && updatedAt != null && updatedAt.isBefore(createdAt)) {
+            throw new IllegalArgumentException("UpdatedAt cannot be before createdAt");
+        }
+    }
+
+    /**
+     * Создаёт профиль с проверкой инвариантов.
+     *
+     * @throws InvalidUserException если данные некорректны
+     */
+    public static User of(
+            long userId, PlayerName playerName, Bio bio,
+            int balance, int cardCount,
+            LocalDateTime createdAt, LocalDateTime updatedAt
+    ) throws InvalidUserException {
+        try {
+            return new User(userId, playerName, bio, balance, cardCount, createdAt, updatedAt);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidUserException(e.getMessage());
+        }
+    }
 
     /**
      * Создаёт нового игрока с минимальными данными.
@@ -34,7 +69,7 @@ public record User(
      * @param playerName отображаемое имя
      */
     public User(long userId, PlayerName playerName) {
-        this(userId, playerName, null, 0, 0, null, null, null, null);
+        this(userId, playerName, null, 0, 0, null, null);
     }
 
     /**
@@ -44,7 +79,7 @@ public record User(
      * @return копия
      */
     public User withPlayerName(PlayerName newName) {
-        return new User(userId, newName, bio, balance, cardCount, createdAt, updatedAt, lastDailyAt, dailyNotifiedAt);
+        return new User(userId, newName, bio, balance, cardCount, createdAt, updatedAt);
     }
 
     /**
@@ -54,26 +89,6 @@ public record User(
      * @return копия
      */
     public User withBio(Bio newBio) {
-        return new User(userId, playerName, newBio, balance, cardCount, createdAt, updatedAt, lastDailyAt, dailyNotifiedAt);
-    }
-
-    /**
-     * Возвращает копию с обновлённым временем получения /daily.
-     *
-     * @param newLastDailyAt новое время
-     * @return копия
-     */
-    public User withLastDailyAt(LocalDateTime newLastDailyAt) {
-        return new User(userId, playerName, bio, balance, cardCount, createdAt, updatedAt, newLastDailyAt, dailyNotifiedAt);
-    }
-
-    /**
-     * Возвращает копию с обновлённым временем уведомления.
-     *
-     * @param newNotifiedAt новое время
-     * @return копия
-     */
-    public User withDailyNotifiedAt(LocalDateTime newNotifiedAt) {
-        return new User(userId, playerName, bio, balance, cardCount, createdAt, updatedAt, lastDailyAt, newNotifiedAt);
+        return new User(userId, playerName, newBio, balance, cardCount, createdAt, updatedAt);
     }
 }
