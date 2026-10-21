@@ -1,5 +1,6 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Assertions;
@@ -27,7 +28,7 @@ class CommandRegistryTest {
 
         registry.register("/start", new StartCommand());
         registry.register("/help", new HelpCommand());
-        registry.register("/profile", new ProfileCommand(userService));
+        registry.register("/profile", new ProfileCommand(userService, new InMemoryUserCardRepository()));
         registry.register("/setname", new SetNameCommand(userService));
         registry.register("/setbio", new SetBioCommand(userService));
     }

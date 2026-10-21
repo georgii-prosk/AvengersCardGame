@@ -4,6 +4,8 @@ import com.avengers.cardgame.exception.UserAlreadyExistsException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -34,4 +36,32 @@ public interface UserRepository {
      * @throws UserNotFoundException если пользователя с таким идентификатором нет
      */
     void update(User user) throws UserNotFoundException;
+
+    /**
+     * Обновляет время последнего получения ежедневной награды.
+     *
+     * @param userId      идентификатор пользователя
+     * @param lastDailyAt новое время получения /daily
+     * @throws UserNotFoundException если пользователя с таким идентификатором нет
+     */
+    void updateLastDailyAt(long userId, LocalDateTime lastDailyAt) throws UserNotFoundException;
+
+    /**
+     * Находит пользователей, которым пора отправить уведомление о доступной
+     * ежедневной награде: последняя награда получена не позже указанного
+     * момента, и уведомление после неё ещё не отправлялось.
+     *
+     * @param thresholdTime момент, не позже которого должна быть получена последняя награда
+     * @return список пользователей для уведомления
+     */
+    List<User> findUsersToNotify(LocalDateTime thresholdTime);
+
+    /**
+     * Сохраняет время отправки уведомления о готовности ежедневной награды.
+     *
+     * @param userId     идентификатор пользователя
+     * @param notifiedAt время отправки уведомления
+     * @throws UserNotFoundException если пользователя с таким идентификатором нет
+     */
+    void updateDailyNotifiedAt(long userId, LocalDateTime notifiedAt) throws UserNotFoundException;
 }

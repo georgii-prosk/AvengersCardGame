@@ -2,6 +2,7 @@ package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.fakes.FakeBot;
+import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.Bio;
 import com.avengers.cardgame.model.PlayerName;
@@ -22,14 +23,16 @@ class ProfileCommandTest {
     private static final long CHAT_ID = 10L;
 
     private InMemoryUserRepository userRepository;
+    private InMemoryUserCardRepository cardRepository;
     private FakeBot bot;
     private ProfileCommand command;
 
     @BeforeEach
     void setUp(){
         userRepository = new InMemoryUserRepository();
+        cardRepository = new InMemoryUserCardRepository();
         bot = new FakeBot();
-        command = new ProfileCommand(new UserServiceImpl(userRepository));
+        command = new ProfileCommand(new UserServiceImpl(userRepository), cardRepository);
     }
 
     @Test
@@ -40,9 +43,11 @@ class ProfileCommandTest {
                 .playerName(PlayerName.of("Tony"))
                 .bio(new Bio("Genius"))
                 .balance(100)
-                .cardCount(5)
                 .build();
         userRepository.save(user);
+        for (long heroId = 1; heroId <= 5; heroId++) {
+            cardRepository.addCard(USER_ID, heroId);
+        }
 
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
@@ -69,6 +74,19 @@ class ProfileCommandTest {
                 В твоей коллекции: 0 карточек
                 """;
         Assertions.assertEquals(expected, bot.lastText());
+    }
+
+    @Test
+    @DisplayName("Считает все копии карточек из репозитория карточек, а не из поля пользователя")
+    void countsAllCopiesFromCardRepository() throws Exception {
+        userRepository.save(new User(USER_ID, new PlayerName("Tony")));
+        cardRepository.addCard(USER_ID, 1);
+        cardRepository.addCard(USER_ID, 1);
+        cardRepository.addCard(USER_ID, 2);
+
+        command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
+
+        Assertions.assertTrue(bot.lastText().contains("В твоей коллекции: 3 карточек"));
     }
 
     /**

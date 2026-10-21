@@ -2,6 +2,7 @@ package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
+import com.avengers.cardgame.repository.UserCardRepository;
 import com.avengers.cardgame.service.Message;
 import com.avengers.cardgame.service.UserService;
 
@@ -24,11 +25,16 @@ public class ProfileCommand implements CommandHandler {
     /** Сервис пользователей. */
     private final UserService userService;
 
+    /** Репозиторий карточек пользователей. */
+    private final UserCardRepository userCardRepository;
+
     /**
-     * @param userService сервис пользователей
+     * @param userService        сервис пользователей
+     * @param userCardRepository репозиторий карточек пользователей
      */
-    public ProfileCommand(UserService userService) {
+    public ProfileCommand(UserService userService, UserCardRepository userCardRepository) {
         this.userService = userService;
+        this.userCardRepository = userCardRepository;
     }
 
     @Override
@@ -38,7 +44,9 @@ public class ProfileCommand implements CommandHandler {
         String displayName = user.playerName().value();
         String bio = user.bio() == null ? NOT_SET : user.bio().value();
 
-        String text = PROFILE_TEMPLATE.formatted(displayName, bio, user.balance(), user.cardCount());
+        int cardCount = userCardRepository.countByUserId(context.userId());
+
+        String text = PROFILE_TEMPLATE.formatted(displayName, bio, user.balance(), cardCount);
 
         context.bot().sendMessage(new Message(text), context.chatId());
     }

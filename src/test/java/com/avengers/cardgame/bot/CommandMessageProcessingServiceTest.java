@@ -2,7 +2,11 @@ package com.avengers.cardgame.bot;
 
 import com.avengers.cardgame.command.CommandRegistry;
 import com.avengers.cardgame.command.CommandRegistryFactory;
+import com.avengers.cardgame.command.InventoryRenderer;
 import com.avengers.cardgame.fakes.FakeBot;
+import com.avengers.cardgame.fakes.FakeCardService;
+import com.avengers.cardgame.fakes.InMemoryHeroRepository;
+import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.service.impl.CommandMessageProcessingService;
 import com.avengers.cardgame.service.MessageProcessingService;
@@ -11,6 +15,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 /**
  * Тесты для {@link CommandMessageProcessingService}.
@@ -32,7 +38,10 @@ class CommandMessageProcessingServiceTest {
         userRepository = new InMemoryUserRepository();
         bot = new FakeBot();
         UserServiceImpl userService = new UserServiceImpl(userRepository);
-        CommandRegistry registry = new CommandRegistryFactory(userService).create();
+        InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository();
+        CommandRegistry registry = new CommandRegistryFactory(
+                userService, new FakeCardService(List.of()), cardRepository,
+                new InventoryRenderer(cardRepository, new InMemoryHeroRepository())).create();
         service = new CommandMessageProcessingService(registry);
     }
 
