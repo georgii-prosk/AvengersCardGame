@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 /**
  * Тесты для {@link UserServiceImpl}.
  * <p>
- * Используется фейковый репозиторий в памяти — без Mockito и без Docker.
  */
 class UserServiceTest {
 
