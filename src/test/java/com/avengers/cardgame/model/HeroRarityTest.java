@@ -35,4 +35,16 @@ class HeroRarityTest {
             Assertions.assertFalse(rarity.emoji().isBlank());
         }
     }
+
+    /**
+     * Проверяет, что каждая редкость имеет название для пользователя.
+     */
+    @Test
+    @DisplayName("Каждая редкость имеет название")
+    void everyRarityHasTitle() {
+        for (HeroRarity rarity : HeroRarity.values()) {
+            Assertions.assertNotNull(rarity.title());
+            Assertions.assertFalse(rarity.title().isBlank());
+        }
+    }
 }

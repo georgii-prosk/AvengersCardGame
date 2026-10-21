@@ -6,6 +6,8 @@ import com.avengers.cardgame.model.Bio;
 import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.model.User;
 
+import java.time.LocalDateTime;
+
 /**
  * Сервис для работы с пользователями.
  */
@@ -50,4 +52,13 @@ public interface UserService {
      * @throws UserNotFoundException если пользователь не найден
      */
     void updateBio(long userId, Bio newBio) throws UserNotFoundException;
+
+    /**
+     * Обновляет время последнего получения ежедневной награды.
+     *
+     * @param userId      идентификатор пользователя
+     * @param lastDailyAt новое время получения /daily
+     * @throws UserNotFoundException если пользователь не найден
+     */
+    void updateLastDailyAt(long userId, LocalDateTime lastDailyAt) throws UserNotFoundException;
 }

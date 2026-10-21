@@ -39,6 +39,17 @@ public class FakeBot implements Bot {
     }
 
     /**
+     * @return последнее отправленное сообщение целиком (с кнопками)
+     * @throws AssertionError если ничего не отправлено
+     */
+    public Message lastMessage() {
+        if (sent.isEmpty()) {
+            throw new AssertionError("Бот не отправил ни одного сообщения");
+        }
+        return sent.getLast().message();
+    }
+
+    /**
      * @return количество отправленных сообщений
      */
     public int count() {
