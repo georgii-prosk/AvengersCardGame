@@ -25,22 +25,22 @@ public class CommandRegistryFactory {
     public CommandRegistry create() {
         CommandRegistry registry = new CommandRegistry();
 
-        registry.register("/start", wrap(new StartCommand()));
-        registry.register("/help", new HelpCommand());
-        registry.register("/profile", wrap(new ProfileCommand(userService)));
-        registry.register("/setname", wrap(new SetNameCommand(userService)));
-        registry.register("/setbio", wrap(new SetBioCommand(userService)));
+        registry.register("/start", wrap(new StartCommandHandler()));
+        registry.register("/help", new HelpCommandHandler());
+        registry.register("/profile", wrap(new ProfileCommandHandler(userService)));
+        registry.register("/setname", wrap(new SetNameCommandHandler(userService)));
+        registry.register("/setbio", wrap(new SetBioCommandHandler(userService)));
 
         return registry;
     }
 
     /**
-     * Оборачивает команду в {@link RegisteringCommand}.
+     * Оборачивает команду в {@link RegisteringCommandHandler}.
      *
      * @param command команда
      * @return обёрнутый обработчик
      */
     private CommandHandler wrap(CommandHandler command) {
-        return new RegisteringCommand(command, userService);
+        return new RegisteringCommandHandler(command, userService);
     }
 }

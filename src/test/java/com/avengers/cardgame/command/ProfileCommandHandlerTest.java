@@ -6,7 +6,6 @@ import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.Bio;
 import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.model.User;
-import com.avengers.cardgame.model.UserBuilder;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,34 +13,29 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Тесты для {@link ProfileCommand}.
+ * Тесты для {@link ProfileCommandHandler}.
  */
-class ProfileCommandTest {
+class ProfileCommandHandlerTest {
 
     private static final long USER_ID = 1L;
     private static final long CHAT_ID = 10L;
 
     private InMemoryUserRepository userRepository;
     private FakeBot bot;
-    private ProfileCommand command;
+    private ProfileCommandHandler command;
 
     @BeforeEach
     void setUp(){
         userRepository = new InMemoryUserRepository();
         bot = new FakeBot();
-        command = new ProfileCommand(new UserServiceImpl(userRepository));
+        command = new ProfileCommandHandler(new UserServiceImpl(userRepository));
     }
 
     @Test
     @DisplayName("Отправляет полные данные профиля")
     void sendsFullProfile() throws Exception {
-        User user = new UserBuilder()
-                .userId(USER_ID)
-                .playerName(PlayerName.of("Tony"))
-                .bio(new Bio("Genius"))
-                .balance(100)
-                .cardCount(5)
-                .build();
+        User user = User.of(USER_ID, PlayerName.of("Tony"), new Bio("Genius"),
+                100, 5, null, null);
         userRepository.save(user);
 
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
@@ -52,7 +46,7 @@ class ProfileCommandTest {
                 Твой баланс: 100 щитов
                 В твоей коллекции: 5 карточек
                 """;
-        Assertions.assertEquals(expected, bot.lastText());
+        Assertions.assertEquals(expected, bot.lastSent().message().text());
     }
 
     @Test
@@ -68,7 +62,7 @@ class ProfileCommandTest {
                 Твой баланс: 0 щитов
                 В твоей коллекции: 0 карточек
                 """;
-        Assertions.assertEquals(expected, bot.lastText());
+        Assertions.assertEquals(expected, bot.lastSent().message().text());
     }
 
     /**

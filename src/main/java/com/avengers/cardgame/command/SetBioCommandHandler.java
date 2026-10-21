@@ -7,9 +7,9 @@ import com.avengers.cardgame.service.Message;
 import com.avengers.cardgame.service.UserService;
 
 /**
- * Команда /setbio.
+ * Обработчик команды /setbio.
  */
-public class SetBioCommand implements CommandHandler {
+public class SetBioCommandHandler implements CommandHandler {
 
     /** Текст ошибки при невалидном bio. */
     private static final String ERROR = "Вы ввели некорректное описание профиля. "
@@ -26,7 +26,7 @@ public class SetBioCommand implements CommandHandler {
     /**
      * @param userService сервис пользователей
      */
-    public SetBioCommand(UserService userService) {
+    public SetBioCommandHandler(UserService userService) {
         this.userService = userService;
     }
 
