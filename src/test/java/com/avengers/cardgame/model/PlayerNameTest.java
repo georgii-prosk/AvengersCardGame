@@ -22,7 +22,7 @@ class PlayerNameTest {
         @ValueSource(strings = {"Avenger", "IronMan", "a", "Abcdefghijklmnop"})
         @DisplayName("Принимает валидные имена")
         void acceptsValidNames(String name) throws Exception {
-            PlayerName playerName = PlayerName.of(name); // <-- Используем of()
+            PlayerName playerName = PlayerName.of(name);
 
             Assertions.assertEquals(name, playerName.value());
         }
