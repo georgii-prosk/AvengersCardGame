@@ -15,7 +15,7 @@ class EnvironmentConfigReaderTest {
     /**
      * Создаёт reader с заданными переменными окружения.
      *
-     * @param env карта «имя → значение»
+     * @param env отображение «имя → значение»
      * @return reader
      */
     private EnvironmentConfigReader readerWith(Map<String, String> env) {
@@ -23,9 +23,9 @@ class EnvironmentConfigReaderTest {
     }
 
     /**
-     * Возвращает карту со всеми обязательными переменными.
+     * Возвращает отображение со всеми обязательными переменными.
      *
-     * @return карта
+     * @return отображение
      */
     private Map<String, String> validEnv() {
         Map<String, String> env = new HashMap<>();

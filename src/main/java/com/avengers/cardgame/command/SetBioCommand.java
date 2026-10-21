@@ -1,5 +1,6 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.exception.InvalidBioException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.Bio;
 import com.avengers.cardgame.service.Message;
@@ -33,8 +34,8 @@ public class SetBioCommand implements CommandHandler {
     public void handle(CommandContext context) throws UserNotFoundException {
         Bio newBio;
         try {
-            newBio = new Bio(context.argument());
-        } catch (IllegalArgumentException e) {
+            newBio = Bio.of(context.argument());
+        } catch (InvalidBioException e) {
             context.bot().sendMessage(new Message(ERROR), context.chatId());
             return;
         }

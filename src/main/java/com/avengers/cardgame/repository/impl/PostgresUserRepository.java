@@ -1,6 +1,6 @@
 package com.avengers.cardgame.repository.impl;
 
-import com.avengers.cardgame.exception.InvalidPlayerNameException;
+import com.avengers.cardgame.exception.AppException;
 import com.avengers.cardgame.model.UserBuilder;
 import com.avengers.cardgame.config.ConnectionFactory;
 import com.avengers.cardgame.exception.UserAlreadyExistsException;
@@ -107,7 +107,7 @@ public class PostgresUserRepository implements UserRepository {
             return new UserBuilder()
                     .userId(rs.getLong("telegram_id"))
                     .playerName(PlayerName.of(displayNameValue))
-                    .bio(bioValue == null || bioValue.isEmpty() ? null : new Bio(bioValue))
+                    .bio(bioValue == null || bioValue.isEmpty() ? null : Bio.of(bioValue))
                     .balance(rs.getInt("balance"))
                     .cardCount(rs.getInt("card_count"))
                     .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
@@ -115,7 +115,7 @@ public class PostgresUserRepository implements UserRepository {
                     .lastDailyAt(lastDailyTs != null ? lastDailyTs.toLocalDateTime() : null)
                     .dailyNotifiedAt(dailyNotifiedTs != null ? dailyNotifiedTs.toLocalDateTime() : null)
                     .build();
-        } catch (InvalidPlayerNameException | IllegalArgumentException e) {
+        } catch (AppException e) {
             // Если в БД лежат битые данные, выбрасываем техническую ошибку
             throw new RuntimeException("Corrupted user data in DB for ID " + rs.getLong("telegram_id"), e);
         }

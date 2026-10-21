@@ -9,7 +9,7 @@ import java.util.Optional;
  */
 public class CommandRegistry {
 
-    /** Карта зарегистрированных команд: имя → обработчик. */
+    /** Отображение зарегистрированных команд: имя → обработчик. */
     private final Map<String, CommandHandler> commands = new HashMap<>();
 
     /**
