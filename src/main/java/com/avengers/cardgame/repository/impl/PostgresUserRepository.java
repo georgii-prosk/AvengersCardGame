@@ -171,12 +171,27 @@ public class PostgresUserRepository implements UserRepository {
                     bioValue == null || bioValue.isEmpty() ? null : Bio.of(bioValue),
                     rs.getInt("balance"),
                     rs.getInt("card_count"),
-                    rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toLocalDateTime() : null,
-                    rs.getTimestamp("updated_at") != null ? rs.getTimestamp("updated_at").toLocalDateTime() : null
+                    toLocalDateTime(rs, "created_at"),
+                    toLocalDateTime(rs, "updated_at"),
+                    toLocalDateTime(rs, "last_daily_at"),
+                    toLocalDateTime(rs, "daily_notified_at")
             );
         } catch (AppException e) {
             // Если в БД лежат битые данные, выбрасываем техническую ошибку
             throw new RuntimeException("Corrupted user data in DB for ID " + rs.getLong("telegram_id"), e);
         }
+    }
+
+    /**
+     * Читает {@link Timestamp} из указанной колонки и приводит к {@link LocalDateTime}.
+     *
+     * @param rs       результат SQL-запроса
+     * @param column   имя колонки
+     * @return значение или {@code null}, если колонка содержит SQL NULL
+     * @throws SQLException при ошибке чтения
+     */
+    private LocalDateTime toLocalDateTime(ResultSet rs, String column) throws SQLException {
+        Timestamp ts = rs.getTimestamp(column);
+        return ts == null ? null : ts.toLocalDateTime();
     }
 }

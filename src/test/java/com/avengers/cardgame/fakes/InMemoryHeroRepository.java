@@ -13,9 +13,6 @@ import java.util.stream.Collectors;
 
 /**
  * Фейковый репозиторий героев в памяти.
- * <p>
- * Полноценная реализация {@link HeroRepository} без обращения к БД.
- * Используется в тестах.
  */
 public class InMemoryHeroRepository implements HeroRepository {
 
