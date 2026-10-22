@@ -1,5 +1,7 @@
 package com.avengers.cardgame.config;
 
+import com.avengers.cardgame.exception.MissingEnvironmentVariableException;
+
 import java.util.Map;
 
 /**
@@ -30,17 +32,18 @@ public class EnvironmentConfigReader implements ConfigProvider {
     }
 
     /**
-     * Создаёт reader с указанным источником значений.
-     * Используется в тестах.
+     * Создаёт reader, читающий значения из переданного отображения.
+     * Отображение копируется, поэтому его последующие изменения
+     * на reader не влияют.
      *
-     * @param envSource карта с переменными окружения
+     * @param envSource отображение «имя переменной → значение»
      */
     public EnvironmentConfigReader(Map<String, String> envSource) {
-        this.envSource = envSource;
+        this.envSource = Map.copyOf(envSource);
     }
 
     @Override
-    public AppConfig read() {
+    public AppConfig read() throws MissingEnvironmentVariableException {
         DatabaseConfig database = new DatabaseConfig(
                 require(DB_URL),
                 require(DB_USER),
@@ -54,12 +57,12 @@ public class EnvironmentConfigReader implements ConfigProvider {
      *
      * @param name имя переменной
      * @return значение переменной
-     * @throws IllegalStateException если переменная не задана или пуста
+     * @throws MissingEnvironmentVariableException если переменная не задана или пуста
      */
-    private String require(String name) {
+    private String require(String name) throws MissingEnvironmentVariableException {
         String value = envSource.get(name);
         if (value == null || value.isBlank()) {
-            throw new IllegalStateException("Environment variable " + name + " is not set");
+            throw new MissingEnvironmentVariableException(name);
         }
         return value;
     }

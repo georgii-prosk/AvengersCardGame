@@ -12,22 +12,22 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Тесты для {@link SetNameCommand}.
+ * Тесты для {@link SetNameCommandHandler}.
  */
-class SetNameCommandTest {
+class SetNameCommandHandlerTest {
 
     private static final long USER_ID = 1L;
     private static final long CHAT_ID = 10L;
 
     private InMemoryUserRepository userRepository;
     private FakeBot bot;
-    private SetNameCommand command;
+    private SetNameCommandHandler command;
 
     @BeforeEach
     void setUp() {
         userRepository = new InMemoryUserRepository();
         bot = new FakeBot();
-        command = new SetNameCommand(new UserServiceImpl(userRepository));
+        command = new SetNameCommandHandler(new UserServiceImpl(userRepository));
     }
 
     @Test
@@ -37,7 +37,7 @@ class SetNameCommandTest {
 
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "Narek", bot));
 
-        Assertions.assertEquals("Вы сменили отображаемое имя на Narek", bot.lastText());
+        Assertions.assertEquals("Вы сменили отображаемое имя на Narek", bot.lastSent().message().text());
         Assertions.assertEquals("Narek",
                 userRepository.findByUserId(USER_ID).orElseThrow().playerName().value());
     }
@@ -51,7 +51,7 @@ class SetNameCommandTest {
 
         Assertions.assertEquals(
                 "Вы ввели некорректное имя. Допустимо использовать до 128 символов латиницей.",
-                bot.lastText());
+                bot.lastSent().message().text());
         Assertions.assertEquals("OldName",
                 userRepository.findByUserId(USER_ID).orElseThrow().playerName().value());
     }
@@ -65,7 +65,7 @@ class SetNameCommandTest {
 
         Assertions.assertEquals(
                 "Вы ввели некорректное имя. Допустимо использовать до 128 символов латиницей.",
-                bot.lastText());
+                bot.lastSent().message().text());
     }
 
     /**

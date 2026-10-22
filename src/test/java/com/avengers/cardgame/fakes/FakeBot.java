@@ -28,14 +28,14 @@ public class FakeBot implements Bot {
     }
 
     /**
-     * @return текст последнего отправленного сообщения
+     * @return последнее отправленное сообщение
      * @throws AssertionError если ничего не отправлено
      */
-    public String lastText() {
+    public Sent lastSent() {
         if (sent.isEmpty()) {
             throw new AssertionError("Бот не отправил ни одного сообщения");
         }
-        return sent.getLast().message().text();
+        return sent.getLast();
     }
 
     /**
