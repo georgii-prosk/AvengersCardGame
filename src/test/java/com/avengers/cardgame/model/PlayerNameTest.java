@@ -47,7 +47,7 @@ class PlayerNameTest {
         @DisplayName("Отклоняет null")
         void rejectsNull(String name) {
             Assertions.assertThrows(InvalidPlayerNameException.class,
-                    () -> PlayerName.of(name)); // <-- Используем of()
+                    () -> PlayerName.of(name));
         }
 
         @ParameterizedTest
@@ -55,7 +55,7 @@ class PlayerNameTest {
         @DisplayName("Отклоняет недопустимые имена")
         void rejectsInvalidNames(String name) {
             Assertions.assertThrows(InvalidPlayerNameException.class,
-                    () -> PlayerName.of(name)); // <-- Используем of()
+                    () -> PlayerName.of(name));
         }
 
         @Test
@@ -64,7 +64,7 @@ class PlayerNameTest {
             String name = "a".repeat(129);
 
             Assertions.assertThrows(InvalidPlayerNameException.class,
-                    () -> PlayerName.of(name)); // <-- Используем of()
+                    () -> PlayerName.of(name));
         }
     }
 }

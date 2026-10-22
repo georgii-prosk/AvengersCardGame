@@ -39,7 +39,7 @@ class EnvironmentConfigReaderTest {
 
     @Test
     @DisplayName("Читает валидную конфигурацию")
-    void readsValidConfig() throws MissingEnvironmentVariableException { // <-- Добавлен throws
+    void readsValidConfig() throws MissingEnvironmentVariableException {
         AppConfig config = readerWith(validEnv()).read();
 
         Assertions.assertEquals("test-token", config.botToken());
@@ -55,7 +55,7 @@ class EnvironmentConfigReaderTest {
         Map<String, String> env = validEnv();
         env.remove("BOT_TOKEN");
 
-        Assertions.assertThrows(MissingEnvironmentVariableException.class, // <-- Новый класс исключения
+        Assertions.assertThrows(MissingEnvironmentVariableException.class,
                 () -> readerWith(env).read());
     }
 
