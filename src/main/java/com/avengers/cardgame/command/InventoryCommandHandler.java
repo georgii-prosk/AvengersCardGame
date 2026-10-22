@@ -1,5 +1,7 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.exception.BotException;
+
 /**
  * Команда /inventory: показывает коллекцию карточек первой страницей.
  */
@@ -19,7 +21,7 @@ public class InventoryCommandHandler implements CommandHandler {
     }
 
     @Override
-    public void handle(CommandContext context) {
+    public void handle(CommandContext context) throws BotException {
         context.bot().sendMessage(renderer.render(context.userId(), FIRST_PAGE), context.chatId());
     }
 }

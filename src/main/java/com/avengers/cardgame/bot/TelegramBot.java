@@ -1,5 +1,6 @@
 package com.avengers.cardgame.bot;
 
+import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.service.Button;
 import com.avengers.cardgame.service.CallbackProcessingService;
 import com.avengers.cardgame.service.Message;
@@ -27,7 +28,8 @@ import java.util.List;
  * <p>
  * Принимает обновления от Telegram, передаёт данные в
  * {@link MessageProcessingService} (текст) и {@link CallbackProcessingService}
- * (нажатия на inline-кнопки) и отправляет ответы через {@link TelegramClient}. Бизнес-логики не содержит.
+ * (нажатия на inline-кнопки) и отправляет ответы через {@link TelegramClient}.
+ * Бизнес-логики не содержит.
  */
 public final class TelegramBot extends DefaultLongPollingUpdateConsumer implements Bot {
 
@@ -55,7 +57,7 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
     }
 
     @Override
-    public void sendMessage(@NotNull Message msg, long chatId) {
+    public void sendMessage(@NotNull Message msg, long chatId) throws BotException {
         try {
             SendMessage.SendMessageBuilder<?, ?> builder = SendMessage.builder()
                     .chatId(chatId)
@@ -65,7 +67,7 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
             }
             telegramClient.execute(builder.build());
         } catch (TelegramApiException e) {
-            log.error("Failed to send message", e);
+            throw new BotException("Failed to send message to chat " + chatId, e);
         }
     }
 
@@ -84,6 +86,8 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
         String userName = update.getMessage().getFrom().getUserName();
         String text = update.getMessage().getText();
 
+        // CommandMessageProcessingService сам ловит BotException и превращает
+        // в ERROR_MESSAGE, поэтому здесь checked-исключение не всплывает.
         logic.processMessage(userId, userName, chatId, text, this);
     }
 
@@ -103,6 +107,7 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
         long chatId = callbackQuery.getMessage().getChatId();
         long userId = callbackQuery.getFrom().getId();
 
+        // CommandCallbackProcessingService сам ловит BotException.
         callbackLogic.processCallback(userId, chatId, callbackQuery.getData(), this);
     }
 

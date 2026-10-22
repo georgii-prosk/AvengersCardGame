@@ -109,6 +109,8 @@ public class AvengersCardGameApplication {
                 userRepository, bot, gameConfig, executor, Clock.systemUTC());
         scheduler.start();
 
+        Runtime.getRuntime().addShutdownHook(new Thread(scheduler::stop, "scheduler-shutdown"));
+
         // 9. Запуск
         startBot(env.botToken(), bot);
     }

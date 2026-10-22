@@ -18,10 +18,10 @@ public record GameConfig(Duration dailyCooldown, Duration notificationInterval) 
      * @throws IllegalArgumentException если длительности отрицательные или нулевые
      */
     public GameConfig {
-        if (dailyCooldown.isNegative() || dailyCooldown.isZero()) {
+        if (dailyCooldown == null || dailyCooldown.isNegative() || dailyCooldown.isZero()) {
             throw new IllegalArgumentException("Daily cooldown must be positive");
         }
-        if (notificationInterval.isNegative() || notificationInterval.isZero()) {
+        if (notificationInterval == null || notificationInterval.isNegative() || notificationInterval.isZero()) {
             throw new IllegalArgumentException("Notification interval must be positive");
         }
     }

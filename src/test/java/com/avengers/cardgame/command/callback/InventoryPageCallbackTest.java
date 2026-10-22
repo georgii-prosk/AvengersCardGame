@@ -36,7 +36,7 @@ class InventoryPageCallbackTest {
 
     @Test
     @DisplayName("Отправляет запрошенную страницу")
-    void sendsRequestedPage() {
+    void sendsRequestedPage() throws Exception {
         callback.handle(new CallbackContext(USER_ID, CHAT_ID, "page:2", bot));
 
         Assertions.assertTrue(bot.lastSent().message().text().startsWith("Твоя коллекция (страница 2/2):"));
@@ -45,7 +45,7 @@ class InventoryPageCallbackTest {
 
     @Test
     @DisplayName("Игнорирует некорректный номер страницы")
-    void ignoresInvalidPage() {
+    void ignoresInvalidPage() throws Exception {
         callback.handle(new CallbackContext(USER_ID, CHAT_ID, "page:x", bot));
 
         Assertions.assertEquals(0, bot.count());

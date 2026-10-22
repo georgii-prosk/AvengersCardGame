@@ -1,5 +1,6 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.exception.DailyCooldownException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.Hero;
@@ -54,7 +55,7 @@ public class DailyCommandHandler implements CommandHandler {
     }
 
     @Override
-    public void handle(CommandContext context) throws UserNotFoundException {
+    public void handle(CommandContext context) throws UserNotFoundException, BotException {
         List<Hero> heroes;
         try {
             heroes = cardService.grantDaily(context.userId());

@@ -2,6 +2,7 @@ package com.avengers.cardgame.scheduler;
 
 import com.avengers.cardgame.bot.Bot;
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.PlayerName;
@@ -160,7 +161,7 @@ class DailyNotificationSchedulerTest {
         FakeBot delivering = new FakeBot();
         Bot flaky = (msg, chatId) -> {
             if (chatId == 1L) {
-                throw new RuntimeException("Forbidden: bot was blocked by the user");
+                throw new BotException("Forbidden: bot was blocked by the user", null);
             }
             delivering.sendMessage(msg, chatId);
         };

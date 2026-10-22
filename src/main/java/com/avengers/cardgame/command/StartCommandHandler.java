@@ -1,5 +1,6 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.service.Message;
 
 /**
@@ -15,7 +16,7 @@ public class StartCommandHandler implements CommandHandler {
             """;
 
     @Override
-    public void handle(CommandContext context) {
+    public void handle(CommandContext context) throws BotException {
         context.bot().sendMessage(new Message(GREETING), context.chatId());
     }
 }

@@ -16,7 +16,7 @@ public class FakeBot implements Bot {
     private final List<Sent> sent = new ArrayList<>();
 
     @Override
-    public void sendMessage(@NotNull Message msg, long chatId) {
+    public void sendMessage(@NotNull Message msg, long chatId){
         sent.add(new Sent(msg, chatId));
     }
 
@@ -36,17 +36,6 @@ public class FakeBot implements Bot {
             throw new AssertionError("Бот не отправил ни одного сообщения");
         }
         return sent.getLast();
-    }
-
-    /**
-     * @return последнее отправленное сообщение целиком (с кнопками)
-     * @throws AssertionError если ничего не отправлено
-     */
-    public Message lastMessage() {
-        if (sent.isEmpty()) {
-            throw new AssertionError("Бот не отправил ни одного сообщения");
-        }
-        return sent.getLast().message();
     }
 
     /**

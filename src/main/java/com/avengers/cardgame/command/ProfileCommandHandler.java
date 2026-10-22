@@ -1,5 +1,6 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.service.Message;
@@ -32,7 +33,7 @@ public class ProfileCommandHandler implements CommandHandler {
     }
 
     @Override
-    public void handle(CommandContext context) throws UserNotFoundException {
+    public void handle(CommandContext context) throws UserNotFoundException, BotException {
         User user = userService.getByUserId(context.userId());
 
         String displayName = user.playerName().value();

@@ -37,7 +37,7 @@ class InventoryCommandHandlerTest {
         command = new InventoryCommandHandler(renderer);
     }
 
-    private void run() {
+    private void run() throws Exception {
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
     }
 
@@ -47,7 +47,7 @@ class InventoryCommandHandlerTest {
 
     @Test
     @DisplayName("Сообщает, что карточек нет, и не добавляет кнопок")
-    void sendsEmptyMessageWhenNoCards() {
+    void sendsEmptyMessageWhenNoCards() throws Exception {
         run();
 
         Assertions.assertEquals(1, bot.count());
@@ -57,7 +57,7 @@ class InventoryCommandHandlerTest {
 
     @Test
     @DisplayName("Группирует повторные карточки как ×N")
-    void groupsDuplicatesAsCount() {
+    void groupsDuplicatesAsCount() throws Exception {
         addHero(1, "Thor", HeroRarity.EPIC);
         cardRepository.addCard(USER_ID, 1);
         cardRepository.addCard(USER_ID, 1);
@@ -72,7 +72,7 @@ class InventoryCommandHandlerTest {
 
     @Test
     @DisplayName("Отправляет одно сообщение со страницей 1/1 и кнопкой на каждую карточку")
-    void sendsMessageWithCardButtons() {
+    void sendsMessageWithCardButtons() throws Exception {
         addHero(1, "Thor", HeroRarity.EPIC);
         addHero(2, "Hulk", HeroRarity.RARE);
         cardRepository.addCard(USER_ID, 1);
@@ -92,7 +92,7 @@ class InventoryCommandHandlerTest {
 
     @Test
     @DisplayName("Сортирует: сначала редкие, затем по имени")
-    void sortsByRarityThenName() {
+    void sortsByRarityThenName() throws Exception {
         addHero(1, "Zed", HeroRarity.COMMON);
         addHero(2, "Alpha", HeroRarity.COMMON);
         addHero(3, "Legend", HeroRarity.LEGENDARY);
@@ -110,7 +110,7 @@ class InventoryCommandHandlerTest {
 
     @Test
     @DisplayName("Разбивает коллекцию на страницы по 5 и добавляет кнопку «Вперёд»")
-    void paginatesByFive() {
+    void paginatesByFive() throws Exception {
         for (long id = 1; id <= 7; id++) {
             addHero(id, "Hero" + id, HeroRarity.COMMON);
             cardRepository.addCard(USER_ID, id);
@@ -129,7 +129,7 @@ class InventoryCommandHandlerTest {
 
     @Test
     @DisplayName("На второй странице есть «Назад» и остаток карточек")
-    void secondPageHasBackButton() {
+    void secondPageHasBackButton(){
         for (long id = 1; id <= 7; id++) {
             addHero(id, "Hero" + id, HeroRarity.COMMON);
             cardRepository.addCard(USER_ID, id);
@@ -157,7 +157,7 @@ class InventoryCommandHandlerTest {
 
     @Test
     @DisplayName("Не показывает чужие карточки")
-    void ignoresOtherUsersCards() {
+    void ignoresOtherUsersCards() throws Exception {
         addHero(1, "Thor", HeroRarity.EPIC);
         cardRepository.addCard(2L, 1);
 
@@ -168,7 +168,7 @@ class InventoryCommandHandlerTest {
 
     @Test
     @DisplayName("Отправляет сообщение в нужный чат")
-    void sendsToCorrectChat() {
+    void sendsToCorrectChat() throws Exception {
         run();
 
         Assertions.assertEquals(CHAT_ID, bot.sent().getFirst().chatId());
