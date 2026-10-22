@@ -3,7 +3,7 @@ package com.avengers.cardgame.command;
 /**
  * Команда /inventory: показывает коллекцию карточек первой страницей.
  */
-public class InventoryCommand implements CommandHandler {
+public class InventoryCommandHandler implements CommandHandler {
 
     /** Номер первой страницы. */
     private static final int FIRST_PAGE = 1;
@@ -14,7 +14,7 @@ public class InventoryCommand implements CommandHandler {
     /**
      * @param renderer генератор страниц инвентаря
      */
-    public InventoryCommand(InventoryRenderer renderer) {
+    public InventoryCommandHandler(InventoryRenderer renderer) {
         this.renderer = renderer;
     }
 

@@ -73,7 +73,7 @@ class DailyNotificationSchedulerTest {
         scheduler(bot).notifyUsers();
 
         Assertions.assertEquals(1, bot.count());
-        Assertions.assertEquals(NOTIFICATION, bot.lastText());
+        Assertions.assertEquals(NOTIFICATION, bot.lastSent().message().text());
         Assertions.assertEquals(1L, bot.sent().getFirst().chatId());
     }
 

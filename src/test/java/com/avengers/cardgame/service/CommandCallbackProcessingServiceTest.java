@@ -78,7 +78,7 @@ class CommandCallbackProcessingServiceTest {
 
         service.processCallback(USER_ID, CHAT_ID, "page:1", bot);
 
-        Assertions.assertEquals("Произошла ошибка при обработке нажатия.", bot.lastText());
+        Assertions.assertEquals("Произошла ошибка при обработке нажатия.", bot.lastSent().message().text());
         Assertions.assertEquals(CHAT_ID, bot.sent().getFirst().chatId());
     }
 

@@ -39,7 +39,7 @@ class InventoryPageCallbackTest {
     void sendsRequestedPage() {
         callback.handle(new CallbackContext(USER_ID, CHAT_ID, "page:2", bot));
 
-        Assertions.assertTrue(bot.lastText().startsWith("Твоя коллекция (страница 2/2):"));
+        Assertions.assertTrue(bot.lastSent().message().text().startsWith("Твоя коллекция (страница 2/2):"));
         Assertions.assertEquals(CHAT_ID, bot.sent().getFirst().chatId());
     }
 

@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * Формирует страницу инвентаря (текст и кнопки).
  * <p>
- * Используется и командой {@link InventoryCommand}, и обработчиком
+ * Используется и командой {@link InventoryCommandHandler}, и обработчиком
  * переключения страниц, чтобы не дублировать код.
  */
 public class InventoryRenderer {

@@ -15,9 +15,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 /**
- * Тесты для {@link InventoryCommand} и {@link InventoryRenderer}.
+ * Тесты для {@link InventoryCommandHandler} и {@link InventoryRenderer}.
  */
-class InventoryCommandTest {
+class InventoryCommandHandlerTest {
 
     private static final long USER_ID = 1L;
     private static final long CHAT_ID = 10L;
@@ -26,7 +26,7 @@ class InventoryCommandTest {
     private InMemoryHeroRepository heroRepository;
     private FakeBot bot;
     private InventoryRenderer renderer;
-    private InventoryCommand command;
+    private InventoryCommandHandler command;
 
     @BeforeEach
     void setUp() {
@@ -34,7 +34,7 @@ class InventoryCommandTest {
         heroRepository = new InMemoryHeroRepository();
         bot = new FakeBot();
         renderer = new InventoryRenderer(cardRepository, heroRepository);
-        command = new InventoryCommand(renderer);
+        command = new InventoryCommandHandler(renderer);
     }
 
     private void run() {
@@ -51,8 +51,8 @@ class InventoryCommandTest {
         run();
 
         Assertions.assertEquals(1, bot.count());
-        Assertions.assertTrue(bot.lastText().contains("нет карточек"));
-        Assertions.assertTrue(bot.lastMessage().buttons().isEmpty());
+        Assertions.assertTrue(bot.lastSent().message().text().contains("нет карточек"));
+        Assertions.assertTrue(bot.lastSent().message().buttons().isEmpty());
     }
 
     @Test
@@ -65,9 +65,9 @@ class InventoryCommandTest {
 
         run();
 
-        Assertions.assertTrue(bot.lastText().contains("Thor"));
-        Assertions.assertTrue(bot.lastText().contains("×3"));
-        Assertions.assertTrue(bot.lastText().contains("Эпическая"));
+        Assertions.assertTrue(bot.lastSent().message().text().contains("Thor"));
+        Assertions.assertTrue(bot.lastSent().message().text().contains("×3"));
+        Assertions.assertTrue(bot.lastSent().message().text().contains("Эпическая"));
     }
 
     @Test
@@ -80,7 +80,7 @@ class InventoryCommandTest {
 
         run();
 
-        Message message = bot.lastMessage();
+        Message message = bot.lastSent().message();
         Assertions.assertEquals(1, bot.count());
         Assertions.assertTrue(message.text().startsWith("Твоя коллекция (страница 1/1):"));
         Assertions.assertEquals(2, message.buttons().size());
@@ -102,7 +102,7 @@ class InventoryCommandTest {
 
         run();
 
-        List<String> data = bot.lastMessage().buttons().stream()
+        List<String> data = bot.lastSent().message().buttons().stream()
                 .map(row -> row.getFirst().callbackData())
                 .toList();
         Assertions.assertEquals(List.of("view_card:3", "view_card:2", "view_card:1"), data);
@@ -118,7 +118,7 @@ class InventoryCommandTest {
 
         run();
 
-        Message message = bot.lastMessage();
+        Message message = bot.lastSent().message();
         Assertions.assertTrue(message.text().startsWith("Твоя коллекция (страница 1/2):"));
         // 5 рядов карточек + ряд навигации
         Assertions.assertEquals(6, message.buttons().size());
@@ -163,7 +163,7 @@ class InventoryCommandTest {
 
         run();
 
-        Assertions.assertTrue(bot.lastText().contains("нет карточек"));
+        Assertions.assertTrue(bot.lastSent().message().text().contains("нет карточек"));
     }
 
     @Test
