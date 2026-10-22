@@ -1,0 +1,85 @@
+package com.avengers.cardgame.command;
+
+import com.avengers.cardgame.exception.UserNotFoundException;
+import com.avengers.cardgame.fakes.FakeBot;
+import com.avengers.cardgame.fakes.InMemoryUserRepository;
+import com.avengers.cardgame.model.PlayerName;
+import com.avengers.cardgame.model.User;
+import com.avengers.cardgame.service.impl.UserServiceImpl;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Тесты для {@link SetBioCommandHandler}.
+ */
+class SetBioCommandHandlerTest {
+
+    private static final long USER_ID = 1L;
+    private static final long CHAT_ID = 10L;
+
+    private InMemoryUserRepository userRepository;
+    private FakeBot bot;
+    private SetBioCommandHandler command;
+
+    @BeforeEach
+    void setUp() {
+        userRepository = new InMemoryUserRepository();
+        bot = new FakeBot();
+        command = new SetBioCommandHandler(new UserServiceImpl(userRepository));
+    }
+
+    @Test
+    @DisplayName("Обновляет bio при валидном вводе")
+    void updatesBioWhenValid() throws Exception {
+        userRepository.save(new User(USER_ID, new PlayerName("Tony")));
+
+        command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "Genius billionaire", bot));
+
+        Assertions.assertEquals(
+                "Вы обновили описание своего профиля на Genius billionaire", bot.lastSent().message().text());
+        Assertions.assertEquals("Genius billionaire",
+                userRepository.findByUserId(USER_ID).orElseThrow().bio().value());
+    }
+
+    @Test
+    @DisplayName("Отправляет ошибку при невалидном bio")
+    void sendsErrorWhenInvalid() throws Exception {
+        userRepository.save(new User(USER_ID, new PlayerName("Tony")));
+
+        command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony",
+                "Текст с \u0000 нулевым символом", bot));
+
+        String expected = "Вы ввели некорректное описание профиля. "
+                + "Допустимо использовать до 256 символов латиницей или кириллицей "
+                + "+ эмодзи и знаков препинания, пробелов, цифр, спецсимволы "
+                + "(/|\\<>@#$%^&*(){}[]`~;:'\"-_=+).";
+        Assertions.assertEquals(expected, bot.lastSent().message().text());
+        Assertions.assertNull(userRepository.findByUserId(USER_ID).orElseThrow().bio());
+    }
+
+    @Test
+    @DisplayName("Отправляет ошибку при пустом аргументе")
+    void sendsErrorWhenEmptyArgument() throws Exception {
+        userRepository.save(new User(USER_ID, new PlayerName("Tony")));
+
+        command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
+
+        String expected = "Вы ввели некорректное описание профиля. "
+                + "Допустимо использовать до 256 символов латиницей или кириллицей "
+                + "+ эмодзи и знаков препинания, пробелов, цифр, спецсимволы "
+                + "(/|\\<>@#$%^&*(){}[]`~;:'\"-_=+).";
+        Assertions.assertEquals(expected, bot.lastSent().message().text());
+    }
+
+    /**
+     * Проверяет, что команда бросает UserNotFoundException, если пользователя нет.
+     */
+    @Test
+    @DisplayName("Бросает UserNotFoundException, если пользователя нет")
+    void throwsWhenUserNotFound() {
+        Assertions.assertThrows(UserNotFoundException.class,
+                () -> command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "some bio", bot)));
+    }
+}
