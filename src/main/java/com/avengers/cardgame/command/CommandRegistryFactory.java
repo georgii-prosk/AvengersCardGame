@@ -19,24 +19,24 @@ public class CommandRegistryFactory {
     private final UserCardRepository userCardRepository;
 
     /** Генератор страниц инвентаря. */
-    private final InventoryRenderer inventoryRenderer;
+    private final InventoryRenderer renderer;
 
     /**
      * @param userService        сервис пользователей
      * @param cardService        сервис карточек
      * @param userCardRepository репозиторий карточек пользователей
-     * @param inventoryRenderer  генератор страниц инвентаря
+     * @param renderer           генератор страниц инвентаря
      */
     public CommandRegistryFactory(
             UserService userService,
             CardService cardService,
             UserCardRepository userCardRepository,
-            InventoryRenderer inventoryRenderer
+            InventoryRenderer renderer
     ) {
         this.userService = userService;
         this.cardService = cardService;
         this.userCardRepository = userCardRepository;
-        this.inventoryRenderer = inventoryRenderer;
+        this.renderer = renderer;
     }
 
     /**
@@ -47,24 +47,24 @@ public class CommandRegistryFactory {
     public CommandRegistry create() {
         CommandRegistry registry = new CommandRegistry();
 
-        registry.register("/start", wrap(new StartCommand()));
-        registry.register("/help", new HelpCommand());
-        registry.register("/profile", wrap(new ProfileCommand(userService, userCardRepository)));
-        registry.register("/daily", wrap(new DailyCommand(cardService)));
-        registry.register("/inventory", wrap(new InventoryCommand(inventoryRenderer)));
-        registry.register("/setname", wrap(new SetNameCommand(userService)));
-        registry.register("/setbio", wrap(new SetBioCommand(userService)));
+        registry.register("/start", wrap(new StartCommandHandler()));
+        registry.register("/help", new HelpCommandHandler());
+        registry.register("/profile", wrap(new ProfileCommandHandler(userService, userCardRepository)));
+        registry.register("/setname", wrap(new SetNameCommandHandler(userService)));
+        registry.register("/setbio", wrap(new SetBioCommandHandler(userService)));
+        registry.register("/daily", wrap(new DailyCommandHandler(cardService)));
+        registry.register("/inventory", wrap(new InventoryCommandHandler(renderer)));
 
         return registry;
     }
 
     /**
-     * Оборачивает команду в {@link RegisteringCommand}.
+     * Оборачивает команду в {@link RegisteringCommandHandler}.
      *
      * @param command команда
      * @return обёрнутый обработчик
      */
     private CommandHandler wrap(CommandHandler command) {
-        return new RegisteringCommand(command, userService);
+        return new RegisteringCommandHandler(command, userService);
     }
 }

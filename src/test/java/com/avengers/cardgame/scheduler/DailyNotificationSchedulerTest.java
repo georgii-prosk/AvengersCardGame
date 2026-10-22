@@ -2,11 +2,11 @@ package com.avengers.cardgame.scheduler;
 
 import com.avengers.cardgame.bot.Bot;
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.PlayerName;
-import com.avengers.cardgame.model.User;
-import com.avengers.cardgame.model.UserBuilder;
+import com.avengers.cardgame.model.User;                 // уже есть
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,13 +55,26 @@ class DailyNotificationSchedulerTest {
         return new DailyNotificationScheduler(userRepository, b, config, executor, clock);
     }
 
+    /**
+     * Сохраняет пользователя с заданными временами последней награды и уведомления.
+     *
+     * @param id           идентификатор пользователя
+     * @param lastDailyAt  время последней награды или {@code null}
+     * @param notifiedAt   время последнего уведомления или {@code null}
+     * @throws Exception если сохранить пользователя не удалось
+     */
     private void saveUser(long id, LocalDateTime lastDailyAt, LocalDateTime notifiedAt) throws Exception {
-        User user = new UserBuilder()
-                .userId(id)
-                .playerName(PlayerName.of("Hero"))
-                .lastDailyAt(lastDailyAt)
-                .dailyNotifiedAt(notifiedAt)
-                .build();
+        User user = User.of(
+                id,
+                PlayerName.of("Hero"),
+                null,           // bio
+                0,              // balance
+                0,              // cardCount
+                null,           // createdAt
+                null,           // updatedAt
+                lastDailyAt,
+                notifiedAt
+        );
         userRepository.save(user);
     }
 
@@ -73,7 +86,7 @@ class DailyNotificationSchedulerTest {
         scheduler(bot).notifyUsers();
 
         Assertions.assertEquals(1, bot.count());
-        Assertions.assertEquals(NOTIFICATION, bot.lastText());
+        Assertions.assertEquals(NOTIFICATION, bot.lastSent().message().text());
         Assertions.assertEquals(1L, bot.sent().getFirst().chatId());
     }
 
@@ -148,7 +161,7 @@ class DailyNotificationSchedulerTest {
         FakeBot delivering = new FakeBot();
         Bot flaky = (msg, chatId) -> {
             if (chatId == 1L) {
-                throw new RuntimeException("Forbidden: bot was blocked by the user");
+                throw new BotException("Forbidden: bot was blocked by the user", null);
             }
             delivering.sendMessage(msg, chatId);
         };

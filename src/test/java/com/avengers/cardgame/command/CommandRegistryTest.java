@@ -1,8 +1,5 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
-import com.avengers.cardgame.fakes.InMemoryUserRepository;
-import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,62 +15,69 @@ class CommandRegistryTest {
     /** Тестируемый реестр. */
     private CommandRegistry registry;
 
-    /**
-     * Создаёт реестр с несколькими командами перед каждым тестом.
-     */
+    /** Первый фейковый обработчик. */
+    private CommandHandler firstHandler;
+
+    /** Второй фейковый обработчик. */
+    private CommandHandler secondHandler;
+
     @BeforeEach
     void setUp() {
         registry = new CommandRegistry();
-        UserServiceImpl userService = new UserServiceImpl(new InMemoryUserRepository());
-
-        registry.register("/start", new StartCommand());
-        registry.register("/help", new HelpCommand());
-        registry.register("/profile", new ProfileCommand(userService, new InMemoryUserCardRepository()));
-        registry.register("/setname", new SetNameCommand(userService));
-        registry.register("/setbio", new SetBioCommand(userService));
+        firstHandler = context -> { };
+        secondHandler = context -> { };
+        registry.register("/first", firstHandler);
+        registry.register("/second", secondHandler);
     }
 
     @Test
-    @DisplayName("Разрешает /start без аргумента")
-    void resolvesStartWithoutArgument() {
-        Optional<ResolvedCommand> resolved = registry.resolve("/start");
+    @DisplayName("Разрешает зарегистрированную команду без аргумента")
+    void resolvesRegisteredCommandWithoutArgument() {
+        Optional<ResolvedCommand> resolved = registry.resolve("/first");
 
         Assertions.assertTrue(resolved.isPresent());
-        Assertions.assertInstanceOf(StartCommand.class, resolved.get().command());
+        Assertions.assertSame(firstHandler, resolved.get().command());
         Assertions.assertEquals("", resolved.get().argument());
     }
 
     @Test
-    @DisplayName("Разрешает /setname с аргументом")
-    void resolvesSetNameWithArgument() {
-        Optional<ResolvedCommand> resolved = registry.resolve("/setname Narek");
+    @DisplayName("Возвращает нужный обработчик для второй команды")
+    void resolvesSecondHandler() {
+        Optional<ResolvedCommand> resolved = registry.resolve("/second");
 
         Assertions.assertTrue(resolved.isPresent());
-        Assertions.assertInstanceOf(SetNameCommand.class, resolved.get().command());
-        Assertions.assertEquals("Narek", resolved.get().argument());
+        Assertions.assertSame(secondHandler, resolved.get().command());
     }
 
     @Test
-    @DisplayName("Разрешает /setbio с многословным аргументом")
-    void resolvesSetBioWithMultiWordArgument() {
-        Optional<ResolvedCommand> resolved = registry.resolve("/setbio Привет мир 🦸");
+    @DisplayName("Разбирает аргумент команды")
+    void parsesArgument() {
+        Optional<ResolvedCommand> resolved = registry.resolve("/first hello");
 
         Assertions.assertTrue(resolved.isPresent());
-        Assertions.assertInstanceOf(SetBioCommand.class, resolved.get().command());
-        Assertions.assertEquals("Привет мир 🦸", resolved.get().argument());
+        Assertions.assertEquals("hello", resolved.get().argument());
+    }
+
+    @Test
+    @DisplayName("Разбирает многословный аргумент")
+    void parsesMultiWordArgument() {
+        Optional<ResolvedCommand> resolved = registry.resolve("/second hello world 42");
+
+        Assertions.assertTrue(resolved.isPresent());
+        Assertions.assertEquals("hello world 42", resolved.get().argument());
     }
 
     @Test
     @DisplayName("Регистронезависимость имени команды")
     void resolvesCaseInsensitive() {
-        Assertions.assertTrue(registry.resolve("/START").isPresent());
-        Assertions.assertTrue(registry.resolve("/SetName Narek").isPresent());
+        Assertions.assertTrue(registry.resolve("/FIRST").isPresent());
+        Assertions.assertTrue(registry.resolve("/First hello").isPresent());
     }
 
     @Test
-    @DisplayName("Пустой Optional для неизвестной команды")
+    @DisplayName("Пустой Optional для незарегистрированной команды")
     void returnsEmptyForUnknownCommand() {
-        Assertions.assertTrue(registry.resolve("/foo").isEmpty());
+        Assertions.assertTrue(registry.resolve("/unknown").isEmpty());
     }
 
     @Test
@@ -89,17 +93,17 @@ class CommandRegistryTest {
     }
 
     @Test
-    @DisplayName("Команда без пробела после имени не распознаётся")
+    @DisplayName("Префикс без пробела не считается совпадением")
     void doesNotMatchCommandWithoutSpace() {
-        Assertions.assertTrue(registry.resolve("/setnameX foo").isEmpty());
+        Assertions.assertTrue(registry.resolve("/firstX foo").isEmpty());
     }
 
     @Test
     @DisplayName("Ведущие и хвостовые пробелы не мешают")
     void trimsWhitespace() {
-        Optional<ResolvedCommand> resolved = registry.resolve("   /setname Narek   ");
+        Optional<ResolvedCommand> resolved = registry.resolve("   /first hello   ");
 
         Assertions.assertTrue(resolved.isPresent());
-        Assertions.assertEquals("Narek", resolved.get().argument());
+        Assertions.assertEquals("hello", resolved.get().argument());
     }
 }

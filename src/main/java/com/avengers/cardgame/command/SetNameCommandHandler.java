@@ -1,14 +1,16 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.exception.BotException;
+import com.avengers.cardgame.exception.InvalidPlayerNameException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.service.Message;
 import com.avengers.cardgame.service.UserService;
 
 /**
- * Команда /setname.
+ * Обработчик команды /setname.
  */
-public class SetNameCommand implements CommandHandler {
+public class SetNameCommandHandler implements CommandHandler {
 
     /** Текст ошибки при невалидном имени. */
     private static final String ERROR = "Вы ввели некорректное имя. "
@@ -23,16 +25,16 @@ public class SetNameCommand implements CommandHandler {
     /**
      * @param userService сервис пользователей
      */
-    public SetNameCommand(UserService userService) {
+    public SetNameCommandHandler(UserService userService) {
         this.userService = userService;
     }
 
     @Override
-    public void handle(CommandContext context) throws UserNotFoundException {
+    public void handle(CommandContext context) throws UserNotFoundException, BotException {
         PlayerName newName;
         try {
-            newName = new PlayerName(context.argument());
-        } catch (IllegalArgumentException e) {
+            newName = PlayerName.of(context.argument());
+        } catch (InvalidPlayerNameException e) {
             context.bot().sendMessage(new Message(ERROR), context.chatId());
             return;
         }

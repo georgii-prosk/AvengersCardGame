@@ -7,7 +7,14 @@ import com.avengers.cardgame.command.InventoryRenderer;
 import com.avengers.cardgame.command.callback.CallbackPrefix;
 import com.avengers.cardgame.command.callback.InventoryPageCallback;
 import com.avengers.cardgame.command.callback.ViewCardCallback;
-import com.avengers.cardgame.config.*;
+import com.avengers.cardgame.config.AppConfig;
+import com.avengers.cardgame.config.ConfigProvider;
+import com.avengers.cardgame.config.ConnectionFactory;
+import com.avengers.cardgame.config.DatabaseMigrator;
+import com.avengers.cardgame.config.EnvironmentConfigReader;
+import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.GameConfigReader;
+import com.avengers.cardgame.exception.AppException;
 import com.avengers.cardgame.repository.HeroRepository;
 import com.avengers.cardgame.repository.UserCardRepository;
 import com.avengers.cardgame.repository.UserRepository;
@@ -33,9 +40,14 @@ import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import java.time.Clock;
 import java.util.Random;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Точка входа приложения.
+ * <p>
+ * Composition root: здесь собирается весь граф зависимостей — конфигурация,
+ * подключение к БД, репозитории, сервисы, реестр команд, обработчик сообщений
+ * и Telegram-адаптер.
  */
 public class AvengersCardGameApplication {
 
@@ -47,7 +59,13 @@ public class AvengersCardGameApplication {
      */
     void main() {
         ConfigProvider configProvider = new EnvironmentConfigReader();
-        AppConfig env = configProvider.read();
+        AppConfig env;
+        try {
+            env = configProvider.read();
+        } catch (AppException e) {
+            log.error("Invalid configuration: {}", e.getMessage(), e);
+            return;
+        }
         GameConfig gameConfig = new GameConfigReader().read();
 
         // 1. Инфраструктура: миграции и подключение к БД
@@ -59,43 +77,42 @@ public class AvengersCardGameApplication {
         HeroRepository heroRepository = new PostgresHeroRepository(connectionFactory);
         UserCardRepository userCardRepository = new PostgresUserCardRepository(connectionFactory);
 
-        // 3. Синхронизация справочника героев (выполняется при каждом старте)
-        ObjectMapper objectMapper = new ObjectMapper();
-        new HeroSyncService(heroRepository, objectMapper).sync();
+        // 3. Синхронизация справочника героев из JSON
+        new HeroSyncService(heroRepository, new ObjectMapper()).sync();
 
         // 4. Бизнес-логика
-        Random random = new Random();
         UserService userService = new UserServiceImpl(userRepository);
-        HeroService heroService = new HeroServiceImpl(heroRepository, random);
+        HeroService heroService = new HeroServiceImpl(heroRepository, new Random());
         CardService cardService = new CardServiceImpl(
-                userService, userCardRepository, heroService, gameConfig, random, Clock.systemDefaultZone());
+                userService, userCardRepository, heroService,
+                gameConfig, new Random(), Clock.systemUTC());
 
         // 5. Слой команд
-        InventoryRenderer inventoryRenderer = new InventoryRenderer(userCardRepository, heroRepository);
+        InventoryRenderer renderer = new InventoryRenderer(userCardRepository, heroRepository);
         CommandRegistry commandRegistry = new CommandRegistryFactory(
-                userService, cardService, userCardRepository, inventoryRenderer).create();
+                userService, cardService, userCardRepository, renderer).create();
         MessageProcessingService logic = new CommandMessageProcessingService(commandRegistry);
 
+        // 6. Слой callback-обработчиков
         CommandCallbackProcessingService callbackLogic = new CommandCallbackProcessingService();
         callbackLogic.register(CallbackPrefix.VIEW_CARD.value(),
                 new ViewCardCallback(heroRepository, userCardRepository));
-        callbackLogic.register(CallbackPrefix.PAGE.value(), new InventoryPageCallback(inventoryRenderer));
+        callbackLogic.register(CallbackPrefix.PAGE.value(),
+                new InventoryPageCallback(renderer));
 
-        // 6. Транспорт
+        // 7. Транспорт
         TelegramBot bot = new TelegramBot(env.botToken(), logic, callbackLogic);
 
-        // 7. Фоновые задачи
+        // 8. Планировщик уведомлений
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         DailyNotificationScheduler scheduler = new DailyNotificationScheduler(
-                userRepository, bot, gameConfig,
-                Executors.newSingleThreadScheduledExecutor(), Clock.systemDefaultZone());
+                userRepository, bot, gameConfig, executor, Clock.systemUTC());
         scheduler.start();
 
-        // 8. Запуск
-        try {
-            startBot(env.botToken(), bot);
-        } finally {
-            scheduler.stop();
-        }
+        Runtime.getRuntime().addShutdownHook(new Thread(scheduler::stop, "scheduler-shutdown"));
+
+        // 9. Запуск
+        startBot(env.botToken(), bot);
     }
 
     /**

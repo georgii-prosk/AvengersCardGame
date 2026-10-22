@@ -20,4 +20,14 @@ public abstract class AppException extends Exception {
     protected AppException(String message) {
         super(message);
     }
+
+    /**
+     * Создаёт исключение с описанием и причиной.
+     *
+     * @param message описание ошибки
+     * @param cause   причина
+     */
+    protected AppException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

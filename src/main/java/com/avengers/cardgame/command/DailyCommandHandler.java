@@ -1,5 +1,6 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.exception.DailyCooldownException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.Hero;
@@ -12,7 +13,7 @@ import java.util.List;
 /**
  * Команда /daily: выдаёт ежедневные карточки.
  */
-public class DailyCommand implements CommandHandler {
+public class DailyCommandHandler implements CommandHandler {
 
     /** Текст при активном кулдауне; подставляется оставшееся время. */
     private static final String COOLDOWN_TEMPLATE =
@@ -49,12 +50,12 @@ public class DailyCommand implements CommandHandler {
     /**
      * @param cardService сервис карточек
      */
-    public DailyCommand(CardService cardService) {
+    public DailyCommandHandler(CardService cardService) {
         this.cardService = cardService;
     }
 
     @Override
-    public void handle(CommandContext context) throws UserNotFoundException {
+    public void handle(CommandContext context) throws UserNotFoundException, BotException {
         List<Hero> heroes;
         try {
             heroes = cardService.grantDaily(context.userId());

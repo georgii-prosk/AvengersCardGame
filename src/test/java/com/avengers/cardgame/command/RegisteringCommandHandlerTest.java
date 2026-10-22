@@ -12,9 +12,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Тесты для {@link RegisteringCommand}.
+ * Тесты для {@link RegisteringCommandHandler}.
  */
-class RegisteringCommandTest {
+class RegisteringCommandHandlerTest {
 
     private static final long USER_ID = 1L;
     private static final long CHAT_ID = 10L;
@@ -34,7 +34,7 @@ class RegisteringCommandTest {
     @DisplayName("Регистрирует нового пользователя перед вызовом делегата")
     void registersNewUserBeforeDelegate() throws Exception {
         CommandHandler delegate = _ -> { /* ничего не отправляет */ };
-        CommandHandler registering = new RegisteringCommand(delegate, userService);
+        CommandHandler registering = new RegisteringCommandHandler(delegate, userService);
 
         registering.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
@@ -47,7 +47,7 @@ class RegisteringCommandTest {
     @DisplayName("Использует Avenger при отсутствии username")
     void usesDefaultNameWhenUsernameMissing() throws Exception {
         CommandHandler delegate = _ -> { };
-        CommandHandler registering = new RegisteringCommand(delegate, userService);
+        CommandHandler registering = new RegisteringCommandHandler(delegate, userService);
 
         registering.handle(new CommandContext(USER_ID, CHAT_ID, null, "", bot));
 
@@ -59,7 +59,7 @@ class RegisteringCommandTest {
     @DisplayName("Использует Avenger при пустом username")
     void usesDefaultNameWhenUsernameBlank() throws Exception {
         CommandHandler delegate = _ -> { };
-        CommandHandler registering = new RegisteringCommand(delegate, userService);
+        CommandHandler registering = new RegisteringCommandHandler(delegate, userService);
 
         registering.handle(new CommandContext(USER_ID, CHAT_ID, "   ", "", bot));
 
@@ -73,7 +73,7 @@ class RegisteringCommandTest {
         userRepository.save(new User(USER_ID, new PlayerName("Original")));
 
         CommandHandler delegate = _ -> { };
-        CommandHandler registering = new RegisteringCommand(delegate, userService);
+        CommandHandler registering = new RegisteringCommandHandler(delegate, userService);
 
         registering.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
@@ -95,7 +95,7 @@ class RegisteringCommandTest {
             capturedUserName[0] = context.userName();
             capturedArgument[0] = context.argument();
         };
-        CommandHandler registering = new RegisteringCommand(delegate, userService);
+        CommandHandler registering = new RegisteringCommandHandler(delegate, userService);
 
         registering.handle(new CommandContext(42L, CHAT_ID, "Tony", "Narek", bot));
 

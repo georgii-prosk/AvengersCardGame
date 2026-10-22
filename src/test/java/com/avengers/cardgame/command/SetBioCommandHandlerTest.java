@@ -12,22 +12,22 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Тесты для {@link SetBioCommand}.
+ * Тесты для {@link SetBioCommandHandler}.
  */
-class SetBioCommandTest {
+class SetBioCommandHandlerTest {
 
     private static final long USER_ID = 1L;
     private static final long CHAT_ID = 10L;
 
     private InMemoryUserRepository userRepository;
     private FakeBot bot;
-    private SetBioCommand command;
+    private SetBioCommandHandler command;
 
     @BeforeEach
     void setUp() {
         userRepository = new InMemoryUserRepository();
         bot = new FakeBot();
-        command = new SetBioCommand(new UserServiceImpl(userRepository));
+        command = new SetBioCommandHandler(new UserServiceImpl(userRepository));
     }
 
     @Test
@@ -38,7 +38,7 @@ class SetBioCommandTest {
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "Genius billionaire", bot));
 
         Assertions.assertEquals(
-                "Вы обновили описание своего профиля на Genius billionaire", bot.lastText());
+                "Вы обновили описание своего профиля на Genius billionaire", bot.lastSent().message().text());
         Assertions.assertEquals("Genius billionaire",
                 userRepository.findByUserId(USER_ID).orElseThrow().bio().value());
     }
@@ -55,7 +55,7 @@ class SetBioCommandTest {
                 + "Допустимо использовать до 256 символов латиницей или кириллицей "
                 + "+ эмодзи и знаков препинания, пробелов, цифр, спецсимволы "
                 + "(/|\\<>@#$%^&*(){}[]`~;:'\"-_=+).";
-        Assertions.assertEquals(expected, bot.lastText());
+        Assertions.assertEquals(expected, bot.lastSent().message().text());
         Assertions.assertNull(userRepository.findByUserId(USER_ID).orElseThrow().bio());
     }
 
@@ -70,7 +70,7 @@ class SetBioCommandTest {
                 + "Допустимо использовать до 256 символов латиницей или кириллицей "
                 + "+ эмодзи и знаков препинания, пробелов, цифр, спецсимволы "
                 + "(/|\\<>@#$%^&*(){}[]`~;:'\"-_=+).";
-        Assertions.assertEquals(expected, bot.lastText());
+        Assertions.assertEquals(expected, bot.lastSent().message().text());
     }
 
     /**

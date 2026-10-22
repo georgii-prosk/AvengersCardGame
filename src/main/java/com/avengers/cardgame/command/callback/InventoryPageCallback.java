@@ -1,6 +1,7 @@
 package com.avengers.cardgame.command.callback;
 
 import com.avengers.cardgame.command.InventoryRenderer;
+import com.avengers.cardgame.exception.BotException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +24,7 @@ public class InventoryPageCallback implements CallbackHandler {
     }
 
     @Override
-    public void handle(CallbackContext context) {
+    public void handle(CallbackContext context) throws BotException {
         int page;
         try {
             page = Integer.parseInt(context.argument());

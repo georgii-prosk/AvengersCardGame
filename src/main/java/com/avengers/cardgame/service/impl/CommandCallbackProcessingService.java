@@ -4,6 +4,7 @@ import com.avengers.cardgame.bot.Bot;
 import com.avengers.cardgame.command.callback.CallbackContext;
 import com.avengers.cardgame.command.callback.CallbackHandler;
 import com.avengers.cardgame.exception.AppException;
+import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.service.CallbackProcessingService;
 import com.avengers.cardgame.service.Message;
 import org.slf4j.Logger;
@@ -57,9 +58,27 @@ public class CommandCallbackProcessingService implements CallbackProcessingServi
 
         try {
             handler.handle(new CallbackContext(userId, chatId, callbackData, bot));
+        } catch (BotException e) {
+            // Бот сломан — отвечать через него бессмысленно.
+            log.error("Bot error while handling callback", e);
         } catch (AppException e) {
             log.error("Domain error while handling callback", e);
-            bot.sendMessage(new Message(ERROR_MESSAGE), chatId);
+            sendSafely(bot, new Message(ERROR_MESSAGE), chatId);
+        }
+    }
+
+    /**
+     * Пытается отправить сообщение и логирует ошибку, если это не удалось.
+     *
+     * @param bot     бот
+     * @param message сообщение
+     * @param chatId  идентификатор чата
+     */
+    private void sendSafely(Bot bot, Message message, long chatId) {
+        try {
+            bot.sendMessage(message, chatId);
+        } catch (BotException e) {
+            log.error("Failed to send message to chat {}", chatId, e);
         }
     }
 
