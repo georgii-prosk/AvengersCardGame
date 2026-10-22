@@ -49,7 +49,7 @@ public class CommandRegistryFactory {
 
         registry.register("/start", wrap(new StartCommandHandler()));
         registry.register("/help", new HelpCommandHandler());
-        registry.register("/profile", wrap(new ProfileCommandHandler(userService)));
+        registry.register("/profile", wrap(new ProfileCommandHandler(userService, userCardRepository)));
         registry.register("/setname", wrap(new SetNameCommandHandler(userService)));
         registry.register("/setbio", wrap(new SetBioCommandHandler(userService)));
         registry.register("/daily", wrap(new DailyCommandHandler(cardService)));
