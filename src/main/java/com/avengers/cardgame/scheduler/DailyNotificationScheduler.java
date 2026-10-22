@@ -2,6 +2,8 @@ package com.avengers.cardgame.scheduler;
 
 import com.avengers.cardgame.bot.Bot;
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.exception.BotException;
+import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserRepository;
 import com.avengers.cardgame.service.Message;
@@ -80,7 +82,8 @@ public class DailyNotificationScheduler {
     /**
      * Находит игроков, у которых награда стала доступна, и отправляет им
      * уведомление. Сбой на одном игроке (например, он заблокировал бота)
-     * не прерывает обработку остальных.
+     * не прерывает обработку остальных. Время уведомления записывается
+     * только после успешной доставки, иначе попытка повторится при следующем запуске.
      */
     public void notifyUsers() {
         LocalDateTime now = LocalDateTime.now(clock);
@@ -91,9 +94,15 @@ public class DailyNotificationScheduler {
             try {
                 // В личных чатах Telegram идентификатор чата совпадает с идентификатором пользователя.
                 bot.sendMessage(new Message(NOTIFICATION_MESSAGE), user.userId());
+            } catch (BotException e) {
+                log.warn("Failed to deliver notification to user {}", user.userId(), e);
+                continue;
+            }
+
+            try {
                 userRepository.updateDailyNotifiedAt(user.userId(), now);
-            } catch (Exception e) {
-                log.warn("Failed to notify user {}", user.userId(), e);
+            } catch (UserNotFoundException e) {
+                log.warn("Failed to mark user {} as notified", user.userId(), e);
             }
         }
     }

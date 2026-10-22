@@ -8,7 +8,7 @@ import com.avengers.cardgame.service.UserService;
 /**
  * Декоратор команды: регистрирует пользователя перед обработкой.
  */
-public class RegisteringCommand implements CommandHandler {
+public class RegisteringCommandHandler implements CommandHandler {
 
     /** Имя пользователя по умолчанию. */
     private static final String DEFAULT_USER_NAME = "Avenger";
@@ -23,7 +23,7 @@ public class RegisteringCommand implements CommandHandler {
      * @param delegate    оборачиваемый обработчик
      * @param userService сервис пользователей
      */
-    public RegisteringCommand(CommandHandler delegate, UserService userService) {
+    public RegisteringCommandHandler(CommandHandler delegate, UserService userService) {
         this.delegate = delegate;
         this.userService = userService;
     }

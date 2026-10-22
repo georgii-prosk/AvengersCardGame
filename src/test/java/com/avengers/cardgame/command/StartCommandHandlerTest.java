@@ -7,25 +7,25 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Тесты для {@link StartCommand}.
+ * Тесты для {@link StartCommandHandler}.
  */
-class StartCommandTest {
+class StartCommandHandlerTest {
 
     private static final long USER_ID = 1L;
     private static final long CHAT_ID = 10L;
 
     private FakeBot bot;
-    private StartCommand command;
+    private StartCommandHandler command;
 
     @BeforeEach
     void setUp() {
         bot = new FakeBot();
-        command = new StartCommand();
+        command = new StartCommandHandler();
     }
 
     @Test
     @DisplayName("Отправляет фиксированное приветствие")
-    void sendsFixedGreeting() {
+    void sendsFixedGreeting() throws Exception {
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         String expected = """
@@ -33,12 +33,12 @@ class StartCommandTest {
                 Тут ты можешь собирать свою коллекцию карточек мстителей,
                 обмениваться карточками с другими игроками и устраивать сражения.
                 """;
-        Assertions.assertEquals(expected, bot.lastText());
+        Assertions.assertEquals(expected, bot.lastSent().message().text());
     }
 
     @Test
     @DisplayName("Отправляет сообщение в правильный чат")
-    void sendsToCorrectChat() {
+    void sendsToCorrectChat() throws Exception {
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         Assertions.assertEquals(CHAT_ID, bot.sent().getFirst().chatId());
@@ -46,7 +46,7 @@ class StartCommandTest {
 
     @Test
     @DisplayName("Отправляет ровно одно сообщение")
-    void sendsExactlyOneMessage() {
+    void sendsExactlyOneMessage() throws Exception {
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         Assertions.assertEquals(1, bot.count());
@@ -54,13 +54,13 @@ class StartCommandTest {
 
     @Test
     @DisplayName("Не зависит от данных пользователя")
-    void doesNotDependOnUserData() {
+    void doesNotDependOnUserData() throws Exception {
         FakeBot bot1 = new FakeBot();
         FakeBot bot2 = new FakeBot();
 
         command.handle(new CommandContext(1L, CHAT_ID, "Tony", "", bot1));
         command.handle(new CommandContext(2L, CHAT_ID, null, "", bot2));
 
-        Assertions.assertEquals(bot1.lastText(), bot2.lastText());
+        Assertions.assertEquals(bot1.lastSent().message().text(), bot2.lastSent().message().text());
     }
 }

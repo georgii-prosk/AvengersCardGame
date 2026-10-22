@@ -13,9 +13,9 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * Тесты для {@link DailyCommand}.
+ * Тесты для {@link DailyCommandHandler}.
  */
-class DailyCommandTest {
+class DailyCommandHandlerTest {
 
     private static final long USER_ID = 7L;
     private static final long CHAT_ID = 700L;
@@ -36,7 +36,7 @@ class DailyCommandTest {
      * @throws Exception если команда завершилась ошибкой
      */
     private void runDaily(FakeCardService cardService) throws Exception {
-        new DailyCommand(cardService).handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
+        new DailyCommandHandler(cardService).handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
     }
 
     /**
@@ -91,7 +91,7 @@ class DailyCommandTest {
         runDaily(new FakeCardService(new DailyCooldownException(left)));
 
         Assertions.assertEquals(1, bot.count());
-        Assertions.assertTrue(bot.lastText().contains("5 ч 32 мин"));
+        Assertions.assertTrue(bot.lastSent().message().text().contains("5 ч 32 мин"));
     }
 
     @Test
@@ -101,7 +101,7 @@ class DailyCommandTest {
 
         runDaily(new FakeCardService(new DailyCooldownException(left)));
 
-        Assertions.assertTrue(bot.lastText().contains("5 ч 32 мин"));
+        Assertions.assertTrue(bot.lastSent().message().text().contains("5 ч 32 мин"));
     }
 
     @Test
@@ -109,8 +109,8 @@ class DailyCommandTest {
     void cooldownWithWholeHoursShowsOnlyHours() throws Exception {
         runDaily(new FakeCardService(new DailyCooldownException(Duration.ofHours(2))));
 
-        Assertions.assertTrue(bot.lastText().contains("2 ч"));
-        Assertions.assertFalse(bot.lastText().contains("мин"));
+        Assertions.assertTrue(bot.lastSent().message().text().contains("2 ч"));
+        Assertions.assertFalse(bot.lastSent().message().text().contains("мин"));
     }
 
     @Test
@@ -118,6 +118,6 @@ class DailyCommandTest {
     void cooldownUnderOneMinuteShowsOneMinute() throws Exception {
         runDaily(new FakeCardService(new DailyCooldownException(Duration.ofSeconds(20))));
 
-        Assertions.assertTrue(bot.lastText().contains("1 мин"));
+        Assertions.assertTrue(bot.lastSent().message().text().contains("1 мин"));
     }
 }

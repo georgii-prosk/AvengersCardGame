@@ -1,5 +1,6 @@
 package com.avengers.cardgame.model;
 
+import com.avengers.cardgame.exception.InvalidBioException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -28,18 +29,18 @@ class BioTest {
                 "a"
         })
         @DisplayName("Принимает валидные описания")
-        void acceptsValidBios(String bio) {
-            Bio value = new Bio(bio);
+        void acceptsValidBios(String bio) throws InvalidBioException {
+            Bio value = Bio.of(bio);
 
             Assertions.assertEquals(bio, value.value());
         }
 
         @Test
         @DisplayName("Принимает описание ровно 256 символов")
-        void acceptsMaxLengthBio() {
+        void acceptsMaxLengthBio() throws InvalidBioException {
             String bio = "a".repeat(256);
 
-            Bio value = new Bio(bio);
+            Bio value = Bio.of(bio);
 
             Assertions.assertEquals(bio, value.value());
         }
@@ -53,16 +54,16 @@ class BioTest {
         @NullSource
         @DisplayName("Отклоняет null")
         void rejectsNull(String bio) {
-            Assertions.assertThrows(IllegalArgumentException.class,
-                    () -> new Bio(bio));
+            Assertions.assertThrows(InvalidBioException.class,
+                    () -> Bio.of(bio));
         }
 
         @ParameterizedTest
         @ValueSource(strings = {"", "   "})
         @DisplayName("Отклоняет пустое описание")
         void rejectsBlankBio(String bio) {
-            Assertions.assertThrows(IllegalArgumentException.class,
-                    () -> new Bio(bio));
+            Assertions.assertThrows(InvalidBioException.class,
+                    () -> Bio.of(bio));
         }
 
         @Test
@@ -70,8 +71,8 @@ class BioTest {
         void rejectsBioTooLong() {
             String bio = "a".repeat(257);
 
-            Assertions.assertThrows(IllegalArgumentException.class,
-                    () -> new Bio(bio));
+            Assertions.assertThrows(InvalidBioException.class,
+                    () -> Bio.of(bio));
         }
     }
 }

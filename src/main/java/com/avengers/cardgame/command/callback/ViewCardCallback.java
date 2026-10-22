@@ -1,5 +1,6 @@
 package com.avengers.cardgame.command.callback;
 
+import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.UserCard;
 import com.avengers.cardgame.repository.HeroRepository;
@@ -50,7 +51,7 @@ public class ViewCardCallback implements CallbackHandler {
     }
 
     @Override
-    public void handle(CallbackContext context) {
+    public void handle(CallbackContext context) throws BotException {
         long heroId;
         try {
             heroId = Long.parseLong(context.argument());

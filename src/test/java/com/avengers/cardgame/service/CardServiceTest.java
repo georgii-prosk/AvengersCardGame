@@ -10,7 +10,7 @@ import com.avengers.cardgame.fakes.ScriptedRandom;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
 import com.avengers.cardgame.model.PlayerName;
-import com.avengers.cardgame.model.UserBuilder;
+import com.avengers.cardgame.model.User;                 // <-- добавить
 import com.avengers.cardgame.service.impl.CardServiceImpl;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Assertions;
@@ -94,11 +94,17 @@ class CardServiceTest {
      * @throws Exception если сохранить пользователя не удалось
      */
     private void registerUser(LocalDateTime lastDailyAt) throws Exception {
-        userRepository.save(new UserBuilder()
-                .userId(USER_ID)
-                .playerName(PlayerName.of("Tony"))
-                .lastDailyAt(lastDailyAt)
-                .build());
+        userRepository.save(User.of(
+                USER_ID,
+                PlayerName.of("Tony"),
+                null,           // bio
+                0,              // balance
+                0,              // cardCount
+                null,           // createdAt
+                null,           // updatedAt
+                lastDailyAt,    // lastDailyAt
+                null            // dailyNotifiedAt
+        ));
     }
 
     @Test

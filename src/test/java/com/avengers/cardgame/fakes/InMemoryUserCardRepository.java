@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Репозиторий карточек пользователей в памяти для тестов.
+ * Репозиторий карточек пользователей в памяти.
  */
 public class InMemoryUserCardRepository implements UserCardRepository {
 

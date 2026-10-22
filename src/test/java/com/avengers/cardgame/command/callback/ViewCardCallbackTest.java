@@ -53,7 +53,7 @@ class ViewCardCallbackTest {
                 Бог грома
                 В коллекции: ×2
                 """;
-        Assertions.assertEquals(expected, bot.lastText());
+        Assertions.assertEquals(expected, bot.lastSent().message().text());
         Assertions.assertEquals(CHAT_ID, bot.sent().getFirst().chatId());
     }
 
@@ -65,8 +65,8 @@ class ViewCardCallbackTest {
 
         click("view_card:7");
 
-        Assertions.assertFalse(bot.lastText().contains("\n\n"));
-        Assertions.assertTrue(bot.lastText().endsWith("❤️ Здоровье: 100\nВ коллекции: ×1\n"));
+        Assertions.assertFalse(bot.lastSent().message().text().contains("\n\n"));
+        Assertions.assertTrue(bot.lastSent().message().text().endsWith("❤️ Здоровье: 100\nВ коллекции: ×1\n"));
     }
 
     @Test
@@ -74,7 +74,7 @@ class ViewCardCallbackTest {
     void reportsUnknownHero() throws Exception {
         click("view_card:999");
 
-        Assertions.assertEquals("Такой карточки не существует.", bot.lastText());
+        Assertions.assertEquals("Такой карточки не существует.", bot.lastSent().message().text());
     }
 
     @Test
@@ -84,7 +84,7 @@ class ViewCardCallbackTest {
 
         click("view_card:7");
 
-        Assertions.assertEquals("Этой карточки нет в твоей коллекции.", bot.lastText());
+        Assertions.assertEquals("Этой карточки нет в твоей коллекции.", bot.lastSent().message().text());
     }
 
     @Test

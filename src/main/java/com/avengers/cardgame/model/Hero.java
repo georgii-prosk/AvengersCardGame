@@ -1,36 +1,14 @@
 package com.avengers.cardgame.model;
 
-/**
- * Карточка героя.
- *
- * @param id          уникальный идентификатор
- * @param name        имя героя
- * @param rarity      редкость
- * @param atk         атака
- * @param def         защита
- * @param hp          здоровье
- * @param description короткое описание
- */
-public record Hero(
-        long id,
-        String name,
-        HeroRarity rarity,
-        int atk,
-        int def,
-        int hp,
-        String description
-) {
-    /**
-     * Создаёт карточку с проверкой инвариантов.
-     *
-     * @throws IllegalArgumentException если статы отрицательные или имя пустое
-     */
+public record Hero(long id, String name, HeroRarity rarity, int attack, int defense, int health, String description) {
     public Hero {
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Hero name must not be empty");
-        }
-        if (atk < 0 || def < 0 || hp < 0) {
-            throw new IllegalArgumentException("Hero stats must be non-negative");
-        }
+        if (name == null || name.isBlank()) throw new IllegalArgumentException("Hero name must not be empty");
+        if (rarity == null) throw new IllegalArgumentException("Hero rarity must not be null");
+        if (attack < 0 || defense < 0 || health < 0) throw new IllegalArgumentException("Hero stats must be non-negative");
     }
+
+    // Временные алиасы для совместимости со старым кодом.
+    @Deprecated public int atk() { return attack; }
+    @Deprecated public int def() { return defense; }
+    @Deprecated public int hp() { return health; }
 }

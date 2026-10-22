@@ -1,5 +1,6 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserCardRepository;
@@ -7,9 +8,9 @@ import com.avengers.cardgame.service.Message;
 import com.avengers.cardgame.service.UserService;
 
 /**
- * Команда /profile.
+ * Обработчик команды /profile.
  */
-public class ProfileCommand implements CommandHandler {
+public class ProfileCommandHandler implements CommandHandler {
 
     /** Шаблон для вывода профиля. */
     private static final String PROFILE_TEMPLATE = """
@@ -32,18 +33,17 @@ public class ProfileCommand implements CommandHandler {
      * @param userService        сервис пользователей
      * @param userCardRepository репозиторий карточек пользователей
      */
-    public ProfileCommand(UserService userService, UserCardRepository userCardRepository) {
+    public ProfileCommandHandler(UserService userService, UserCardRepository userCardRepository) {
         this.userService = userService;
         this.userCardRepository = userCardRepository;
     }
 
     @Override
-    public void handle(CommandContext context) throws UserNotFoundException {
+    public void handle(CommandContext context) throws UserNotFoundException, BotException {
         User user = userService.getByUserId(context.userId());
 
         String displayName = user.playerName().value();
         String bio = user.bio() == null ? NOT_SET : user.bio().value();
-
         int cardCount = userCardRepository.countByUserId(context.userId());
 
         String text = PROFILE_TEMPLATE.formatted(displayName, bio, user.balance(), cardCount);
