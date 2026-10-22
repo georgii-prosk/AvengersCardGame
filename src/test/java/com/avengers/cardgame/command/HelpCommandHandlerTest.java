@@ -25,13 +25,15 @@ class HelpCommandHandlerTest {
 
     @Test
     @DisplayName("Отправляет полный текст справки")
-    void sendsFullHelpText() {
+    void sendsFullHelpText() throws Exception {
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         String expected = """
                 /start - запуск бота.
                 /help - помощь.
                 /profile - информация о твоём профиле в боте.
+                /daily - получить ежедневные карточки.
+                /inventory - показать твою коллекцию карточек.
                 /setname <name> - позволяет сменить отображаемое для других пользователей имя. Максимум 128 символов латиницей.
                 /setbio <bio> - позволяет обновить короткое описание профиля. Максимум 256 символов латиницей или кириллицей + эмодзи и знаков препинания, пробелов, цифр, спецсимволы (/|\\<>@#$%^&*(){}[]`~;:'"-_=+).
                 """;
@@ -40,7 +42,7 @@ class HelpCommandHandlerTest {
 
     @Test
     @DisplayName("Отправляет ровно одно сообщение")
-    void sendsExactlyOneMessage() {
+    void sendsExactlyOneMessage() throws Exception {
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         Assertions.assertEquals(1, bot.count());

@@ -1,5 +1,6 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.exception.InvalidPlayerNameException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.PlayerName;
@@ -29,7 +30,7 @@ public class SetNameCommandHandler implements CommandHandler {
     }
 
     @Override
-    public void handle(CommandContext context) throws UserNotFoundException {
+    public void handle(CommandContext context) throws UserNotFoundException, BotException {
         PlayerName newName;
         try {
             newName = PlayerName.of(context.argument());

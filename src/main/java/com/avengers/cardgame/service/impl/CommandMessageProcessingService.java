@@ -5,6 +5,7 @@ import com.avengers.cardgame.command.CommandContext;
 import com.avengers.cardgame.command.CommandRegistry;
 import com.avengers.cardgame.command.ResolvedCommand;
 import com.avengers.cardgame.exception.AppException;
+import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.service.Message;
 import com.avengers.cardgame.service.MessageProcessingService;
 import org.slf4j.Logger;
@@ -43,7 +44,7 @@ public class CommandMessageProcessingService implements MessageProcessingService
         Optional<ResolvedCommand> resolved = registry.resolve(text);
         if (resolved.isEmpty()) {
             log.debug("Unknown command: {}", text);
-            bot.sendMessage(new Message(UNKNOWN_COMMAND_MESSAGE), chatId);
+            sendSafely(bot, new Message(UNKNOWN_COMMAND_MESSAGE), chatId);
             return;
         }
 
@@ -52,12 +53,32 @@ public class CommandMessageProcessingService implements MessageProcessingService
 
         try {
             rc.command().handle(context);
+        } catch (BotException e) {
+            // Бот уже сломан — отвечать через него бессмысленно, только логируем.
+            log.error("Bot error while executing command", e);
         } catch (AppException e) {
             log.error("Domain error while executing command", e);
-            bot.sendMessage(new Message(ERROR_MESSAGE), chatId);
+            sendSafely(bot, new Message(ERROR_MESSAGE), chatId);
         } catch (Throwable e) {
             log.error("Unexpected error while executing command", e);
-            bot.sendMessage(new Message(ERROR_MESSAGE), chatId);
+            sendSafely(bot, new Message(ERROR_MESSAGE), chatId);
+        }
+    }
+
+    /**
+     * Пытается отправить сообщение и логирует ошибку, если это не удалось.
+     * Используется в сценариях, где отсутствие ответа не должно прерывать
+     * обработку (ответ на неизвестную команду, ответ об ошибке).
+     *
+     * @param bot     бот
+     * @param message сообщение
+     * @param chatId  идентификатор чата
+     */
+    private void sendSafely(Bot bot, Message message, long chatId) {
+        try {
+            bot.sendMessage(message, chatId);
+        } catch (BotException e) {
+            log.error("Failed to send message to chat {}", chatId, e);
         }
     }
 }

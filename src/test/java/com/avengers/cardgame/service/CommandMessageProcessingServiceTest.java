@@ -106,4 +106,19 @@ class CommandMessageProcessingServiceTest {
         Assertions.assertEquals(1, bot.count());
         Assertions.assertEquals(ERROR_MESSAGE, bot.lastSent().message().text());
     }
+
+    @Test
+    @DisplayName("Не пытается ответить через сломанного бота при BotException")
+    void doesNotReplyWhenBotIsBroken() {
+        CommandRegistry brokenRegistry = new CommandRegistry();
+        brokenRegistry.register("/bot-fail", context -> {
+            throw new com.avengers.cardgame.exception.BotException("boom", null);
+        });
+        CommandMessageProcessingService brokenService = new CommandMessageProcessingService(brokenRegistry);
+        FakeBot neverSent = new FakeBot();
+
+        brokenService.processMessage(USER_ID, USER_NAME, CHAT_ID, "/bot-fail", neverSent);
+
+        Assertions.assertEquals(0, neverSent.count());
+    }
 }
