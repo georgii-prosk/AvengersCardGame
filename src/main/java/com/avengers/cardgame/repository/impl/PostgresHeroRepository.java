@@ -102,9 +102,9 @@ public class PostgresHeroRepository implements HeroRepository {
             stmt.setLong(1, hero.id());
             stmt.setString(2, hero.name());
             stmt.setString(3, hero.rarity().name());
-            stmt.setInt(4, hero.atk());
-            stmt.setInt(5, hero.def());
-            stmt.setInt(6, hero.hp());
+            stmt.setInt(4, hero.attack());
+            stmt.setInt(5, hero.defense());
+            stmt.setInt(6, hero.health());
             stmt.setString(7, hero.description());
             stmt.executeUpdate();
         } catch (SQLException e) {

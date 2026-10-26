@@ -8,7 +8,7 @@ public record Hero(long id, String name, HeroRarity rarity, int attack, int defe
     }
 
     // Временные алиасы для совместимости со старым кодом.
-    @Deprecated public int atk() { return attack; }
-    @Deprecated public int def() { return defense; }
-    @Deprecated public int hp() { return health; }
+    @Deprecated public int attack() { return attack; }
+    @Deprecated public int defense() { return defense; }
+    @Deprecated public int health() { return health; }
 }

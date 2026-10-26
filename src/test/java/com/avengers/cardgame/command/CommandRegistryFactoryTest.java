@@ -7,6 +7,7 @@ import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
+import com.avengers.cardgame.presentation.HeroRenderer;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -15,9 +16,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Тесты для {@link CommandRegistryFactory}.
- */
 class CommandRegistryFactoryTest {
 
     private static final long USER_ID = 11L;
@@ -29,11 +27,15 @@ class CommandRegistryFactoryTest {
         InMemoryUserRepository userRepository = new InMemoryUserRepository();
         Hero hero = new Hero(1, "Pepper Potts", HeroRarity.COMMON, 5, 15, 20, "c");
         InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository();
+        InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
+
         CommandRegistry registry = new CommandRegistryFactory(
                 new UserServiceImpl(userRepository),
                 new FakeCardService(List.of(hero)),
                 cardRepository,
-                new InventoryRenderer(cardRepository, new InMemoryHeroRepository())
+                heroRepository,
+                new InventoryRenderer(cardRepository, heroRepository),
+                new HeroRenderer()
         ).create();
         FakeBot bot = new FakeBot();
 
@@ -50,11 +52,15 @@ class CommandRegistryFactoryTest {
     void inventoryIsRegisteredAndRegistersUserBeforeRunning() throws Exception {
         InMemoryUserRepository userRepository = new InMemoryUserRepository();
         InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository();
+        InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
+
         CommandRegistry registry = new CommandRegistryFactory(
                 new UserServiceImpl(userRepository),
                 new FakeCardService(List.of()),
                 cardRepository,
-                new InventoryRenderer(cardRepository, new InMemoryHeroRepository())
+                heroRepository,
+                new InventoryRenderer(cardRepository, heroRepository),
+                new HeroRenderer()
         ).create();
         FakeBot bot = new FakeBot();
 
