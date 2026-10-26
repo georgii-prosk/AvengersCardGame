@@ -3,6 +3,7 @@ package com.avengers.cardgame.fakes;
 import com.avengers.cardgame.model.UserCard;
 import com.avengers.cardgame.repository.UserCardRepository;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,12 @@ public class InMemoryUserCardRepository implements UserCardRepository {
     @Override
     public void addCard(long userId, long heroId) {
         cards.computeIfAbsent(userId, id -> new HashMap<>()).merge(heroId, 1, Integer::sum);
+    }
+
+
+    @Override
+    public void addCard(Connection conn, long userId, long heroId) {
+        addCard(userId, heroId);
     }
 
     @Override

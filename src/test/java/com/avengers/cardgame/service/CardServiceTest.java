@@ -3,10 +3,7 @@ package com.avengers.cardgame.service;
 import com.avengers.cardgame.config.GameConfig;
 import com.avengers.cardgame.exception.DailyCooldownException;
 import com.avengers.cardgame.exception.UserNotFoundException;
-import com.avengers.cardgame.fakes.FakeHeroService;
-import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
-import com.avengers.cardgame.fakes.InMemoryUserRepository;
-import com.avengers.cardgame.fakes.ScriptedRandom;
+import com.avengers.cardgame.fakes.*;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
 import com.avengers.cardgame.model.PlayerName;
@@ -78,12 +75,13 @@ class CardServiceTest {
      */
     private CardService serviceWith(int... scripted) {
         return new CardServiceImpl(
-                userService,
+                userRepository,
                 userCardRepository,
                 new FakeHeroService(List.of(ironMan, widow)),
                 new GameConfig(COOLDOWN, Duration.ofMinutes(30)),
                 new ScriptedRandom(scripted),
-                clock
+                clock,
+                new ImmediateTransactionManager()
         );
     }
 

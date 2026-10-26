@@ -1,14 +1,16 @@
 package com.avengers.cardgame.service.impl;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.exception.AppException;
 import com.avengers.cardgame.exception.DailyCooldownException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserCardRepository;
+import com.avengers.cardgame.repository.UserRepository;
 import com.avengers.cardgame.service.CardService;
 import com.avengers.cardgame.service.HeroService;
-import com.avengers.cardgame.service.UserService;
+import com.avengers.cardgame.transaction.TransactionManager;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -28,8 +30,8 @@ public class CardServiceImpl implements CardService {
     /** Максимальное количество карточек за одну выдачу. */
     private static final int MAX_DAILY_CARDS = 3;
 
-    /** Сервис пользователей. */
-    private final UserService userService;
+    /** Репозиторий пользователей. */
+    private final UserRepository userRepository;
 
     /** Репозиторий карточек пользователей. */
     private final UserCardRepository userCardRepository;
@@ -46,54 +48,72 @@ public class CardServiceImpl implements CardService {
     /** Часы, по которым отсчитывается кулдаун. */
     private final Clock clock;
 
+    /** Менеджер транзакций. */
+    private final TransactionManager transactionManager;
+
     /**
-     * @param userService        сервис пользователей
+     * @param userRepository     репозиторий пользователей
      * @param userCardRepository репозиторий карточек пользователей
      * @param heroService        сервис героев
      * @param gameConfig         игровая конфигурация
      * @param random             источник случайности
      * @param clock              часы
+     * @param transactionManager менеджер транзакций
      */
     public CardServiceImpl(
-            UserService userService,
+            UserRepository userRepository,
             UserCardRepository userCardRepository,
             HeroService heroService,
             GameConfig gameConfig,
             Random random,
-            Clock clock
+            Clock clock,
+            TransactionManager transactionManager
     ) {
-        this.userService = userService;
+        this.userRepository = userRepository;
         this.userCardRepository = userCardRepository;
         this.heroService = heroService;
         this.gameConfig = gameConfig;
         this.random = random;
         this.clock = clock;
+        this.transactionManager = transactionManager;
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Метод синхронизирован, чтобы два одновременных {@code /daily} от одного
-     * игрока не прошли проверку кулдауна оба и не выдали награду дважды.
+     * Работает в транзакции с блокировкой строки пользователя
+     * ({@code SELECT ... FOR UPDATE}): параллельные вызовы для одного и того же
+     * пользователя выполняются последовательно, и второй вызов видит уже
+     * обновлённое {@code lastDailyAt} и получает {@link DailyCooldownException}.
+     * Параллельные вызовы для разных пользователей друг другу не мешают.
      */
     @Override
-    public synchronized List<Hero> grantDaily(long userId)
-            throws UserNotFoundException, DailyCooldownException {
-        User user = userService.getByUserId(userId);
-        LocalDateTime now = LocalDateTime.now(clock);
+    public List<Hero> grantDaily(long userId) throws UserNotFoundException, DailyCooldownException {
+        try {
+            return transactionManager.inTransaction(conn -> {
+                User user = userRepository.findByUserIdForUpdate(conn, userId)
+                        .orElseThrow(() -> new UserNotFoundException(userId));
+                LocalDateTime now = LocalDateTime.now(clock);
 
-        checkCooldown(user.lastDailyAt(), now);
+                checkCooldown(user.lastDailyAt(), now);
 
-        int cardsCount = MIN_DAILY_CARDS + random.nextInt(MAX_DAILY_CARDS - MIN_DAILY_CARDS + 1);
-        List<Hero> granted = new ArrayList<>(cardsCount);
-        for (int i = 0; i < cardsCount; i++) {
-            Hero hero = heroService.getRandomHero();
-            userCardRepository.addCard(userId, hero.id());
-            granted.add(hero);
+                int cardsCount = MIN_DAILY_CARDS + random.nextInt(MAX_DAILY_CARDS - MIN_DAILY_CARDS + 1);
+                List<Hero> granted = new ArrayList<>(cardsCount);
+                for (int i = 0; i < cardsCount; i++) {
+                    Hero hero = heroService.getRandomHero();
+                    userCardRepository.addCard(conn, userId, hero.id());
+                    granted.add(hero);
+                }
+
+                userRepository.updateLastDailyAt(conn, userId, now);
+                return granted;
+            });
+        } catch (UserNotFoundException | DailyCooldownException e) {
+            throw e;
+        } catch (AppException e) {
+            // Сюда попадать не должны: лямбда бросает только два типа выше.
+            throw new RuntimeException("Unexpected domain error in grantDaily", e);
         }
-
-        userService.updateLastDailyAt(userId, now);
-        return granted;
     }
 
     /**

@@ -2,6 +2,7 @@ package com.avengers.cardgame.repository;
 
 import com.avengers.cardgame.model.UserCard;
 
+import java.sql.Connection;
 import java.util.List;
 
 /**
@@ -16,6 +17,15 @@ public interface UserCardRepository {
      * @param heroId идентификатор героя
      */
     void addCard(long userId, long heroId);
+
+    /**
+     * Добавляет карточку пользователю в рамках транзакции.
+     *
+     * @param conn   соединение, привязанное к транзакции
+     * @param userId идентификатор пользователя
+     * @param heroId идентификатор героя
+     */
+    void addCard(Connection conn, long userId, long heroId);
 
     /**
      * Возвращает все карточки пользователя.

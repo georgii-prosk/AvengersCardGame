@@ -4,6 +4,7 @@ import com.avengers.cardgame.exception.UserAlreadyExistsException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
 
+import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +37,27 @@ public interface UserRepository {
      * @throws UserNotFoundException если пользователя с таким идентификатором нет
      */
     void update(User user) throws UserNotFoundException;
+
+    /**
+     * Находит пользователя по идентификатору и блокирует строку до конца
+     * транзакции ({@code SELECT ... FOR UPDATE}).
+     *
+     * @param conn   соединение, привязанное к транзакции
+     * @param userId идентификатор пользователя
+     * @return пользователь, если найден
+     */
+    Optional<User> findByUserIdForUpdate(Connection conn, long userId);
+
+    /**
+     * Обновляет время последнего получения ежедневной награды в рамках транзакции.
+     *
+     * @param conn        соединение, привязанное к транзакции
+     * @param userId      идентификатор пользователя
+     * @param lastDailyAt новое время
+     * @throws UserNotFoundException если пользователя нет
+     */
+    void updateLastDailyAt(Connection conn, long userId, LocalDateTime lastDailyAt)
+            throws UserNotFoundException;
 
     /**
      * Обновляет время последнего получения ежедневной награды.

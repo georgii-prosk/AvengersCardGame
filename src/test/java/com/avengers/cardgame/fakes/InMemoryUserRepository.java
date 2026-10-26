@@ -5,6 +5,7 @@ import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserRepository;
 
+import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -66,6 +67,18 @@ public class InMemoryUserRepository implements UserRepository {
             throw new UserNotFoundException(userId);
         }
         storage.put(userId, user.withDailyNotifiedAt(notifiedAt));
+    }
+
+    @Override
+    public Optional<User> findByUserIdForUpdate(Connection conn, long userId) {
+        // in-memory не участвует в транзакциях — Connection игнорируется
+        return findByUserId(userId);
+    }
+
+    @Override
+    public void updateLastDailyAt(Connection conn, long userId, LocalDateTime lastDailyAt)
+            throws UserNotFoundException {
+        updateLastDailyAt(userId, lastDailyAt);
     }
 
     /**

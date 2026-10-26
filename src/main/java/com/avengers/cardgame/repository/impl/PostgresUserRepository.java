@@ -45,6 +45,9 @@ public class PostgresUserRepository implements UserRepository {
               AND (daily_notified_at IS NULL OR daily_notified_at < last_daily_at)
             """;
 
+    private static final String SQL_FIND_BY_ID_FOR_UPDATE =
+            "SELECT * FROM users WHERE telegram_id = ? FOR UPDATE";
+
     /** Фабрика соединений. */
     private final ConnectionFactory connectionFactory;
 
@@ -101,6 +104,37 @@ public class PostgresUserRepository implements UserRepository {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error updating user", e);
+        }
+    }
+
+    @Override
+    public Optional<User> findByUserIdForUpdate(Connection conn, long userId) {
+        try (PreparedStatement stmt = conn.prepareStatement(SQL_FIND_BY_ID_FOR_UPDATE)) {
+            stmt.setLong(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRowToUser(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error locking user", e);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public void updateLastDailyAt(Connection conn, long userId, LocalDateTime lastDailyAt)
+            throws UserNotFoundException {
+        try (PreparedStatement stmt = conn.prepareStatement(SQL_UPDATE_LAST_DAILY)) {
+            stmt.setTimestamp(1, Timestamp.valueOf(lastDailyAt));
+            stmt.setLong(2, userId);
+
+            int updatedRows = stmt.executeUpdate();
+            if (updatedRows == 0) {
+                throw new UserNotFoundException(userId);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error updating last daily time", e);
         }
     }
 

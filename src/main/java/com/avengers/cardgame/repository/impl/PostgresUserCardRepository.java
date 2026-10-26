@@ -53,6 +53,17 @@ public class PostgresUserCardRepository implements UserCardRepository {
     }
 
     @Override
+    public void addCard(Connection conn, long userId, long heroId) {
+        try (PreparedStatement stmt = conn.prepareStatement(SQL_ADD_CARD)) {
+            stmt.setLong(1, userId);
+            stmt.setLong(2, heroId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error adding card", e);
+        }
+    }
+
+    @Override
     public List<UserCard> findByUserId(long userId) {
         List<UserCard> cards = new ArrayList<>();
         try (Connection conn = connectionFactory.getConnection();

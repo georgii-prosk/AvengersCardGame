@@ -32,6 +32,8 @@ import com.avengers.cardgame.service.impl.CommandCallbackProcessingService;
 import com.avengers.cardgame.service.impl.CommandMessageProcessingService;
 import com.avengers.cardgame.service.impl.HeroServiceImpl;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
+import com.avengers.cardgame.transaction.TransactionManager;
+import com.avengers.cardgame.transaction.impl.PostgresTransactionManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,9 +85,10 @@ public class AvengersCardGameApplication {
         // 4. Бизнес-логика
         UserService userService = new UserServiceImpl(userRepository);
         HeroService heroService = new HeroServiceImpl(heroRepository, new Random());
+        TransactionManager transactionManager = new PostgresTransactionManager(connectionFactory);
         CardService cardService = new CardServiceImpl(
-                userService, userCardRepository, heroService,
-                gameConfig, new Random(), Clock.systemUTC());
+                userRepository, userCardRepository, heroService,
+                gameConfig, new Random(), Clock.systemUTC(), transactionManager);
 
         // 5. Слой команд
         InventoryRenderer renderer = new InventoryRenderer(userCardRepository, heroRepository);
