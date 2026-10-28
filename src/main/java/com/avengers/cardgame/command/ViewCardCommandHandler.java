@@ -22,7 +22,7 @@ public class ViewCardCommandHandler implements CommandHandler {
     }
 
     @Override
-    public void handle(CommandContext context) throws BotException {
+    public void handle(CommandContext context) {
         long heroId;
         try {
             heroId = Long.parseLong(context.argument());

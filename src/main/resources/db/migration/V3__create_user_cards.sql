@@ -1,15 +1,3 @@
--- Справочник героев
-CREATE TABLE IF NOT EXISTS heroes (
-    id          BIGINT PRIMARY KEY,
-    name        VARCHAR(128) NOT NULL,
-    rarity      VARCHAR(32) NOT NULL,
-    atk         INTEGER NOT NULL,
-    def         INTEGER NOT NULL,
-    hp          INTEGER NOT NULL,
-    description VARCHAR(512)
-    );
-
-
 -- Коллекция карточек пользователей.
 -- Справочник героев загружается из heroes.json.
 CREATE TABLE IF NOT EXISTS user_cards (

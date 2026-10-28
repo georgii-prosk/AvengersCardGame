@@ -46,10 +46,15 @@ class DailyCommandHandlerTest {
     @Test
     @DisplayName("Сообщение о карточке содержит эмодзи, имя, редкость и статы")
     void cardMessageContainsEmojiNameRarityAndStats() throws Exception {
+        runDaily(new FakeCardService(List.of(ironMan)));
+
         String card = textOf(1);
-        Assertions.assertTrue(card.contains("🟣"));
-        Assertions.assertTrue(card.contains("Iron Man"));
-        Assertions.assertTrue(card.contains("Эпическая"));
+
+        Assertions.assertAll(
+                () -> Assertions.assertTrue(card.contains("🟣"), "Нет эмодзи редкости"),
+                () -> Assertions.assertTrue(card.contains("Iron Man"), "Нет имени карточки"),
+                () -> Assertions.assertTrue(card.contains("Эпическая"), "Нет названия редкости")
+        );
     }
 
     @Test

@@ -21,7 +21,7 @@ public class InventoryCommandHandler implements CommandHandler {
     }
 
     @Override
-    public void handle(CommandContext context) throws BotException {
+    public void handle(CommandContext context) {
         context.bot().sendMessage(renderer.render(context.userId(), FIRST_PAGE), context.chatId());
     }
 }

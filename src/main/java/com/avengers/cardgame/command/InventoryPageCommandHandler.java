@@ -8,7 +8,7 @@ public class InventoryPageCommandHandler implements CommandHandler {
     public InventoryPageCommandHandler(InventoryRenderer renderer) { this.renderer = renderer; }
 
     @Override
-    public void handle(CommandContext context) throws BotException {
+    public void handle(CommandContext context)  {
         int page;
         try {
             page = Integer.parseInt(context.argument());

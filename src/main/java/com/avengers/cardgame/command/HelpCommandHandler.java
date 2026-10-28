@@ -20,7 +20,7 @@ public class HelpCommandHandler implements CommandHandler {
             """;
 
     @Override
-    public void handle(CommandContext context) throws BotException {
+    public void handle(CommandContext context) {
         context.bot().sendMessage(new Message(HELP_TEXT), context.chatId());
     }
 }

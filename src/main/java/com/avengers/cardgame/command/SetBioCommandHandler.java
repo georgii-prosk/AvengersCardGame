@@ -32,7 +32,7 @@ public class SetBioCommandHandler implements CommandHandler {
     }
 
     @Override
-    public void handle(CommandContext context) throws UserNotFoundException, BotException {
+    public void handle(CommandContext context) throws UserNotFoundException {
         Bio newBio;
         try {
             newBio = Bio.of(context.argument());

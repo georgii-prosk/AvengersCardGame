@@ -30,7 +30,7 @@ public class SetNameCommandHandler implements CommandHandler {
     }
 
     @Override
-    public void handle(CommandContext context) throws UserNotFoundException, BotException {
+    public void handle(CommandContext context) throws UserNotFoundException {
         PlayerName newName;
         try {
             newName = PlayerName.of(context.argument());
