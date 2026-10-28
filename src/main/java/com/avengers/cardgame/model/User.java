@@ -1,7 +1,8 @@
 package com.avengers.cardgame.model;
 
 import com.avengers.cardgame.exception.InvalidUserException;
-
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.time.LocalDateTime;
 
 /**
@@ -19,14 +20,14 @@ import java.time.LocalDateTime;
  */
 public record User(
         long userId,
-        PlayerName playerName,
-        Bio bio,
+        @NotNull PlayerName playerName,
+        @Nullable Bio bio,
         int balance,
         int cardCount,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt,
-        LocalDateTime lastDailyAt,
-        LocalDateTime dailyNotifiedAt
+        @Nullable LocalDateTime createdAt,
+        @Nullable LocalDateTime updatedAt,
+        @Nullable LocalDateTime lastDailyAt,
+        @Nullable LocalDateTime dailyNotifiedAt
 ) {
 
     /**
