@@ -61,8 +61,9 @@ public class AvengersCardGameApplication {
         CardService cardService = new CardServiceImpl(userService, userCardRepository,
                 heroService, gameConfig, new Random(), Clock.systemUTC());
 
-        InventoryRenderer inventoryRenderer = new InventoryRenderer(userCardRepository, heroRepository);
         HeroRenderer heroRenderer = new HeroRenderer();
+        InventoryRenderer inventoryRenderer =
+                new InventoryRenderer(userCardRepository, heroRepository, heroRenderer);
         CommandRegistry registry = new CommandRegistryFactory(userService, cardService,
                 userCardRepository, heroRepository, inventoryRenderer, heroRenderer).create();
         MessageProcessingService logic = new CommandMessageProcessingService(registry);

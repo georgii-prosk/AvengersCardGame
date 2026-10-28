@@ -11,6 +11,8 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import com.avengers.cardgame.model.HeroRarity;
+import com.avengers.cardgame.presentation.HeroRenderer;
 
 public class InventoryRenderer {
     private static final String EMPTY_MESSAGE = "У тебя пока нет карточек. Забери ежедневную награду командой /daily!";
@@ -22,10 +24,13 @@ public class InventoryRenderer {
     private static final int PAGE_SIZE = 5;
     private final UserCardRepository userCardRepository;
     private final HeroRepository heroRepository;
+    private final HeroRenderer heroRenderer;
 
-    public InventoryRenderer(UserCardRepository userCardRepository, HeroRepository heroRepository) {
+    public InventoryRenderer(UserCardRepository userCardRepository,
+                             HeroRepository heroRepository, HeroRenderer heroRenderer) {
         this.userCardRepository = userCardRepository;
         this.heroRepository = heroRepository;
+        this.heroRenderer = heroRenderer;
     }
 
     public Message render(long userId, int page) {
@@ -39,10 +44,11 @@ public class InventoryRenderer {
         List<List<Button>> rows = new ArrayList<>();
         for (Entry entry : pageEntries) {
             Hero hero = entry.hero();
+            HeroRarity rarity = hero.rarity();
             text.append('\n').append(LINE_TEMPLATE.formatted(
-                    hero.rarity().emoji(), hero.name(), hero.rarity().title(), entry.count()));
+                    heroRenderer.emoji(rarity), hero.name(), heroRenderer.title(rarity), entry.count()));
             rows.add(List.of(new Button(CARD_BUTTON_TEMPLATE.formatted(
-                    hero.rarity().emoji(), hero.name(), entry.count()), "/view_card " + hero.id())));
+                    heroRenderer.emoji(rarity), hero.name(), entry.count()), "/view_card " + hero.id())));
         }
         List<Button> navigation = new ArrayList<>();
         if (currentPage > 1) navigation.add(new Button(PREVIOUS_BUTTON_TEXT, "/inventory_page " + (currentPage - 1)));

@@ -58,10 +58,4 @@ public final class InMemoryHeroRepository implements HeroRepository {
                 .filter(hero -> hero.rarity() == rarity)
                 .toList();
     }
-
-    @Override
-    public void save(Hero hero) {
-        throw new UnsupportedOperationException(
-                "Heroes are loaded from heroes.json and cannot be saved");
-    }
 }

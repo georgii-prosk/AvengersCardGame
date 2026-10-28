@@ -34,7 +34,7 @@ class CommandRegistryFactoryTest {
                 new FakeCardService(List.of(hero)),
                 cardRepository,
                 heroRepository,
-                new InventoryRenderer(cardRepository, heroRepository),
+                new InventoryRenderer(cardRepository, heroRepository, new HeroRenderer()),
                 new HeroRenderer()
         ).create();
         FakeBot bot = new FakeBot();
@@ -59,7 +59,7 @@ class CommandRegistryFactoryTest {
                 new FakeCardService(List.of()),
                 cardRepository,
                 heroRepository,
-                new InventoryRenderer(cardRepository, heroRepository),
+                new InventoryRenderer(cardRepository, heroRepository, new HeroRenderer()),
                 new HeroRenderer()
         ).create();
         FakeBot bot = new FakeBot();

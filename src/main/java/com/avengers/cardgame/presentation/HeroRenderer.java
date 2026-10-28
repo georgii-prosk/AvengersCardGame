@@ -1,9 +1,9 @@
-
 package com.avengers.cardgame.presentation;
 
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
 
+/** Формирует текстовое представление героев и их редкости. */
 public class HeroRenderer {
     private static final String CARD_TEMPLATE = """
             %s %s
@@ -21,9 +21,9 @@ public class HeroRenderer {
         HeroRarity rarity = hero.rarity();
 
         String text = CARD_TEMPLATE.formatted(
-                rarityEmoji(rarity),
+                emoji(rarity),
                 hero.name(),
-                rarityTitle(rarity),
+                title(rarity),
                 hero.attack(),
                 hero.defense(),
                 hero.health()
@@ -40,7 +40,7 @@ public class HeroRenderer {
         return text;
     }
 
-    private String rarityEmoji(HeroRarity rarity) {
+    public String emoji(HeroRarity rarity) {
         return switch (rarity) {
             case COMMON -> "⚪";
             case RARE -> "🔵";
@@ -49,7 +49,7 @@ public class HeroRenderer {
         };
     }
 
-    private String rarityTitle(HeroRarity rarity) {
+    public String title(HeroRarity rarity) {
         return switch (rarity) {
             case COMMON -> "Обычная";
             case RARE -> "Редкая";
