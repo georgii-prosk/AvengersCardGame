@@ -1,3 +1,4 @@
+
 package com.avengers.cardgame.model;
 
 /**
@@ -5,32 +6,22 @@ package com.avengers.cardgame.model;
  */
 public enum HeroRarity {
     /** Обычная редкость. */
-    COMMON(60, "⚪", "Обычная"),
+    COMMON(60),
     /** Редкая редкость. */
-    RARE(25, "🔵", "Редкая"),
+    RARE(25),
     /** Эпическая редкость. */
-    EPIC(12, "🟣", "Эпическая"),
+    EPIC(12),
     /** Легендарная редкость. */
-    LEGENDARY(3, "🟡", "Легендарная");
+    LEGENDARY(3);
 
     /** Вес для выпадения. */
     private final int weight;
 
-    /** Эмодзи для отображения. */
-    private final String emoji;
-
-    /** Название для отображения пользователю. */
-    private final String title;
-
     /**
      * @param weight вес для выпадения
-     * @param emoji  эмодзи редкости
-     * @param title  название редкости для пользователя
      */
-    HeroRarity(int weight, String emoji, String title) {
+    HeroRarity(int weight) {
         this.weight = weight;
-        this.emoji = emoji;
-        this.title = title;
     }
 
     /**
@@ -38,19 +29,5 @@ public enum HeroRarity {
      */
     public int weight() {
         return weight;
-    }
-
-    /**
-     * @return эмодзи редкости
-     */
-    public String emoji() {
-        return emoji;
-    }
-
-    /**
-     * @return название редкости для отображения пользователю
-     */
-    public String title() {
-        return title;
     }
 }

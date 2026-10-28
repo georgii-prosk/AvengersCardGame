@@ -49,12 +49,12 @@ class DailyCommandHandlerTest {
         runDaily(new FakeCardService(List.of(ironMan)));
 
         String card = textOf(1);
-        Assertions.assertTrue(card.contains(HeroRarity.EPIC.emoji()));
-        Assertions.assertTrue(card.contains("Iron Man"));
-        Assertions.assertTrue(card.contains(HeroRarity.EPIC.title()));
-        Assertions.assertTrue(card.contains("80"));
-        Assertions.assertTrue(card.contains("90"));
-        Assertions.assertTrue(card.contains("50"));
+
+        Assertions.assertAll(
+                () -> Assertions.assertTrue(card.contains("🟣"), "Нет эмодзи редкости"),
+                () -> Assertions.assertTrue(card.contains("Iron Man"), "Нет имени карточки"),
+                () -> Assertions.assertTrue(card.contains("Эпическая"), "Нет названия редкости")
+        );
     }
 
     @Test

@@ -23,7 +23,7 @@ public class DailyCommandHandler implements CommandHandler {
     }
 
     @Override
-    public void handle(CommandContext context) throws UserNotFoundException, BotException {
+    public void handle(CommandContext context) throws UserNotFoundException {
         DailyRewardResult result = cardService.grantDaily(context.userId());
         if (!result.claimed()) {
             context.bot().sendMessage(new Message(COOLDOWN_TEMPLATE.formatted(

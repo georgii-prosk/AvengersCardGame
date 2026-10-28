@@ -6,9 +6,4 @@ public record Hero(long id, String name, HeroRarity rarity, int attack, int defe
         if (rarity == null) throw new IllegalArgumentException("Hero rarity must not be null");
         if (attack < 0 || defense < 0 || health < 0) throw new IllegalArgumentException("Hero stats must be non-negative");
     }
-
-    // Временные алиасы для совместимости со старым кодом.
-    @Deprecated public int attack() { return attack; }
-    @Deprecated public int defense() { return defense; }
-    @Deprecated public int health() { return health; }
 }

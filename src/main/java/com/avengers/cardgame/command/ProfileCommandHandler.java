@@ -39,7 +39,7 @@ public class ProfileCommandHandler implements CommandHandler {
     }
 
     @Override
-    public void handle(CommandContext context) throws UserNotFoundException, BotException {
+    public void handle(CommandContext context) throws UserNotFoundException {
         User user = userService.getByUserId(context.userId());
 
         String displayName = user.playerName().value();

@@ -36,7 +36,11 @@ public class InMemoryHeroRepository implements HeroRepository {
                 .collect(Collectors.toList());
     }
 
-    @Override
+    /**
+     * Добавляет героя в хранилище (вспомогательный метод для тестов).
+     *
+     * @param hero герой
+     */
     public void save(Hero hero) {
         storage.put(hero.id(), hero);
     }

@@ -1,3 +1,4 @@
+
 package com.avengers.cardgame.repository;
 
 import com.avengers.cardgame.model.Hero;
@@ -7,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Репозиторий для работы с героями.
+ * Репозиторий для чтения справочника героев.
  */
 public interface HeroRepository {
 
@@ -21,7 +22,7 @@ public interface HeroRepository {
     /**
      * Находит героя по идентификатору.
      *
-     * @param id идентификатор
+     * @param id идентификатор героя
      * @return герой, если найден
      */
     Optional<Hero> findById(long id);
@@ -29,15 +30,8 @@ public interface HeroRepository {
     /**
      * Находит героев по редкости.
      *
-     * @param rarity редкость
+     * @param rarity редкость героя
      * @return список героев
      */
     List<Hero> findByRarity(HeroRarity rarity);
-
-    /**
-     * Сохраняет или обновляет героя.
-     *
-     * @param hero герой для сохранения
-     */
-    void save(Hero hero);
 }

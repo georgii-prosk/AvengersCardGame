@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import com.avengers.cardgame.presentation.HeroRenderer;
 
 import java.util.List;
 
@@ -33,7 +34,7 @@ class InventoryCommandHandlerTest {
         cardRepository = new InMemoryUserCardRepository();
         heroRepository = new InMemoryHeroRepository();
         bot = new FakeBot();
-        renderer = new InventoryRenderer(cardRepository, heroRepository);
+        renderer = new InventoryRenderer(cardRepository, heroRepository, new HeroRenderer());
         command = new InventoryCommandHandler(renderer);
     }
 

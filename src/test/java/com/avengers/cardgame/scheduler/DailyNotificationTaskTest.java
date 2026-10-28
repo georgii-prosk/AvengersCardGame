@@ -6,8 +6,7 @@ import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.PlayerName;
-import com.avengers.cardgame.model.User;                 // уже есть
-import org.junit.jupiter.api.AfterEach;
+import com.avengers.cardgame.model.User;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,14 +17,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
-/**
- * Тесты для {@link DailyNotificationScheduler}. Поток планировщика не запускается:
- * проверяется только логика {@code notifyUsers()}.
- */
-class DailyNotificationSchedulerTest {
+/** Тесты для {@link DailyNotificationTask}. */
+class DailyNotificationTaskTest {
 
     private static final Instant NOW_INSTANT = Instant.parse("2026-10-21T12:00:00Z");
     private static final LocalDateTime NOW = LocalDateTime.ofInstant(NOW_INSTANT, ZoneOffset.UTC);
@@ -33,7 +27,6 @@ class DailyNotificationSchedulerTest {
 
     private InMemoryUserRepository userRepository;
     private FakeBot bot;
-    private ScheduledExecutorService executor;
     private GameConfig config;
     private Clock clock;
 
@@ -41,41 +34,17 @@ class DailyNotificationSchedulerTest {
     void setUp() {
         userRepository = new InMemoryUserRepository();
         bot = new FakeBot();
-        executor = Executors.newSingleThreadScheduledExecutor();
         config = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
         clock = Clock.fixed(NOW_INSTANT, ZoneOffset.UTC);
     }
 
-    @AfterEach
-    void tearDown() {
-        executor.shutdownNow();
+    private DailyNotificationTask task(Bot taskBot) {
+        return new DailyNotificationTask(userRepository, taskBot, config, clock);
     }
 
-    private DailyNotificationScheduler scheduler(Bot b) {
-        return new DailyNotificationScheduler(userRepository, b, config, executor, clock);
-    }
-
-    /**
-     * Сохраняет пользователя с заданными временами последней награды и уведомления.
-     *
-     * @param id           идентификатор пользователя
-     * @param lastDailyAt  время последней награды или {@code null}
-     * @param notifiedAt   время последнего уведомления или {@code null}
-     * @throws Exception если сохранить пользователя не удалось
-     */
     private void saveUser(long id, LocalDateTime lastDailyAt, LocalDateTime notifiedAt) throws Exception {
-        User user = User.of(
-                id,
-                PlayerName.of("Hero"),
-                null,           // bio
-                0,              // balance
-                0,              // cardCount
-                null,           // createdAt
-                null,           // updatedAt
-                lastDailyAt,
-                notifiedAt
-        );
-        userRepository.save(user);
+        userRepository.save(User.of(id, PlayerName.of("Hero"), null, 0, 0,
+                null, null, lastDailyAt, notifiedAt));
     }
 
     @Test
@@ -83,7 +52,7 @@ class DailyNotificationSchedulerTest {
     void notifiesUserWhenCooldownPassed() throws Exception {
         saveUser(1L, NOW.minusHours(25), null);
 
-        scheduler(bot).notifyUsers();
+        task(bot).run();
 
         Assertions.assertEquals(1, bot.count());
         Assertions.assertEquals(NOTIFICATION, bot.lastSent().message().text());
@@ -95,7 +64,7 @@ class DailyNotificationSchedulerTest {
     void notifiesExactlyAtCooldownBoundary() throws Exception {
         saveUser(1L, NOW.minusHours(24), null);
 
-        scheduler(bot).notifyUsers();
+        task(bot).run();
 
         Assertions.assertEquals(1, bot.count());
     }
@@ -105,7 +74,7 @@ class DailyNotificationSchedulerTest {
     void doesNotNotifyBeforeCooldown() throws Exception {
         saveUser(1L, NOW.minusHours(23), null);
 
-        scheduler(bot).notifyUsers();
+        task(bot).run();
 
         Assertions.assertEquals(0, bot.count());
     }
@@ -115,7 +84,7 @@ class DailyNotificationSchedulerTest {
     void doesNotNotifyUsersWithoutDaily() throws Exception {
         saveUser(1L, null, null);
 
-        scheduler(bot).notifyUsers();
+        task(bot).run();
 
         Assertions.assertEquals(0, bot.count());
     }
@@ -124,10 +93,10 @@ class DailyNotificationSchedulerTest {
     @DisplayName("Записывает время уведомления и не отправляет повторно")
     void marksNotifiedAndDoesNotRepeat() throws Exception {
         saveUser(1L, NOW.minusHours(30), null);
-        DailyNotificationScheduler scheduler = scheduler(bot);
+        DailyNotificationTask task = task(bot);
 
-        scheduler.notifyUsers();
-        scheduler.notifyUsers();
+        task.run();
+        task.run();
 
         Assertions.assertEquals(1, bot.count());
         Assertions.assertEquals(NOW, userRepository.findByUserId(1L).orElseThrow().dailyNotifiedAt());
@@ -138,7 +107,7 @@ class DailyNotificationSchedulerTest {
     void skipsAlreadyNotified() throws Exception {
         saveUser(1L, NOW.minusHours(30), NOW.minusHours(5));
 
-        scheduler(bot).notifyUsers();
+        task(bot).run();
 
         Assertions.assertEquals(0, bot.count());
     }
@@ -148,7 +117,7 @@ class DailyNotificationSchedulerTest {
     void notifiesAgainAfterNewDaily() throws Exception {
         saveUser(1L, NOW.minusHours(25), NOW.minusHours(50));
 
-        scheduler(bot).notifyUsers();
+        task(bot).run();
 
         Assertions.assertEquals(1, bot.count());
     }
@@ -159,14 +128,14 @@ class DailyNotificationSchedulerTest {
         saveUser(1L, NOW.minusHours(30), null);
         saveUser(2L, NOW.minusHours(30), null);
         FakeBot delivering = new FakeBot();
-        Bot flaky = (msg, chatId) -> {
+        Bot flaky = (message, chatId) -> {
             if (chatId == 1L) {
                 throw new BotException("Forbidden: bot was blocked by the user", null);
             }
-            delivering.sendMessage(msg, chatId);
+            delivering.sendMessage(message, chatId);
         };
 
-        scheduler(flaky).notifyUsers();
+        task(flaky).run();
 
         Assertions.assertEquals(1, delivering.count());
         Assertions.assertEquals(2L, delivering.sent().getFirst().chatId());

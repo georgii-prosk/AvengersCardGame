@@ -59,7 +59,7 @@ public class CommandMessageProcessingService implements MessageProcessingService
         } catch (AppException e) {
             log.error("Domain error while executing command", e);
             sendSafely(bot, new Message(ERROR_MESSAGE), chatId);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             log.error("Unexpected error while executing command", e);
             sendSafely(bot, new Message(ERROR_MESSAGE), chatId);
         }

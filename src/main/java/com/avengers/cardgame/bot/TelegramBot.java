@@ -36,7 +36,7 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
     }
 
     @Override
-    public void sendMessage(@NotNull Message message, long chatId) throws BotException {
+    public void sendMessage(@NotNull Message message, long chatId) {
         SendMessage.SendMessageBuilder<?, ?> builder = SendMessage.builder().chatId(chatId).text(message.text());
         if (!message.buttons().isEmpty()) builder.replyMarkup(toKeyboard(message.buttons()));
         SendMessage request = builder.build();
@@ -74,13 +74,13 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
     }
 
     private void handleCallback(CallbackQuery query) {
-        acknowledge(query.getId());
+        acknowledgeCallbackQuery(query.getId());
         if (query.getMessage() == null || query.getData() == null) return;
         logic.processMessage(query.getFrom().getId(), query.getFrom().getUserName(),
                 query.getMessage().getChatId(), query.getData(), this);
     }
 
-    private void acknowledge(String callbackQueryId) {
+    private void acknowledgeCallbackQuery(String callbackQueryId) {
         try {
             telegramClient.execute(AnswerCallbackQuery.builder().callbackQueryId(callbackQueryId).build());
         } catch (TelegramApiException exception) {

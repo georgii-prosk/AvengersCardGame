@@ -15,20 +15,16 @@ import com.avengers.cardgame.presentation.HeroRenderer;
 import com.avengers.cardgame.repository.HeroRepository;
 import com.avengers.cardgame.repository.UserCardRepository;
 import com.avengers.cardgame.repository.UserRepository;
-import com.avengers.cardgame.repository.impl.PostgresHeroRepository;
 import com.avengers.cardgame.repository.impl.PostgresUserCardRepository;
 import com.avengers.cardgame.repository.impl.PostgresUserRepository;
-import com.avengers.cardgame.scheduler.DailyNotificationScheduler;
 import com.avengers.cardgame.service.CardService;
 import com.avengers.cardgame.service.HeroService;
-import com.avengers.cardgame.service.HeroSyncService;
 import com.avengers.cardgame.service.MessageProcessingService;
 import com.avengers.cardgame.service.UserService;
 import com.avengers.cardgame.service.impl.CardServiceImpl;
 import com.avengers.cardgame.service.impl.CommandMessageProcessingService;
 import com.avengers.cardgame.service.impl.HeroServiceImpl;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
@@ -36,6 +32,9 @@ import java.time.Clock;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import com.avengers.cardgame.scheduler.DailyNotificationTask;
+import com.avengers.cardgame.scheduler.TaskScheduler;
+import com.avengers.cardgame.repository.impl.InMemoryHeroRepository;
 
 public class AvengersCardGameApplication {
     private final Logger log = LoggerFactory.getLogger(AvengersCardGameApplication.class);
@@ -54,27 +53,43 @@ public class AvengersCardGameApplication {
         new DatabaseMigrator(config.database()).migrate();
         ConnectionFactory connectionFactory = new ConnectionFactory(config.database());
         UserRepository userRepository = new PostgresUserRepository(connectionFactory);
-        HeroRepository heroRepository = new PostgresHeroRepository(connectionFactory);
+        HeroRepository heroRepository = new InMemoryHeroRepository();
         UserCardRepository userCardRepository = new PostgresUserCardRepository(connectionFactory);
-        new HeroSyncService(heroRepository, new ObjectMapper()).sync();
 
         UserService userService = new UserServiceImpl(userRepository);
         HeroService heroService = new HeroServiceImpl(heroRepository, new Random());
         CardService cardService = new CardServiceImpl(userService, userCardRepository,
                 heroService, gameConfig, new Random(), Clock.systemUTC());
 
-        InventoryRenderer inventoryRenderer = new InventoryRenderer(userCardRepository, heroRepository);
         HeroRenderer heroRenderer = new HeroRenderer();
+        InventoryRenderer inventoryRenderer =
+                new InventoryRenderer(userCardRepository, heroRepository, heroRenderer);
         CommandRegistry registry = new CommandRegistryFactory(userService, cardService,
                 userCardRepository, heroRepository, inventoryRenderer, heroRenderer).create();
         MessageProcessingService logic = new CommandMessageProcessingService(registry);
         TelegramBot bot = new TelegramBot(config.botToken(), logic);
 
+
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-        DailyNotificationScheduler scheduler = new DailyNotificationScheduler(
-                userRepository, bot, gameConfig, executor, Clock.systemUTC());
-        scheduler.start();
-        Runtime.getRuntime().addShutdownHook(new Thread(scheduler::stop, "scheduler-shutdown"));
+
+        TaskScheduler taskScheduler = new TaskScheduler(executor);
+
+        DailyNotificationTask dailyNotificationTask = new DailyNotificationTask(
+                userRepository,
+                bot,
+                gameConfig,
+                Clock.systemUTC()
+        );
+
+        taskScheduler.scheduleWithFixedDelay(
+                dailyNotificationTask,
+                gameConfig.notificationInterval()
+        );
+
+        Runtime.getRuntime().addShutdownHook(
+                new Thread(taskScheduler::stop, "scheduler-shutdown")
+        );
+
         startBot(config.botToken(), bot);
     }
 

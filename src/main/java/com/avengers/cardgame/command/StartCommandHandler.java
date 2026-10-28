@@ -16,7 +16,7 @@ public class StartCommandHandler implements CommandHandler {
             """;
 
     @Override
-    public void handle(CommandContext context) throws BotException {
+    public void handle(CommandContext context)  {
         context.bot().sendMessage(new Message(GREETING), context.chatId());
     }
 }
