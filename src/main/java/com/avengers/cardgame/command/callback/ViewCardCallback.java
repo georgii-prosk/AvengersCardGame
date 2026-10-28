@@ -104,9 +104,9 @@ public class ViewCardCallback implements CallbackHandler {
                 hero.rarity().emoji(),
                 hero.name(),
                 hero.rarity().title(),
-                hero.atk(),
-                hero.def(),
-                hero.hp(),
+                hero.attack(),
+                hero.defense(),
+                hero.health(),
                 description,
                 count
         );

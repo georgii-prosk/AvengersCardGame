@@ -23,7 +23,7 @@ class HeroTest {
         Assertions.assertEquals(1L, hero.id());
         Assertions.assertEquals("Iron Man", hero.name());
         Assertions.assertEquals(HeroRarity.EPIC, hero.rarity());
-        Assertions.assertEquals(85, hero.atk());
+        Assertions.assertEquals(85, hero.attack());
     }
 
     /**

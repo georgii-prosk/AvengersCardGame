@@ -87,12 +87,13 @@ class InventoryCommandHandlerTest {
         List<String> data = message.buttons().stream()
                 .map(row -> row.getFirst().callbackData())
                 .toList();
-        Assertions.assertEquals(List.of("view_card:1", "view_card:2"), data);
+        Assertions.assertEquals(List.of("/view_card 1", "/view_card 2"), data);
     }
 
     @Test
     @DisplayName("Сортирует: сначала редкие, затем по имени")
     void sortsByRarityThenName() throws Exception {
+        addHero(1, "Zed", HeroRarity.COMMON);
         addHero(1, "Zed", HeroRarity.COMMON);
         addHero(2, "Alpha", HeroRarity.COMMON);
         addHero(3, "Legend", HeroRarity.LEGENDARY);
@@ -105,7 +106,7 @@ class InventoryCommandHandlerTest {
         List<String> data = bot.lastSent().message().buttons().stream()
                 .map(row -> row.getFirst().callbackData())
                 .toList();
-        Assertions.assertEquals(List.of("view_card:3", "view_card:2", "view_card:1"), data);
+        Assertions.assertEquals(List.of("/view_card 3", "/view_card 2", "/view_card 1"), data);
     }
 
     @Test
@@ -124,12 +125,12 @@ class InventoryCommandHandlerTest {
         Assertions.assertEquals(6, message.buttons().size());
         List<Button> navigation = message.buttons().getLast();
         Assertions.assertEquals(1, navigation.size());
-        Assertions.assertEquals("page:2", navigation.getFirst().callbackData());
+        Assertions.assertEquals("/inventory_page 2", navigation.getFirst().callbackData());
     }
 
     @Test
     @DisplayName("На второй странице есть «Назад» и остаток карточек")
-    void secondPageHasBackButton(){
+    void secondPageHasBackButton() {
         for (long id = 1; id <= 7; id++) {
             addHero(id, "Hero" + id, HeroRarity.COMMON);
             cardRepository.addCard(USER_ID, id);
@@ -142,7 +143,7 @@ class InventoryCommandHandlerTest {
         Assertions.assertEquals(3, message.buttons().size());
         List<Button> navigation = message.buttons().getLast();
         Assertions.assertEquals(1, navigation.size());
-        Assertions.assertEquals("page:1", navigation.getFirst().callbackData());
+        Assertions.assertEquals("/inventory_page 1", navigation.getFirst().callbackData());
     }
 
     @Test
