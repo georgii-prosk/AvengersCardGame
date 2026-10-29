@@ -2,6 +2,7 @@ package com.avengers.cardgame.fakes;
 
 import com.avengers.cardgame.model.UserCard;
 import com.avengers.cardgame.repository.UserCardRepository;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,7 +23,7 @@ public class InMemoryUserCardRepository implements UserCardRepository {
     }
 
     @Override
-    public List<UserCard> findByUserId(long userId) {
+    public @NotNull List<UserCard> findByUserId(long userId) {
         List<UserCard> result = new ArrayList<>();
         cards.getOrDefault(userId, Map.of())
                 .forEach((heroId, count) -> result.add(new UserCard(userId, heroId, count)));

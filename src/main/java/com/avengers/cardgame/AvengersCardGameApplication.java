@@ -1,7 +1,7 @@
 package com.avengers.cardgame;
 
 import com.avengers.cardgame.bot.TelegramBot;
-import com.avengers.cardgame.command.CommandRegistry;
+import com.avengers.cardgame.service.impl.InMemoryCommandRegistry;
 import com.avengers.cardgame.command.CommandRegistryFactory;
 import com.avengers.cardgame.command.InventoryRenderer;
 import com.avengers.cardgame.config.AppConfig;
@@ -45,7 +45,7 @@ public class AvengersCardGameApplication {
         try {
             config = configProvider.read();
         } catch (AppException exception) {
-            log.error("Invalid configuration: {}", exception.getMessage(), exception);
+            log.error("Invalid configuration: {}", exception.getMessage());
             return;
         }
 
@@ -64,7 +64,7 @@ public class AvengersCardGameApplication {
         HeroRenderer heroRenderer = new HeroRenderer();
         InventoryRenderer inventoryRenderer =
                 new InventoryRenderer(userCardRepository, heroRepository, heroRenderer);
-        CommandRegistry registry = new CommandRegistryFactory(userService, cardService,
+        InMemoryCommandRegistry registry = new CommandRegistryFactory(userService, cardService,
                 userCardRepository, heroRepository, inventoryRenderer, heroRenderer).create();
         MessageProcessingService logic = new CommandMessageProcessingService(registry);
         TelegramBot bot = new TelegramBot(config.botToken(), logic);

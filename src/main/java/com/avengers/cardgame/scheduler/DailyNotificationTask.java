@@ -7,7 +7,7 @@ import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserRepository;
-import com.avengers.cardgame.service.Message;
+import com.avengers.cardgame.messaging.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

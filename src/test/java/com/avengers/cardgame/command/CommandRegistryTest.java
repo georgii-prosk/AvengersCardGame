@@ -1,5 +1,8 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.service.CommandHandler;
+import com.avengers.cardgame.service.impl.InMemoryCommandRegistry;
+import com.avengers.cardgame.service.ResolvedCommand;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -8,12 +11,12 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 
 /**
- * Тесты для {@link CommandRegistry}.
+ * Тесты для {@link InMemoryCommandRegistry}.
  */
 class CommandRegistryTest {
 
     /** Тестируемый реестр. */
-    private CommandRegistry registry;
+    private InMemoryCommandRegistry registry;
 
     /** Первый фейковый обработчик. */
     private CommandHandler firstHandler;
@@ -23,7 +26,7 @@ class CommandRegistryTest {
 
     @BeforeEach
     void setUp() {
-        registry = new CommandRegistry();
+        registry = new InMemoryCommandRegistry();
         firstHandler = context -> { };
         secondHandler = context -> { };
         registry.register("/first", firstHandler);

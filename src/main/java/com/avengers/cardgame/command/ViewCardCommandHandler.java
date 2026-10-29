@@ -1,12 +1,14 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.UserCard;
 import com.avengers.cardgame.presentation.HeroRenderer;
 import com.avengers.cardgame.repository.HeroRepository;
 import com.avengers.cardgame.repository.UserCardRepository;
-import com.avengers.cardgame.service.Message;
+import com.avengers.cardgame.messaging.Message;
+import com.avengers.cardgame.service.CommandContext;
+import com.avengers.cardgame.service.CommandHandler;
+
 import java.util.Optional;
 
 public class ViewCardCommandHandler implements CommandHandler {

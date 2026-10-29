@@ -3,6 +3,7 @@ package com.avengers.cardgame.repository;
 
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +18,7 @@ public interface HeroRepository {
      *
      * @return список героев
      */
-    List<Hero> findAll();
+    @NotNull List<Hero> findAll();
 
     /**
      * Находит героя по идентификатору.
@@ -25,7 +26,7 @@ public interface HeroRepository {
      * @param id идентификатор героя
      * @return герой, если найден
      */
-    Optional<Hero> findById(long id);
+    @NotNull Optional<Hero> findById(long id);
 
     /**
      * Находит героев по редкости.
@@ -33,5 +34,5 @@ public interface HeroRepository {
      * @param rarity редкость героя
      * @return список героев
      */
-    List<Hero> findByRarity(HeroRarity rarity);
+    @NotNull List<Hero> findByRarity(HeroRarity rarity);
 }

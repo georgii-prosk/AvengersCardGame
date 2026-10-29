@@ -4,6 +4,8 @@ import com.avengers.cardgame.presentation.HeroRenderer;
 import com.avengers.cardgame.repository.HeroRepository;
 import com.avengers.cardgame.repository.UserCardRepository;
 import com.avengers.cardgame.service.CardService;
+import com.avengers.cardgame.service.CommandHandler;
+import com.avengers.cardgame.service.impl.InMemoryCommandRegistry;
 import com.avengers.cardgame.service.UserService;
 
 public class CommandRegistryFactory {
@@ -25,8 +27,8 @@ public class CommandRegistryFactory {
         this.heroRenderer = heroRenderer;
     }
 
-    public CommandRegistry create() {
-        CommandRegistry registry = new CommandRegistry();
+    public InMemoryCommandRegistry create() {
+        InMemoryCommandRegistry registry = new InMemoryCommandRegistry();
         registry.register("/start", wrap(new StartCommandHandler()));
         registry.register("/help", new HelpCommandHandler());
         registry.register("/profile", wrap(new ProfileCommandHandler(userService, userCardRepository)));

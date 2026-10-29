@@ -3,6 +3,7 @@ package com.avengers.cardgame.repository.impl;
 import com.avengers.cardgame.config.ConnectionFactory;
 import com.avengers.cardgame.model.UserCard;
 import com.avengers.cardgame.repository.UserCardRepository;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -47,13 +48,13 @@ public class PostgresUserCardRepository implements UserCardRepository {
             stmt.setLong(1, userId);
             stmt.setLong(2, heroId);
             stmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("Error adding card", e);
+        } catch (SQLException exception) {
+            throw new RuntimeException("Error adding card", exception);
         }
     }
 
     @Override
-    public List<UserCard> findByUserId(long userId) {
+    public @NotNull List<UserCard> findByUserId(long userId) {
         List<UserCard> cards = new ArrayList<>();
         try (Connection conn = connectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_FIND_BY_USER)) {
@@ -67,8 +68,8 @@ public class PostgresUserCardRepository implements UserCardRepository {
                     ));
                 }
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error finding cards by user", e);
+        } catch (SQLException exception) {
+            throw new RuntimeException("Error finding cards by user", exception);
         }
         return cards;
     }
@@ -83,8 +84,8 @@ public class PostgresUserCardRepository implements UserCardRepository {
                     return rs.getInt(1);
                 }
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error counting cards by user", e);
+        } catch (SQLException exception) {
+            throw new RuntimeException("Error counting cards by user", exception);
         }
         return 0;
     }

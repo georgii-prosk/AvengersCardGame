@@ -1,8 +1,8 @@
 package com.avengers.cardgame.bot;
 
 import com.avengers.cardgame.exception.BotException;
-import com.avengers.cardgame.service.Button;
-import com.avengers.cardgame.service.Message;
+import com.avengers.cardgame.messaging.Button;
+import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.service.MessageProcessingService;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;

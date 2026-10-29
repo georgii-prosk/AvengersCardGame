@@ -1,6 +1,8 @@
-package com.avengers.cardgame.command;
+package com.avengers.cardgame.service;
 
 import com.avengers.cardgame.bot.Bot;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Контекст выполнения команды.
@@ -17,8 +19,8 @@ import com.avengers.cardgame.bot.Bot;
 public record CommandContext(
         long userId,
         long chatId,
-        String userName,
-        String argument,
-        Bot bot
+        @Nullable String userName,
+        @NotNull String argument,
+        @NotNull Bot bot
 ) {
 }

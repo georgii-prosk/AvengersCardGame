@@ -64,8 +64,8 @@ public record User(
         try {
             return new User(userId, playerName, bio, balance, cardCount,
                     createdAt, updatedAt, lastDailyAt, dailyNotifiedAt);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidUserException(e.getMessage());
+        } catch (IllegalArgumentException exception) {
+            throw new InvalidUserException(exception.getMessage());
         }
     }
 

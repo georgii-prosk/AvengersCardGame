@@ -1,10 +1,11 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.exception.InvalidPlayerNameException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.PlayerName;
-import com.avengers.cardgame.service.Message;
+import com.avengers.cardgame.messaging.Message;
+import com.avengers.cardgame.service.CommandContext;
+import com.avengers.cardgame.service.CommandHandler;
 import com.avengers.cardgame.service.UserService;
 
 /**
@@ -34,7 +35,7 @@ public class SetNameCommandHandler implements CommandHandler {
         PlayerName newName;
         try {
             newName = PlayerName.of(context.argument());
-        } catch (InvalidPlayerNameException e) {
+        } catch (InvalidPlayerNameException exception) {
             context.bot().sendMessage(new Message(ERROR), context.chatId());
             return;
         }

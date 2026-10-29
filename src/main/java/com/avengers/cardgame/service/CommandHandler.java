@@ -1,4 +1,4 @@
-package com.avengers.cardgame.command;
+package com.avengers.cardgame.service;
 
 import com.avengers.cardgame.exception.AppException;
 
