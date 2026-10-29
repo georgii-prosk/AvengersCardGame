@@ -9,6 +9,7 @@ import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
 import com.avengers.cardgame.presentation.HeroRenderer;
 import com.avengers.cardgame.service.CommandContext;
+import com.avengers.cardgame.service.CommandRegistry;
 import com.avengers.cardgame.service.impl.InMemoryCommandRegistry;
 import com.avengers.cardgame.service.ResolvedCommand;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
@@ -32,7 +33,7 @@ class CommandRegistryFactoryTest {
         InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository();
         InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
 
-        InMemoryCommandRegistry registry = new CommandRegistryFactory(
+        CommandRegistry registry = new CommandRegistryFactory(
                 new UserServiceImpl(userRepository),
                 new FakeCardService(List.of(hero)),
                 cardRepository,
@@ -57,7 +58,7 @@ class CommandRegistryFactoryTest {
         InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository();
         InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
 
-        InMemoryCommandRegistry registry = new CommandRegistryFactory(
+        CommandRegistry registry = new CommandRegistryFactory(
                 new UserServiceImpl(userRepository),
                 new FakeCardService(List.of()),
                 cardRepository,

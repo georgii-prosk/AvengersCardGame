@@ -22,11 +22,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/** Telegram-адаптер: передаёт сообщения и callback-данные общему обработчику команд. */
+/**
+ * Telegram-адаптер: передаёт сообщения и callback-данные общему обработчику команд.
+ */
 public final class TelegramBot extends DefaultLongPollingUpdateConsumer implements Bot {
     private static final Logger log = LoggerFactory.getLogger(TelegramBot.class);
     private static final int MAX_SEND_ATTEMPTS = 3;
     private static final long RETRY_DELAY_MILLIS = 500;
+
     private final TelegramClient telegramClient;
     private final MessageProcessingService logic;
 
@@ -35,11 +38,20 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
         this.logic = logic;
     }
 
+    /**
+     * Отправляет сообщение с механизмом повторных попыток (retry).
+     * При неудаче делает до 3 попыток с экспоненциальной задержкой.
+     *
+     * @param message сообщение
+     * @param chatId  идентификатор чата
+     * @throws BotException если все попытки исчерпаны
+     */
     @Override
     public void sendMessage(@NotNull Message message, long chatId) {
         SendMessage.SendMessageBuilder<?, ?> builder = SendMessage.builder().chatId(chatId).text(message.text());
         if (!message.buttons().isEmpty()) builder.replyMarkup(toKeyboard(message.buttons()));
         SendMessage request = builder.build();
+
         for (int attempt = 1; attempt <= MAX_SEND_ATTEMPTS; attempt++) {
             try {
                 telegramClient.execute(request);
@@ -51,6 +63,7 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
                 }
                 log.warn("Failed to send message to chat {}. Attempt {}/{}", chatId, attempt, MAX_SEND_ATTEMPTS, exception);
                 try {
+                    // Ждем перед следующей попыткой
                     TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MILLIS * attempt);
                 } catch (InterruptedException interrupted) {
                     Thread.currentThread().interrupt();
@@ -67,19 +80,29 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
             return;
         }
         if (!update.hasMessage() || !update.getMessage().hasText()) return;
+
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         String userName = update.getMessage().getFrom().getUserName();
+
         logic.processMessage(userId, userName, chatId, update.getMessage().getText(), this);
     }
 
+    /**
+     * Обрабатывает нажатие на inline-кнопку.
+     * Преобразует callback-данные в обычную текстовую команду и передает в общий обработчик.
+     */
     private void handleCallback(CallbackQuery query) {
         acknowledgeCallbackQuery(query.getId());
         if (query.getMessage() == null || query.getData() == null) return;
+
         logic.processMessage(query.getFrom().getId(), query.getFrom().getUserName(),
                 query.getMessage().getChatId(), query.getData(), this);
     }
 
+    /**
+     * Убирает индикатор загрузки с нажатой кнопки.
+     */
     private void acknowledgeCallbackQuery(String callbackQueryId) {
         try {
             telegramClient.execute(AnswerCallbackQuery.builder().callbackQueryId(callbackQueryId).build());
@@ -88,6 +111,9 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
         }
     }
 
+    /**
+     * Конвертирует внутреннее представление кнопок в формат Telegram API.
+     */
     private InlineKeyboardMarkup toKeyboard(List<List<Button>> rows) {
         List<InlineKeyboardRow> keyboard = new ArrayList<>();
         for (List<Button> row : rows) {

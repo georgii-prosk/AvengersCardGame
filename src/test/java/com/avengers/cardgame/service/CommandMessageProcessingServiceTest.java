@@ -33,7 +33,10 @@ class CommandMessageProcessingServiceTest {
     @BeforeEach
     void setUp() {
         bot = new FakeBot();
-        InMemoryCommandRegistry registry = new InMemoryCommandRegistry();
+
+        // ИСПОЛЬЗУЕМ ИНТЕРФЕЙС:
+        CommandRegistry registry = new InMemoryCommandRegistry();
+
         registry.register("/first", context ->
                 context.bot().sendMessage(new Message(FIRST_RESPONSE), context.chatId()));
         registry.register("/second", context ->
@@ -111,7 +114,9 @@ class CommandMessageProcessingServiceTest {
     @Test
     @DisplayName("Не пытается ответить через сломанного бота при BotException")
     void doesNotReplyWhenBotIsBroken() {
-        InMemoryCommandRegistry brokenRegistry = new InMemoryCommandRegistry();
+        // ИСПОЛЬЗУЕМ ИНТЕРФЕЙС:
+        CommandRegistry brokenRegistry = new InMemoryCommandRegistry();
+
         brokenRegistry.register("/bot-fail", context -> {
             throw new com.avengers.cardgame.exception.BotException("boom", null);
         });

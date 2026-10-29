@@ -9,7 +9,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-/** Реализация реестра команд на основе HashMap. */
+/**
+ * Реализация реестра команд на основе HashMap.
+ */
 public class InMemoryCommandRegistry implements CommandRegistry {
 
     private final Map<String, CommandHandler> commands = new HashMap<>();

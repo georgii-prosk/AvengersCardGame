@@ -16,9 +16,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Реализация {@link CardService}.
+ */
 public class CardServiceImpl implements CardService {
     private static final int MIN_DAILY_CARDS = 1;
     private static final int MAX_DAILY_CARDS = 3;
+
     private final UserService userService;
     private final UserCardRepository userCardRepository;
     private final HeroService heroService;
@@ -27,7 +31,7 @@ public class CardServiceImpl implements CardService {
     private final Clock clock;
 
     public CardServiceImpl(UserService userService, UserCardRepository userCardRepository,
-            HeroService heroService, GameConfig gameConfig, Random random, Clock clock) {
+                           HeroService heroService, GameConfig gameConfig, Random random, Clock clock) {
         this.userService = userService;
         this.userCardRepository = userCardRepository;
         this.heroService = heroService;
@@ -36,13 +40,24 @@ public class CardServiceImpl implements CardService {
         this.clock = clock;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Метод синхронизирован, чтобы предотвратить состояние гонки (check-then-act),
+     * когда два одновременных запроса от одного пользователя могут пройти проверку
+     * кулдауна и выдать карточки дважды.
+     */
     @Override
     public synchronized DailyRewardResult grantDaily(long userId) throws UserNotFoundException {
         User user = userService.getByUserId(userId);
         LocalDateTime now = LocalDateTime.now(clock);
-        Duration remaining = timeUntilNextClaim(user.lastDailyAt(), now);
-        if (remaining != null) return DailyRewardResult.cooldown(remaining);
 
+        Duration remaining = timeUntilNextClaim(user.lastDailyAt(), now);
+        if (remaining != null) {
+            return DailyRewardResult.cooldown(remaining);
+        }
+
+        // Генерируем от 1 до 3 карточек
         int amount = MIN_DAILY_CARDS + random.nextInt(MAX_DAILY_CARDS - MIN_DAILY_CARDS + 1);
         List<Hero> heroes = new ArrayList<>(amount);
         for (int index = 0; index < amount; index++) {
@@ -50,10 +65,15 @@ public class CardServiceImpl implements CardService {
             userCardRepository.addCard(userId, hero.id());
             heroes.add(hero);
         }
+
         userService.updateLastDailyAt(userId, now);
         return DailyRewardResult.success(heroes);
     }
 
+    /**
+     * Проверяет, истёк ли кулдаун.
+     * @return оставшееся время или null, если награда доступна
+     */
     private Duration timeUntilNextClaim(LocalDateTime lastDailyAt, LocalDateTime now) {
         if (lastDailyAt == null) return null;
         Duration elapsed = Duration.between(lastDailyAt, now);

@@ -5,9 +5,13 @@ import com.avengers.cardgame.repository.HeroRepository;
 import com.avengers.cardgame.repository.UserCardRepository;
 import com.avengers.cardgame.service.CardService;
 import com.avengers.cardgame.service.CommandHandler;
+import com.avengers.cardgame.service.CommandRegistry;
 import com.avengers.cardgame.service.impl.InMemoryCommandRegistry;
 import com.avengers.cardgame.service.UserService;
 
+/**
+ * Фабрика для создания и настройки реестра команд.
+ */
 public class CommandRegistryFactory {
     private final UserService userService;
     private final CardService cardService;
@@ -17,8 +21,8 @@ public class CommandRegistryFactory {
     private final HeroRenderer heroRenderer;
 
     public CommandRegistryFactory(UserService userService, CardService cardService,
-            UserCardRepository userCardRepository, HeroRepository heroRepository,
-            InventoryRenderer inventoryRenderer, HeroRenderer heroRenderer) {
+                                  UserCardRepository userCardRepository, HeroRepository heroRepository,
+                                  InventoryRenderer inventoryRenderer, HeroRenderer heroRenderer) {
         this.userService = userService;
         this.cardService = cardService;
         this.userCardRepository = userCardRepository;
@@ -27,8 +31,15 @@ public class CommandRegistryFactory {
         this.heroRenderer = heroRenderer;
     }
 
-    public InMemoryCommandRegistry create() {
-        InMemoryCommandRegistry registry = new InMemoryCommandRegistry();
+    /**
+     * Создаёт и наполняет реестр команд.
+     *
+     * @return готовый реестр
+     */
+    public CommandRegistry create() {
+        // ИСПРАВЛЕНО: переменная типа интерфейса, создается реализация
+        CommandRegistry registry = new InMemoryCommandRegistry();
+
         registry.register("/start", wrap(new StartCommandHandler()));
         registry.register("/help", new HelpCommandHandler());
         registry.register("/profile", wrap(new ProfileCommandHandler(userService, userCardRepository)));
@@ -41,6 +52,9 @@ public class CommandRegistryFactory {
         return registry;
     }
 
+    /**
+     * Оборачивает команду в декоратор, который регистрирует пользователя перед выполнением.
+     */
     private CommandHandler wrap(CommandHandler command) {
         return new RegisteringCommandHandler(command, userService);
     }
