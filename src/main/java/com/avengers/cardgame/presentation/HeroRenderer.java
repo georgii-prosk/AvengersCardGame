@@ -3,8 +3,12 @@ package com.avengers.cardgame.presentation;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
 
-/** Формирует текстовое представление героев и их редкости. */
+/**
+ * Формирует текстовое представление карточек героев и их редкости для отправки пользователю.
+ */
 public class HeroRenderer {
+
+    /** Шаблон карточки: эмодзи, имя, редкость, атака, защита, здоровье. */
     private static final String CARD_TEMPLATE = """
             %s %s
             Редкость: %s
@@ -13,10 +17,26 @@ public class HeroRenderer {
             ❤️ Здоровье: %d
             """;
 
+    /**
+     * Формирует текстовое описание карточки героя без указания количества копий.
+     *
+     * @param hero герой
+     * @return отформатированный текст карточки
+     */
     public String render(Hero hero) {
         return render(hero, null);
     }
 
+    /**
+     * Формирует текстовое описание карточки героя.
+     * <p>
+     * Если у героя есть описание, оно добавляется в конец.
+     * Если передано количество копий, добавляется строка «В коллекции: ×N».
+     *
+     * @param hero  герой
+     * @param count количество копий у пользователя (может быть {@code null}, если карточка просто просматривается)
+     * @return отформатированный текст карточки
+     */
     public String render(Hero hero, Integer count) {
         HeroRarity rarity = hero.rarity();
 
@@ -40,6 +60,12 @@ public class HeroRenderer {
         return text;
     }
 
+    /**
+     * Возвращает эмодзи, соответствующий редкости героя.
+     *
+     * @param rarity редкость
+     * @return строковое представление эмодзи
+     */
     public String emoji(HeroRarity rarity) {
         return switch (rarity) {
             case COMMON -> "⚪";
@@ -49,6 +75,12 @@ public class HeroRenderer {
         };
     }
 
+    /**
+     * Возвращает текстовое название редкости для отображения пользователю.
+     *
+     * @param rarity редкость
+     * @return название редкости (например, "Обычная", "Легендарная")
+     */
     public String title(HeroRarity rarity) {
         return switch (rarity) {
             case COMMON -> "Обычная";
