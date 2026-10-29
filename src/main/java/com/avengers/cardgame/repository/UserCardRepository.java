@@ -1,6 +1,7 @@
 package com.avengers.cardgame.repository;
 
 import com.avengers.cardgame.model.UserCard;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -23,7 +24,7 @@ public interface UserCardRepository {
      * @param userId идентификатор пользователя
      * @return список карточек
      */
-    List<UserCard> findByUserId(long userId);
+    @NotNull List<UserCard> findByUserId(long userId);
 
     /**
      * Считает общее количество карточек у пользователя.

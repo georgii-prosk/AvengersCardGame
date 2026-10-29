@@ -1,7 +1,7 @@
 package com.avengers.cardgame.fakes;
 
 import com.avengers.cardgame.bot.Bot;
-import com.avengers.cardgame.service.Message;
+import com.avengers.cardgame.messaging.Message;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -16,8 +16,8 @@ public class FakeBot implements Bot {
     private final List<Sent> sent = new ArrayList<>();
 
     @Override
-    public void sendMessage(@NotNull Message msg, long chatId){
-        sent.add(new Sent(msg, chatId));
+    public void sendMessage(@NotNull Message message, long chatId){
+        sent.add(new Sent(message, chatId));
     }
 
     /**

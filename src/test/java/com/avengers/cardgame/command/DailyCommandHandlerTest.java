@@ -5,6 +5,7 @@ import com.avengers.cardgame.fakes.FakeCardService;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
 import com.avengers.cardgame.presentation.HeroRenderer;
+import com.avengers.cardgame.service.CommandContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

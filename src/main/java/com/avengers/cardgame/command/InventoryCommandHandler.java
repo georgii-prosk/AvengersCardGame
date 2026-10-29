@@ -1,6 +1,7 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.exception.BotException;
+import com.avengers.cardgame.service.CommandContext;
+import com.avengers.cardgame.service.CommandHandler;
 
 /**
  * Команда /inventory: показывает коллекцию карточек первой страницей.

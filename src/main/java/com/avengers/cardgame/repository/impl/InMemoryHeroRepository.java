@@ -5,6 +5,7 @@ import com.avengers.cardgame.model.HeroRarity;
 import com.avengers.cardgame.repository.HeroRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,19 +42,19 @@ public final class InMemoryHeroRepository implements HeroRepository {
     }
 
     @Override
-    public List<Hero> findAll() {
+    public @NotNull List<Hero> findAll() {
         return heroes.values().stream()
                 .sorted(Comparator.comparingLong(Hero::id))
                 .toList();
     }
 
     @Override
-    public Optional<Hero> findById(long id) {
+    public @NotNull Optional<Hero> findById(long id) {
         return Optional.ofNullable(heroes.get(id));
     }
 
     @Override
-    public List<Hero> findByRarity(HeroRarity rarity) {
+    public @NotNull List<Hero> findByRarity(HeroRarity rarity) {
         return findAll().stream()
                 .filter(hero -> hero.rarity() == rarity)
                 .toList();

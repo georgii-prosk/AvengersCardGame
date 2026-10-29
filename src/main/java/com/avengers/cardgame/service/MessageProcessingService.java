@@ -1,6 +1,8 @@
 package com.avengers.cardgame.service;
 
 import com.avengers.cardgame.bot.Bot;
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Логика обработки входящих сообщений.
@@ -12,7 +14,6 @@ public interface MessageProcessingService {
 
     /**
      * Обрабатывает сообщение пользователя.
-     *
      * Реализация не выбрасывает исключений: все ошибки обрабатываются и логируются внутри
      *
      * @param userId   идентификатор пользователя
@@ -21,5 +22,10 @@ public interface MessageProcessingService {
      * @param text     полный текст сообщения
      * @param bot      бот для отправки ответов
      */
-    void processMessage(long userId, String userName, long chatId, String text, Bot bot);
+    void processMessage(
+            long userId,
+            @Nullable String userName,
+            long chatId,
+            @NotNull String text,
+            @NotNull Bot bot);
 }

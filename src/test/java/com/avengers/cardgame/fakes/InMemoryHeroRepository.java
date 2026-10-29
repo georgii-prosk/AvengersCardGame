@@ -3,6 +3,8 @@ package com.avengers.cardgame.fakes;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
 import com.avengers.cardgame.repository.HeroRepository;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,17 +22,17 @@ public class InMemoryHeroRepository implements HeroRepository {
     private final Map<Long, Hero> storage = new HashMap<>();
 
     @Override
-    public List<Hero> findAll() {
+    public @NotNull List<Hero> findAll() {
         return new ArrayList<>(storage.values());
     }
 
     @Override
-    public Optional<Hero> findById(long id) {
+    public @NotNull Optional<Hero> findById(long id) {
         return Optional.ofNullable(storage.get(id));
     }
 
     @Override
-    public List<Hero> findByRarity(HeroRarity rarity) {
+    public @NotNull List<Hero> findByRarity(HeroRarity rarity) {
         return storage.values().stream()
                 .filter(hero -> hero.rarity() == rarity)
                 .collect(Collectors.toList());

@@ -1,12 +1,13 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.presentation.HeroRenderer;
 import com.avengers.cardgame.service.CardService;
+import com.avengers.cardgame.service.CommandContext;
+import com.avengers.cardgame.service.CommandHandler;
 import com.avengers.cardgame.service.DailyRewardResult;
-import com.avengers.cardgame.service.Message;
+import com.avengers.cardgame.messaging.Message;
 import java.time.Duration;
 import java.util.List;
 

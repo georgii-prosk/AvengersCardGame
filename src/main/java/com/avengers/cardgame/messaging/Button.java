@@ -1,4 +1,6 @@
-package com.avengers.cardgame.service;
+package com.avengers.cardgame.messaging;
+
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Inline-кнопка под сообщением.
@@ -6,5 +8,5 @@ package com.avengers.cardgame.service;
  * @param text         надпись на кнопке
  * @param callbackData данные, которые вернутся боту при нажатии
  */
-public record Button(String text, String callbackData) {
+public record Button(@NotNull String text, String callbackData) {
 }

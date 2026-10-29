@@ -1,12 +1,15 @@
 package com.avengers.cardgame.config;
 
+import com.avengers.cardgame.exception.AppException;
 import com.avengers.cardgame.exception.MissingEnvironmentVariableException;
+import com.avengers.cardgame.exception.InvalidConfigurationException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.time.Duration;
 
 /**
  * Тесты для {@link EnvironmentConfigReader}.
@@ -39,7 +42,7 @@ class EnvironmentConfigReaderTest {
 
     @Test
     @DisplayName("Читает валидную конфигурацию")
-    void readsValidConfig() throws MissingEnvironmentVariableException {
+    void readsValidConfig() throws AppException {
         AppConfig config = readerWith(validEnv()).read();
 
         Assertions.assertEquals("test-token", config.botToken());
@@ -110,5 +113,53 @@ class EnvironmentConfigReaderTest {
                 () -> readerWith(env).read());
 
         Assertions.assertTrue(ex.getMessage().contains("DB_URL"));
+    }
+
+    @Test
+    @DisplayName("Бросает InvalidConfigurationException для нечислового кулдауна")
+    void throwsWhenCooldownNotNumeric() {
+        Map<String, String> env = validEnv();
+        env.put("DAILY_COOLDOWN_MINUTES", "abc");
+
+        Assertions.assertThrows(InvalidConfigurationException.class,
+                () -> readerWith(env).read());
+    }
+
+    @Test
+    @DisplayName("Бросает InvalidConfigurationException для нулевого кулдауна")
+    void throwsWhenCooldownZero() {
+        Map<String, String> env = validEnv();
+        env.put("DAILY_COOLDOWN_MINUTES", "0");
+
+        Assertions.assertThrows(InvalidConfigurationException.class,
+                () -> readerWith(env).read());
+    }
+
+    @Test
+    @DisplayName("Бросает InvalidConfigurationException для отрицательного кулдауна")
+    void throwsWhenCooldownNegative() {
+        Map<String, String> env = validEnv();
+        env.put("DAILY_COOLDOWN_MINUTES", "-5");
+
+        Assertions.assertThrows(InvalidConfigurationException.class,
+                () -> readerWith(env).read());
+    }
+
+    @Test
+    @DisplayName("Бросает InvalidConfigurationException для слишком большого кулдауна")
+    void throwsWhenCooldownTooLarge() {
+        Map<String, String> env = validEnv();
+        env.put("DAILY_COOLDOWN_MINUTES", "999999999999999999999");
+
+        Assertions.assertThrows(InvalidConfigurationException.class,
+                () -> readerWith(env).read());
+    }
+
+    @Test
+    @DisplayName("Использует дефолтный кулдаун, если переменная не задана")
+    void usesDefaultCooldownWhenNotSet() throws Exception {
+        AppConfig config = readerWith(validEnv()).read();
+
+        Assertions.assertEquals(Duration.ofMinutes(1440), config.game().dailyCooldown());
     }
 }

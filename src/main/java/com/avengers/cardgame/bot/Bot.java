@@ -1,6 +1,6 @@
 package com.avengers.cardgame.bot;
 
-import com.avengers.cardgame.service.Message;
+import com.avengers.cardgame.messaging.Message;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -11,8 +11,8 @@ public interface Bot {
     /**
      * Отправляет сообщение в указанный чат.
      *
-     * @param msg    сообщение
+     * @param message    сообщение
      * @param chatId идентификатор чата получателя
      */
-    void sendMessage(@NotNull Message msg, long chatId);
+    void sendMessage(@NotNull Message message, long chatId);
 }

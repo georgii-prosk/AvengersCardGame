@@ -1,10 +1,11 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.exception.BotException;
 import com.avengers.cardgame.exception.InvalidBioException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.Bio;
-import com.avengers.cardgame.service.Message;
+import com.avengers.cardgame.messaging.Message;
+import com.avengers.cardgame.service.CommandContext;
+import com.avengers.cardgame.service.CommandHandler;
 import com.avengers.cardgame.service.UserService;
 
 /**
@@ -36,7 +37,7 @@ public class SetBioCommandHandler implements CommandHandler {
         Bio newBio;
         try {
             newBio = Bio.of(context.argument());
-        } catch (InvalidBioException e) {
+        } catch (InvalidBioException exception) {
             context.bot().sendMessage(new Message(ERROR), context.chatId());
             return;
         }

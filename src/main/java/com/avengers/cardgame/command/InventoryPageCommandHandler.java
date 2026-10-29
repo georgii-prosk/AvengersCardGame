@@ -1,7 +1,8 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.exception.BotException;
-import com.avengers.cardgame.service.Message;
+import com.avengers.cardgame.messaging.Message;
+import com.avengers.cardgame.service.CommandContext;
+import com.avengers.cardgame.service.CommandHandler;
 
 public class InventoryPageCommandHandler implements CommandHandler {
     private final InventoryRenderer renderer;

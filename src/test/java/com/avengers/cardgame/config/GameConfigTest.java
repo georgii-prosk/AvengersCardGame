@@ -30,5 +30,24 @@ class GameConfigTest {
                 () -> new GameConfig(Duration.ZERO, Duration.ofMinutes(30)));
     }
 
-    // Можешь добавить тесты на отрицательные значения
+    @Test
+    @DisplayName("Бросает исключение при отрицательном кулдауне")
+    void throwsOnNegativeCooldown() {
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> new GameConfig(Duration.ofMinutes(-1), Duration.ofMinutes(30)));
+    }
+
+    @Test
+    @DisplayName("Бросает исключение при нулевом интервале уведомлений")
+    void throwsOnZeroNotificationInterval() {
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> new GameConfig(Duration.ofHours(24), Duration.ZERO));
+    }
+
+    @Test
+    @DisplayName("Бросает исключение при null вместо кулдауна")
+    void throwsOnNullCooldown() {
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> new GameConfig(null, Duration.ofMinutes(30)));
+    }
 }
