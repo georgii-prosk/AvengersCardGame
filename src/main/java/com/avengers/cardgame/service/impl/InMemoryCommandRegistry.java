@@ -14,7 +14,6 @@ import java.util.Optional;
  */
 public class InMemoryCommandRegistry implements CommandRegistry {
 
-    /** Хранилище команд: имя команды → обработчик. */
     private final Map<String, CommandHandler> commands = new HashMap<>();
 
     @Override
@@ -27,20 +26,13 @@ public class InMemoryCommandRegistry implements CommandRegistry {
         if (text == null || text.isBlank()) {
             return Optional.empty();
         }
-
         String trimmed = text.trim();
         int spaceIndex = trimmed.indexOf(' ');
-
-        // Выделяем имя команды (до первого пробела) и приводим к нижнему регистру.
-        // Используем Locale.ROOT, чтобы избежать проблем в турецкой локали (где 'I' становится 'ı').
         String name = (spaceIndex == -1 ? trimmed : trimmed.substring(0, spaceIndex)).toLowerCase(Locale.ROOT);
-
         CommandHandler command = commands.get(name);
         if (command == null) {
             return Optional.empty();
         }
-
-        // Всё, что идёт после первого пробела — это аргумент команды.
         String argument = (spaceIndex == -1) ? "" : trimmed.substring(spaceIndex + 1).trim();
         return Optional.of(new ResolvedCommand(command, argument));
     }

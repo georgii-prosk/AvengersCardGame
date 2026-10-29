@@ -1,7 +1,6 @@
 package com.avengers.cardgame;
 
 import com.avengers.cardgame.bot.TelegramBot;
-import com.avengers.cardgame.service.impl.InMemoryCommandRegistry;
 import com.avengers.cardgame.command.CommandRegistryFactory;
 import com.avengers.cardgame.command.InventoryRenderer;
 import com.avengers.cardgame.config.AppConfig;
