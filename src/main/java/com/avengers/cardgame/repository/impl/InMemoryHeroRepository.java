@@ -16,10 +16,19 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Реализация {@link HeroRepository}, которая хранит справочник героев в памяти.
+ */
 public final class InMemoryHeroRepository implements HeroRepository {
 
+    /** Хранилище героев: идентификатор героя → объект героя. */
     private final Map<Long, Hero> heroes;
 
+    /**
+     * Создаёт репозиторий и загружает всех героев из файла {@code heroes.json}.
+     *
+     * @throws IllegalStateException если файл не найден или произошла ошибка при его чтении
+     */
     public InMemoryHeroRepository() {
         try (InputStream input = getClass().getClassLoader()
                 .getResourceAsStream("heroes.json")) {
