@@ -2,10 +2,12 @@ package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.fakes.FakeBot;
+import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.Bio;
 import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.model.User;
+import com.avengers.cardgame.service.CommandContext;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,31 +23,36 @@ class ProfileCommandHandlerTest {
     private static final long CHAT_ID = 10L;
 
     private InMemoryUserRepository userRepository;
+    private InMemoryUserCardRepository cardRepository;
     private FakeBot bot;
     private ProfileCommandHandler command;
 
     @BeforeEach
     void setUp(){
         userRepository = new InMemoryUserRepository();
+        cardRepository = new InMemoryUserCardRepository();
         bot = new FakeBot();
-        command = new ProfileCommandHandler(new UserServiceImpl(userRepository));
+        command = new ProfileCommandHandler(new UserServiceImpl(userRepository), cardRepository);
     }
 
     @Test
     @DisplayName("Отправляет полные данные профиля")
     void sendsFullProfile() throws Exception {
         User user = User.of(USER_ID, PlayerName.of("Tony"), new Bio("Genius"),
-                100, 5, null, null);
+                100, 0, null, null);   // cardCount больше не используется
         userRepository.save(user);
+        for (int i = 0; i < 5; i++) {
+            cardRepository.addCard(USER_ID, 1L);
+        }
 
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         String expected = """
-                Имя: Tony
-                Описание: Genius
-                Твой баланс: 100 щитов
-                В твоей коллекции: 5 карточек
-                """;
+            Имя: Tony
+            Описание: Genius
+            Твой баланс: 100 щитов
+            В твоей коллекции: 5 карточек
+            """;
         Assertions.assertEquals(expected, bot.lastSent().message().text());
     }
 

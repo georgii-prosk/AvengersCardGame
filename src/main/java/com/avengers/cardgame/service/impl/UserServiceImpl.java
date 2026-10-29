@@ -8,6 +8,7 @@ import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserRepository;
 import com.avengers.cardgame.service.UserService;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
@@ -56,5 +57,11 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
         userRepository.update(user.withBio(newBio));
+    }
+
+    @Override
+    public void updateLastDailyAt(long userId, LocalDateTime lastDailyAt)
+            throws UserNotFoundException {
+        userRepository.updateLastDailyAt(userId, lastDailyAt);
     }
 }

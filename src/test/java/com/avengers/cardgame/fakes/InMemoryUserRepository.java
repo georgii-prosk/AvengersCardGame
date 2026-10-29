@@ -5,14 +5,14 @@ import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 /**
  * Фейковый репозиторий пользователей в памяти.
- * <p>
- * Полноценная реализация {@link UserRepository} без обращения к БД.
  */
 public class InMemoryUserRepository implements UserRepository {
 
@@ -38,6 +38,34 @@ public class InMemoryUserRepository implements UserRepository {
             throw new UserNotFoundException(user.userId());
         }
         storage.put(user.userId(), user);
+    }
+
+    @Override
+    public void updateLastDailyAt(long userId, LocalDateTime lastDailyAt) throws UserNotFoundException {
+        User user = storage.get(userId);
+        if (user == null) {
+            throw new UserNotFoundException(userId);
+        }
+        storage.put(userId, user.withLastDailyAt(lastDailyAt));
+    }
+
+    @Override
+    public List<User> findUsersToNotify(LocalDateTime thresholdTime) {
+        return storage.values().stream()
+                .filter(user -> user.lastDailyAt() != null)
+                .filter(user -> !user.lastDailyAt().isAfter(thresholdTime))
+                .filter(user -> user.dailyNotifiedAt() == null
+                        || user.dailyNotifiedAt().isBefore(user.lastDailyAt()))
+                .toList();
+    }
+
+    @Override
+    public void updateDailyNotifiedAt(long userId, LocalDateTime notifiedAt) throws UserNotFoundException {
+        User user = storage.get(userId);
+        if (user == null) {
+            throw new UserNotFoundException(userId);
+        }
+        storage.put(userId, user.withDailyNotifiedAt(notifiedAt));
     }
 
     /**

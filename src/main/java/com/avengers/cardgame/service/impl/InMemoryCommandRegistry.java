@@ -1,40 +1,34 @@
-package com.avengers.cardgame.command;
+package com.avengers.cardgame.service.impl;
+
+import com.avengers.cardgame.service.CommandHandler;
+import com.avengers.cardgame.service.CommandRegistry;
+import com.avengers.cardgame.service.ResolvedCommand;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
 /**
- * Реестр команд бота.
+ * Реализация реестра команд на основе HashMap.
  */
-public class CommandRegistry {
+public class InMemoryCommandRegistry implements CommandRegistry {
 
-    /** Отображение зарегистрированных команд: имя → обработчик. */
     private final Map<String, CommandHandler> commands = new HashMap<>();
 
-    /**
-     * Регистрирует команду под указанным именем.
-     *
-     * @param name    имя команды вида {@code "/start"}
-     * @param command обработчик
-     */
+    @Override
     public void register(String name, CommandHandler command) {
         commands.put(name, command);
     }
 
-    /**
-     * Определяет команду по тексту сообщения.
-     *
-     * @param text полный текст сообщения
-     * @return команда с аргументом, если найдена
-     */
+    @Override
     public Optional<ResolvedCommand> resolve(String text) {
         if (text == null || text.isBlank()) {
             return Optional.empty();
         }
         String trimmed = text.trim();
         int spaceIndex = trimmed.indexOf(' ');
-        String name = (spaceIndex == -1 ? trimmed : trimmed.substring(0, spaceIndex)).toLowerCase();
+        String name = (spaceIndex == -1 ? trimmed : trimmed.substring(0, spaceIndex)).toLowerCase(Locale.ROOT);
         CommandHandler command = commands.get(name);
         if (command == null) {
             return Optional.empty();

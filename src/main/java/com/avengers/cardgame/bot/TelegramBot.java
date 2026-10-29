@@ -1,68 +1,129 @@
 package com.avengers.cardgame.bot;
 
-import com.avengers.cardgame.service.Message;
+import com.avengers.cardgame.exception.BotException;
+import com.avengers.cardgame.messaging.Button;
+import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.service.MessageProcessingService;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.util.DefaultLongPollingUpdateConsumer;
+import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Telegram-адаптер.
- * <p>
- * Принимает обновления от Telegram, передаёт данные в
- * {@link MessageProcessingService} и отправляет ответы через
- * {@link TelegramClient}. Бизнес-логики не содержит.
+ * Telegram-адаптер: передаёт сообщения и callback-данные общему обработчику команд.
  */
 public final class TelegramBot extends DefaultLongPollingUpdateConsumer implements Bot {
-
-    /** Логгер. */
     private static final Logger log = LoggerFactory.getLogger(TelegramBot.class);
+    private static final int MAX_SEND_ATTEMPTS = 3;
+    private static final long RETRY_DELAY_MILLIS = 500;
 
-    /** Клиент для отправки сообщений в Telegram. */
     private final TelegramClient telegramClient;
-
-    /** Обработчик сообщений. */
     private final MessageProcessingService logic;
 
-    /**
-     * @param token токен Telegram-бота
-     * @param logic сервис обработки сообщений
-     */
     public TelegramBot(String token, MessageProcessingService logic) {
         this.telegramClient = new OkHttpTelegramClient(token);
         this.logic = logic;
     }
 
+    /**
+     * Отправляет сообщение с механизмом повторных попыток (retry).
+     * При неудаче делает до 3 попыток с экспоненциальной задержкой.
+     *
+     * @param message сообщение
+     * @param chatId  идентификатор чата
+     * @throws BotException если все попытки исчерпаны
+     */
     @Override
-    public void sendMessage(@NotNull Message msg, long chatId) {
-        try {
-            SendMessage sendMessage = SendMessage.builder()
-                    .chatId(chatId)
-                    .text(msg.text())
-                    .build();
-            telegramClient.execute(sendMessage);
-        } catch (TelegramApiException e) {
-            log.error("Failed to send message", e);
+    public void sendMessage(@NotNull Message message, long chatId) {
+        SendMessage.SendMessageBuilder<?, ?> builder = SendMessage.builder().chatId(chatId).text(message.text());
+        if (!message.buttons().isEmpty()) builder.replyMarkup(toKeyboard(message.buttons()));
+        SendMessage request = builder.build();
+
+        for (int attempt = 1; attempt <= MAX_SEND_ATTEMPTS; attempt++) {
+            try {
+                telegramClient.execute(request);
+                return;
+            } catch (TelegramApiException exception) {
+                if (attempt == MAX_SEND_ATTEMPTS) {
+                    log.error("Failed to send message to chat {} after {} attempts", chatId, MAX_SEND_ATTEMPTS, exception);
+                    throw new BotException("Failed to send message to chat " + chatId, exception);
+                }
+                log.warn("Failed to send message to chat {}. Attempt {}/{}", chatId, attempt, MAX_SEND_ATTEMPTS, exception);
+                try {
+                    // Ждем перед следующей попыткой
+                    TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MILLIS * attempt);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new BotException("Interrupted while waiting to retry message sending", interrupted);
+                }
+            }
         }
     }
 
     @Override
     public void consume(Update update) {
-        if (!update.hasMessage() || !update.getMessage().hasText()) {
+        if (update.hasCallbackQuery()) {
+            handleCallback(update.getCallbackQuery());
             return;
         }
+        if (!update.hasMessage() || !update.getMessage().hasText()) return;
 
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         String userName = update.getMessage().getFrom().getUserName();
-        String text = update.getMessage().getText();
 
-        logic.processMessage(userId, userName, chatId, text, this);
+        logic.processMessage(userId, userName, chatId, update.getMessage().getText(), this);
+    }
+
+    /**
+     * Обрабатывает нажатие на inline-кнопку.
+     * Преобразует callback-данные в обычную текстовую команду и передает в общий обработчик.
+     */
+    private void handleCallback(CallbackQuery query) {
+        acknowledgeCallbackQuery(query.getId());
+        if (query.getMessage() == null || query.getData() == null) return;
+
+        logic.processMessage(query.getFrom().getId(), query.getFrom().getUserName(),
+                query.getMessage().getChatId(), query.getData(), this);
+    }
+
+    /**
+     * Убирает индикатор загрузки с нажатой кнопки.
+     */
+    private void acknowledgeCallbackQuery(String callbackQueryId) {
+        try {
+            telegramClient.execute(AnswerCallbackQuery.builder().callbackQueryId(callbackQueryId).build());
+        } catch (TelegramApiException exception) {
+            log.error("Failed to answer callback query", exception);
+        }
+    }
+
+    /**
+     * Конвертирует внутреннее представление кнопок в формат Telegram API.
+     */
+    private InlineKeyboardMarkup toKeyboard(List<List<Button>> rows) {
+        List<InlineKeyboardRow> keyboard = new ArrayList<>();
+        for (List<Button> row : rows) {
+            InlineKeyboardRow keyboardRow = new InlineKeyboardRow();
+            for (Button button : row) {
+                keyboardRow.add(InlineKeyboardButton.builder().text(button.text())
+                        .callbackData(button.callbackData()).build());
+            }
+            keyboard.add(keyboardRow);
+        }
+        return InlineKeyboardMarkup.builder().keyboard(keyboard).build();
     }
 }

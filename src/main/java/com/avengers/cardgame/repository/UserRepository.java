@@ -3,7 +3,10 @@ package com.avengers.cardgame.repository;
 import com.avengers.cardgame.exception.UserAlreadyExistsException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
+import org.jetbrains.annotations.NotNull;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -17,7 +20,7 @@ public interface UserRepository {
      * @param userId идентификатор пользователя
      * @return пользователь, если найден
      */
-    Optional<User> findByUserId(long userId);
+    @NotNull Optional<User> findByUserId(long userId);
 
     /**
      * Сохраняет нового пользователя.
@@ -25,7 +28,7 @@ public interface UserRepository {
      * @param user пользователь для сохранения
      * @throws UserAlreadyExistsException если пользователь с таким идентификатором уже существует
      */
-    void save(User user) throws UserAlreadyExistsException;
+    void save(@NotNull User user) throws UserAlreadyExistsException;
 
     /**
      * Обновляет данные существующего пользователя.
@@ -33,5 +36,33 @@ public interface UserRepository {
      * @param user пользователь с обновлёнными данными
      * @throws UserNotFoundException если пользователя с таким идентификатором нет
      */
-    void update(User user) throws UserNotFoundException;
+    void update(@NotNull User user) throws UserNotFoundException;
+
+    /**
+     * Обновляет время последнего получения ежедневной награды.
+     *
+     * @param userId      идентификатор пользователя
+     * @param lastDailyAt новое время получения /daily
+     * @throws UserNotFoundException если пользователя с таким идентификатором нет
+     */
+    void updateLastDailyAt(long userId,@NotNull LocalDateTime lastDailyAt) throws UserNotFoundException;
+
+    /**
+     * Находит пользователей, которым пора отправить уведомление о доступной
+     * ежедневной награде: последняя награда получена не позже указанного
+     * момента, и уведомление после неё ещё не отправлялось.
+     *
+     * @param thresholdTime момент, не позже которого должна быть получена последняя награда
+     * @return список пользователей для уведомления
+     */
+    @NotNull List<User> findUsersToNotify(@NotNull LocalDateTime thresholdTime);
+
+    /**
+     * Сохраняет время отправки уведомления о готовности ежедневной награды.
+     *
+     * @param userId     идентификатор пользователя
+     * @param notifiedAt время отправки уведомления
+     * @throws UserNotFoundException если пользователя с таким идентификатором нет
+     */
+    void updateDailyNotifiedAt(long userId,@NotNull LocalDateTime notifiedAt) throws UserNotFoundException;
 }

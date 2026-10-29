@@ -1,6 +1,7 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.fakes.FakeBot;
+import com.avengers.cardgame.service.CommandContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,7 +26,7 @@ class StartCommandHandlerTest {
 
     @Test
     @DisplayName("Отправляет фиксированное приветствие")
-    void sendsFixedGreeting() {
+    void sendsFixedGreeting() throws Exception {
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         String expected = """
@@ -38,7 +39,7 @@ class StartCommandHandlerTest {
 
     @Test
     @DisplayName("Отправляет сообщение в правильный чат")
-    void sendsToCorrectChat() {
+    void sendsToCorrectChat() throws Exception {
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         Assertions.assertEquals(CHAT_ID, bot.sent().getFirst().chatId());
@@ -46,7 +47,7 @@ class StartCommandHandlerTest {
 
     @Test
     @DisplayName("Отправляет ровно одно сообщение")
-    void sendsExactlyOneMessage() {
+    void sendsExactlyOneMessage() throws Exception {
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         Assertions.assertEquals(1, bot.count());
@@ -54,7 +55,7 @@ class StartCommandHandlerTest {
 
     @Test
     @DisplayName("Не зависит от данных пользователя")
-    void doesNotDependOnUserData() {
+    void doesNotDependOnUserData() throws Exception {
         FakeBot bot1 = new FakeBot();
         FakeBot bot2 = new FakeBot();
 
