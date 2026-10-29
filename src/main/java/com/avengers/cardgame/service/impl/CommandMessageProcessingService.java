@@ -2,6 +2,7 @@ package com.avengers.cardgame.service.impl;
 
 import com.avengers.cardgame.bot.Bot;
 import com.avengers.cardgame.service.CommandContext;
+import com.avengers.cardgame.service.CommandRegistry;
 import com.avengers.cardgame.service.ResolvedCommand;
 import com.avengers.cardgame.exception.AppException;
 import com.avengers.cardgame.exception.BotException;
@@ -31,12 +32,12 @@ public class CommandMessageProcessingService implements MessageProcessingService
     private final Logger log = LoggerFactory.getLogger(CommandMessageProcessingService.class);
 
     /** Реестр команд. */
-    private final InMemoryCommandRegistry registry;
+    private final CommandRegistry registry;
 
     /**
      * @param registry реестр команд
      */
-    public CommandMessageProcessingService(InMemoryCommandRegistry registry) {
+    public CommandMessageProcessingService(CommandRegistry registry) {
         this.registry = registry;
     }
 

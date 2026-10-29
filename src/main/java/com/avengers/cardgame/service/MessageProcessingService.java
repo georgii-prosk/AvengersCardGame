@@ -1,7 +1,7 @@
 package com.avengers.cardgame.service;
 
 import com.avengers.cardgame.bot.Bot;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 
 /**

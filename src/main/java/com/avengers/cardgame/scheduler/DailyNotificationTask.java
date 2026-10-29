@@ -1,4 +1,3 @@
-
 package com.avengers.cardgame.scheduler;
 
 import com.avengers.cardgame.bot.Bot;
@@ -15,6 +14,9 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Задача для периодической отправки уведомлений о доступности ежедневной награды.
+ */
 public class DailyNotificationTask implements Runnable {
     private static final String NOTIFICATION_MESSAGE =
             "🔔 Ежедневная награда снова доступна!";
@@ -25,6 +27,12 @@ public class DailyNotificationTask implements Runnable {
     private final GameConfig gameConfig;
     private final Clock clock;
 
+    /**
+     * @param userRepository репозиторий для поиска пользователей
+     * @param bot            бот для отправки сообщений
+     * @param gameConfig     конфигурация для расчета времени кулдауна
+     * @param clock          часы для получения текущего времени
+     */
     public DailyNotificationTask(
             UserRepository userRepository,
             Bot bot,
@@ -42,10 +50,15 @@ public class DailyNotificationTask implements Runnable {
         try {
             notifyUsers();
         } catch (Exception exception) {
+            // Ловим все исключения, чтобы падение задачи не остановило планировщик
             log.error("Daily notification run failed", exception);
         }
     }
 
+    /**
+     * Находит пользователей, готовых к получению награды, и уведомляет их.
+     * Ошибка отправки одному пользователю не прерывает цикл для остальных.
+     */
     private void notifyUsers() {
         LocalDateTime now = LocalDateTime.now(clock);
         LocalDateTime threshold = now.minus(gameConfig.dailyCooldown());
@@ -54,27 +67,17 @@ public class DailyNotificationTask implements Runnable {
 
         for (User user : users) {
             try {
-                bot.sendMessage(
-                        new Message(NOTIFICATION_MESSAGE),
-                        user.userId()
-                );
+                bot.sendMessage(new Message(NOTIFICATION_MESSAGE), user.userId());
             } catch (BotException exception) {
-                log.warn(
-                        "Failed to deliver notification to user {}",
-                        user.userId(),
-                        exception
-                );
+                // Если бот заблокирован или сеть недоступна, пропускаем пользователя
+                log.warn("Failed to deliver notification to user {}", user.userId(), exception);
                 continue;
             }
 
             try {
                 userRepository.updateDailyNotifiedAt(user.userId(), now);
             } catch (UserNotFoundException exception) {
-                log.warn(
-                        "Failed to mark user {} as notified",
-                        user.userId(),
-                        exception
-                );
+                log.warn("Failed to mark user {} as notified", user.userId(), exception);
             }
         }
     }
