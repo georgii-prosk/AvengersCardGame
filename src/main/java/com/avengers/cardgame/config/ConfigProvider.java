@@ -1,6 +1,6 @@
 package com.avengers.cardgame.config;
 
-import com.avengers.cardgame.exception.AppException;
+import com.avengers.cardgame.exception.ConfigurationException;
 
 /**
  * Источник конфигурации приложения.
@@ -11,7 +11,7 @@ public interface ConfigProvider {
      * Возвращает конфигурацию приложения.
      *
      * @return конфигурация
-     * @throws AppException если конфигурацию не удалось получить
+     * @throws ConfigurationException если конфигурацию не удалось получить
      */
-    AppConfig read() throws AppException;
+    AppConfig read() throws ConfigurationException;
 }
