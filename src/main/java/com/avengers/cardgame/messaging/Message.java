@@ -8,7 +8,7 @@ import java.util.List;
  * Сообщение для отправки пользователю.
  *
  * @param text    текст сообщения
- * @param buttons inline-кнопки под сообщением, сгруппированные по рядам;
+ * @param buttons кнопки под сообщением, сгруппированные по рядам;
  *                пустой список означает отсутствие клавиатуры
  */
 public record Message(@NotNull String text, List<List<Button>> buttons) {

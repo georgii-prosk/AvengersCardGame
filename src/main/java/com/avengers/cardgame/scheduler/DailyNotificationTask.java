@@ -17,6 +17,7 @@ import java.util.List;
  * Задача для периодической отправки уведомлений о доступности ежедневной награды.
  */
 public class DailyNotificationTask implements Runnable {
+    /** Шаблон уведомления */
     private static final String NOTIFICATION_MESSAGE =
             "🔔 Ежедневная награда снова доступна!";
 
