@@ -19,7 +19,7 @@ public class InventoryRenderer {
     /** Шаблон строки карточки в тексте (эмодзи, имя, редкость, количество). */
     private static final String LINE_TEMPLATE = "%s %s — %s ×%d";
 
-    /** Шаблон надписи на inline-кнопке карточки (эмодзи, имя, количество). */
+    /** Шаблон надписи на кнопке карточки (эмодзи, имя, количество). */
     private static final String CARD_BUTTON_TEMPLATE = "%s %s ×%d";
 
     /** Надпись кнопки перехода на предыдущую страницу. */

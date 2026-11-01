@@ -15,12 +15,20 @@ import java.util.*;
  * Команда /inventory_page: переключает страницы инвентаря.
  */
 public class InventoryPageCommandHandler implements CommandHandler {
+    /** Репозиторий карточек пользователей. */
     private final UserCardRepository userCardRepository;
+
+    /** Репозиторий героев. */
     private final HeroRepository heroRepository;
+
 
     /** Рендерер для страниц инвентаря. */
     private final InventoryRenderer renderer = new InventoryRenderer();
 
+    /**
+     * @param userCardRepository репозиторий карточек пользователей
+     * @param heroRepository     репозиторий героев
+     */
     public InventoryPageCommandHandler(UserCardRepository userCardRepository, HeroRepository heroRepository) {
         this.userCardRepository = userCardRepository;
         this.heroRepository = heroRepository;

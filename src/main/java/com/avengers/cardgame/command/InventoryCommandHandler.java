@@ -18,12 +18,19 @@ public class InventoryCommandHandler implements CommandHandler {
     /** Номер первой страницы. */
     private static final int FIRST_PAGE = 1;
 
+    /** Репозиторий карточек пользователей. */
     private final UserCardRepository userCardRepository;
+
+    /** Репозиторий героев. */
     private final HeroRepository heroRepository;
 
     /** Рендерер для страниц инвентаря. */
     private final InventoryRenderer renderer = new InventoryRenderer();
 
+    /**
+     * @param userCardRepository репозиторий карточек пользователей
+     * @param heroRepository     репозиторий героев
+     */
     public InventoryCommandHandler(UserCardRepository userCardRepository, HeroRepository heroRepository) {
         this.userCardRepository = userCardRepository;
         this.heroRepository = heroRepository;

@@ -34,6 +34,10 @@ public class HeroServiceImpl implements HeroService {
     /** Сумма весов всех редкостей. */
     private final int totalWeight;
 
+    /**
+     * @param heroRepository репозиторий героев
+     * @param random         источник случайности
+     */
     public HeroServiceImpl(HeroRepository heroRepository, Random random) {
         this.heroRepository = heroRepository;
         this.random = random;
@@ -54,6 +58,11 @@ public class HeroServiceImpl implements HeroService {
         return Optional.of(candidates.get(random.nextInt(candidates.size())));
     }
 
+    /**
+     * Определяет редкость случайным броском с учётом весов.
+     *
+     * @return выпавшая редкость
+     */
     private HeroRarity rollRarity() {
         int roll = random.nextInt(totalWeight);
         int threshold = 0;

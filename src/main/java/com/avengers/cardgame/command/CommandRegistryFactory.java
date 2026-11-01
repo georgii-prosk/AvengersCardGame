@@ -12,9 +12,16 @@ import com.avengers.cardgame.service.UserService;
  * Фабрика для создания и настройки реестра команд.
  */
 public class CommandRegistryFactory {
+    /** Сервис пользователей. */
     private final UserService userService;
+
+    /** Сервис карточек. */
     private final CardService cardService;
+
+    /** Репозиторий карточек пользователей. */
     private final UserCardRepository userCardRepository;
+
+    /** Репозиторий героев. */
     private final HeroRepository heroRepository;
 
     /**

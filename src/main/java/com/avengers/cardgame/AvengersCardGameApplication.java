@@ -64,7 +64,7 @@ public class AvengersCardGameApplication {
 
         // 3. Создание репозиториев
         UserRepository userRepository = new PostgresUserRepository(connectionFactory);
-        HeroRepository heroRepository = new InMemoryHeroRepository(); // Герои загружаются из JSON
+        HeroRepository heroRepository = new InMemoryHeroRepository();
         UserCardRepository userCardRepository = new PostgresUserCardRepository(connectionFactory);
 
         // 4. Создание сервисов

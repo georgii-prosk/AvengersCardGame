@@ -26,7 +26,7 @@ class HelpCommandHandlerTest {
 
     @Test
     @DisplayName("Отправляет полный текст справки")
-    void sendsFullHelpText(){
+    void sendsFullHelpText() {
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         String expected = """
@@ -43,7 +43,7 @@ class HelpCommandHandlerTest {
 
     @Test
     @DisplayName("Отправляет ровно одно сообщение")
-    void sendsExactlyOneMessage(){
+    void sendsExactlyOneMessage() {
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         Assertions.assertEquals(1, bot.count());

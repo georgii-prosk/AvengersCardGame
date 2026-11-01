@@ -15,8 +15,12 @@ import java.util.Optional;
  * Обработчик команды /view_card: показывает детальную информацию о карточке героя.
  */
 public class ViewCardCommandHandler implements CommandHandler {
+    /** Репозиторий героев. */
     private final HeroRepository heroRepository;
+
+    /** Репозиторий карточек пользователей. */
     private final UserCardRepository userCardRepository;
+
 
     /** Рендерер для карточек героев. */
     private final HeroRenderer heroRenderer = new HeroRenderer();

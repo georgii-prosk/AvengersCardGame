@@ -16,7 +16,7 @@ public class FakeBot implements Bot {
     private final List<Sent> sent = new ArrayList<>();
 
     @Override
-    public void sendMessage(@NotNull Message message, long chatId){
+    public void sendMessage(@NotNull Message message, long chatId) {
         sent.add(new Sent(message, chatId));
     }
 

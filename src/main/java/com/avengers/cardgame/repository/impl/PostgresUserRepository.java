@@ -191,7 +191,6 @@ public class PostgresUserRepository implements UserRepository {
                     toLocalDateTime(rs, "daily_notified_at")
             );
         } catch (AppException exception) {
-            // Если в БД лежат битые данные, выбрасываем техническую ошибку
             throw new RuntimeException("Corrupted user data in DB for ID " + rs.getLong("telegram_id"), exception);
         }
     }

@@ -20,8 +20,12 @@ import java.util.Random;
  * Реализация {@link CardService}.
  */
 public class CardServiceImpl implements CardService {
+    /** Минимальное количество карточек, выдаваемых за одну ежедневную награду. */
     private static final int MIN_DAILY_CARDS = 1;
+
+    /** Максимальное количество карточек, выдаваемых за одну ежедневную награду. */
     private static final int MAX_DAILY_CARDS = 3;
+
 
     /** Сервис пользователей. */
     private final UserService userService;
@@ -54,13 +58,6 @@ public class CardServiceImpl implements CardService {
         this.clock = clock;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Метод синхронизирован для предотвращения состояния гонки (check-then-act):
-     * без этого два параллельных запроса от одного пользователя могли бы
-     * одновременно пройти проверку кулдауна и выдать награду дважды.
-     */
     @Override
     public synchronized DailyRewardResult grantDaily(long userId) throws UserNotFoundException {
         User user = userService.getByUserId(userId);

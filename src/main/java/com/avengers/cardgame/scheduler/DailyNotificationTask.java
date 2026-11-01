@@ -54,7 +54,6 @@ public class DailyNotificationTask implements Runnable {
         try {
             notifyUsers();
         } catch (Exception exception) {
-            // Ловим все исключения, чтобы падение задачи не остановило планировщик
             log.error("Daily notification run failed", exception);
         }
     }

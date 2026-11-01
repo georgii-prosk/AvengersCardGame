@@ -39,7 +39,7 @@ class InventoryCommandHandlerTest {
         command = new InventoryCommandHandler(cardRepository, heroRepository);
     }
 
-    private void run(){
+    private void run() {
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
     }
 
@@ -49,7 +49,7 @@ class InventoryCommandHandlerTest {
 
     @Test
     @DisplayName("Сообщает, что карточек нет, и не добавляет кнопок")
-    void sendsEmptyMessageWhenNoCards(){
+    void sendsEmptyMessageWhenNoCards() {
         run();
 
         Assertions.assertEquals(1, bot.count());
@@ -59,7 +59,7 @@ class InventoryCommandHandlerTest {
 
     @Test
     @DisplayName("Группирует повторные карточки как ×N")
-    void groupsDuplicatesAsCount(){
+    void groupsDuplicatesAsCount() {
         addHero(1, "Thor", HeroRarity.EPIC);
         cardRepository.addCard(USER_ID, 1);
         cardRepository.addCard(USER_ID, 1);
@@ -74,7 +74,7 @@ class InventoryCommandHandlerTest {
 
     @Test
     @DisplayName("Отправляет одно сообщение со страницей 1/1 и кнопкой на каждую карточку")
-    void sendsMessageWithCardButtons(){
+    void sendsMessageWithCardButtons() {
         addHero(1, "Thor", HeroRarity.EPIC);
         addHero(2, "Hulk", HeroRarity.RARE);
         cardRepository.addCard(USER_ID, 1);
@@ -94,7 +94,7 @@ class InventoryCommandHandlerTest {
 
     @Test
     @DisplayName("Сортирует: сначала редкие, затем по имени")
-    void sortsByRarityThenName(){
+    void sortsByRarityThenName() {
         addHero(1, "Zed", HeroRarity.COMMON);
         addHero(1, "Zed", HeroRarity.COMMON);
         addHero(2, "Alpha", HeroRarity.COMMON);
@@ -113,7 +113,7 @@ class InventoryCommandHandlerTest {
 
     @Test
     @DisplayName("Разбивает коллекцию на страницы по 5 и добавляет кнопку «Вперёд»")
-    void paginatesByFive(){
+    void paginatesByFive() {
         for (long id = 1; id <= 7; id++) {
             addHero(id, "Hero" + id, HeroRarity.COMMON);
             cardRepository.addCard(USER_ID, id);
@@ -123,7 +123,6 @@ class InventoryCommandHandlerTest {
 
         Message message = bot.lastSent().message();
         Assertions.assertTrue(message.text().startsWith("Твоя коллекция (страница 1/2):"));
-        // 5 рядов карточек + ряд навигации
         Assertions.assertEquals(6, message.buttons().size());
         List<Button> navigation = message.buttons().getLast();
         Assertions.assertEquals(1, navigation.size());
@@ -142,7 +141,6 @@ class InventoryCommandHandlerTest {
         Message message = renderer.render(items, 2);
 
         Assertions.assertTrue(message.text().startsWith("Твоя коллекция (страница 2/2):"));
-        // 2 карточки + ряд навигации
         Assertions.assertEquals(3, message.buttons().size());
         List<Button> navigation = message.buttons().getLast();
         Assertions.assertEquals(1, navigation.size());
@@ -163,7 +161,7 @@ class InventoryCommandHandlerTest {
 
     @Test
     @DisplayName("Не показывает чужие карточки")
-    void ignoresOtherUsersCards(){
+    void ignoresOtherUsersCards() {
         addHero(1, "Thor", HeroRarity.EPIC);
         cardRepository.addCard(2L, 1);
 
@@ -174,7 +172,7 @@ class InventoryCommandHandlerTest {
 
     @Test
     @DisplayName("Отправляет сообщение в нужный чат")
-    void sendsToCorrectChat(){
+    void sendsToCorrectChat() {
         run();
 
         Assertions.assertEquals(CHAT_ID, bot.sent().getFirst().chatId());
