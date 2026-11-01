@@ -1,4 +1,3 @@
-
 package com.avengers.cardgame.model;
 
 /**
@@ -6,28 +5,11 @@ package com.avengers.cardgame.model;
  */
 public enum HeroRarity {
     /** Обычная редкость. */
-    COMMON(60),
+    COMMON,
     /** Редкая редкость. */
-    RARE(25),
+    RARE,
     /** Эпическая редкость. */
-    EPIC(12),
+    EPIC,
     /** Легендарная редкость. */
-    LEGENDARY(3);
-
-    /** Вес для выпадения. */
-    private final int weight;
-
-    /**
-     * @param weight вес для выпадения
-     */
-    HeroRarity(int weight) {
-        this.weight = weight;
-    }
-
-    /**
-     * @return вес для выпадения
-     */
-    public int weight() {
-        return weight;
-    }
+    LEGENDARY
 }

@@ -12,6 +12,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+
 /**
  * Тесты для {@link UserServiceImpl}.
  */
@@ -188,19 +190,20 @@ class UserServiceTest {
         @Test
         @DisplayName("Сохраняет bio при обновлении имени")
         void keepsBioUnchanged() throws Exception {
-            User user = new User(1L, new PlayerName("Tony"), new Bio("Genius"), 0, 0, null, null);
+            User user = new User(1L, new PlayerName("Tony"), new Bio("Genius"), 0, 0, LocalDateTime.now(), LocalDateTime.now());
             userRepository.save(user);
 
             userService.updateDisplayName(1L, new PlayerName("IronMan"));
 
-            Assertions.assertEquals("Genius",
-                    userRepository.findByUserId(1L).orElseThrow().bio().value());
+            User savedUser = userRepository.findByUserId(1L).orElseThrow();
+            Assertions.assertNotNull(savedUser.bio());
+            Assertions.assertEquals("Genius", savedUser.bio().value());
         }
 
         @Test
         @DisplayName("Сохраняет balance при обновлении имени")
         void keepsBalanceUnchanged() throws Exception {
-            User user = new User(1L, new PlayerName("Tony"), null, 500, 0, null, null);
+            User user = new User(1L, new PlayerName("Tony"), null, 500, 0, LocalDateTime.now(), LocalDateTime.now());
             userRepository.save(user);
 
             userService.updateDisplayName(1L, new PlayerName("IronMan"));
@@ -212,7 +215,7 @@ class UserServiceTest {
         @Test
         @DisplayName("Сохраняет cardCount при обновлении имени")
         void keepsCardCountUnchanged() throws Exception {
-            User user = new User(1L, new PlayerName("Tony"), null, 0, 10, null, null);
+            User user = new User(1L, new PlayerName("Tony"), null, 0, 10, LocalDateTime.now(), LocalDateTime.now());
             userRepository.save(user);
 
             userService.updateDisplayName(1L, new PlayerName("IronMan"));
@@ -236,8 +239,9 @@ class UserServiceTest {
 
             userService.updateBio(1L, new Bio("Genius billionaire"));
 
-            Assertions.assertEquals("Genius billionaire",
-                    userRepository.findByUserId(1L).orElseThrow().bio().value());
+            User savedUser = userRepository.findByUserId(1L).orElseThrow();
+            Assertions.assertNotNull(savedUser.bio());
+            Assertions.assertEquals("Genius billionaire", savedUser.bio().value());
         }
 
         @Test
@@ -280,7 +284,7 @@ class UserServiceTest {
         @Test
         @DisplayName("Сохраняет balance при обновлении bio")
         void keepsBalanceUnchanged() throws Exception {
-            User user = new User(1L, new PlayerName("Tony"), new Bio("Genius"), 500, 0, null, null);
+            User user = new User(1L, new PlayerName("Tony"), new Bio("Genius"), 500, 0, LocalDateTime.now(), LocalDateTime.now());
             userRepository.save(user);
 
             userService.updateBio(1L, new Bio("New bio"));
@@ -296,8 +300,9 @@ class UserServiceTest {
 
             userService.updateBio(1L, new Bio("Привет! 🦸"));
 
-            Assertions.assertEquals("Привет! 🦸",
-                    userRepository.findByUserId(1L).orElseThrow().bio().value());
+            User savedUser = userRepository.findByUserId(1L).orElseThrow();
+            Assertions.assertNotNull(savedUser.bio());
+            Assertions.assertEquals("Привет! 🦸", savedUser.bio().value());
         }
 
         @Test
@@ -307,8 +312,9 @@ class UserServiceTest {
 
             userService.updateBio(1L, new Bio("Line one\nLine two\nLine three"));
 
-            Assertions.assertEquals("Line one\nLine two\nLine three",
-                    userRepository.findByUserId(1L).orElseThrow().bio().value());
+            User savedUser = userRepository.findByUserId(1L).orElseThrow();
+            Assertions.assertNotNull(savedUser.bio());
+            Assertions.assertEquals("Line one\nLine two\nLine three", savedUser.bio().value());
         }
 
         @Test
@@ -319,8 +325,9 @@ class UserServiceTest {
 
             userService.updateBio(1L, new Bio(longBioText));
 
-            Assertions.assertEquals(longBioText,
-                    userRepository.findByUserId(1L).orElseThrow().bio().value());
+            User savedUser = userRepository.findByUserId(1L).orElseThrow();
+            Assertions.assertNotNull(savedUser.bio());
+            Assertions.assertEquals(longBioText, savedUser.bio().value());
         }
     }
 }

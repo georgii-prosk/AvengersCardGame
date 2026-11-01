@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /**
@@ -32,12 +31,11 @@ class HeroTest {
      * @param name пустое имя
      */
     @ParameterizedTest
-    @NullSource
     @ValueSource(strings = {"", "   "})
     @DisplayName("Бросает исключение при пустом имени")
     void throwsOnBlankName(String name) {
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new Hero(1L, name, HeroRarity.COMMON, 10, 10, 10, null));
+                () -> new Hero(1L, name, HeroRarity.COMMON, 10, 10, 10, "desc"));
     }
 
     /**
@@ -47,7 +45,7 @@ class HeroTest {
     @DisplayName("Бросает исключение при отрицательной атаке")
     void throwsOnNegativeAtk() {
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new Hero(1L, "Hero", HeroRarity.COMMON, -1, 10, 10, null));
+                () -> new Hero(1L, "Hero", HeroRarity.COMMON, -1, 10, 10, "description"));
     }
 
     /**
@@ -57,7 +55,7 @@ class HeroTest {
     @DisplayName("Бросает исключение при отрицательной защите")
     void throwsOnNegativeDef() {
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new Hero(1L, "Hero", HeroRarity.COMMON, 10, -1, 10, null));
+                () -> new Hero(1L, "Hero", HeroRarity.COMMON, 10, -1, 10, "description"));
     }
 
     /**
@@ -67,6 +65,6 @@ class HeroTest {
     @DisplayName("Бросает исключение при отрицательном здоровье")
     void throwsOnNegativeHp() {
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new Hero(1L, "Hero", HeroRarity.COMMON, 10, 10, -1, null));
+                () -> new Hero(1L, "Hero", HeroRarity.COMMON, 10, 10, -1, "description"));
     }
 }

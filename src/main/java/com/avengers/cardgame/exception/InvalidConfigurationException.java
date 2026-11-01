@@ -3,7 +3,7 @@ package com.avengers.cardgame.exception;
 /**
  * Доменная ошибка конфигурации: некорректное значение параметра.
  */
-public class InvalidConfigurationException extends AppException {
+public class InvalidConfigurationException extends ConfigurationException {
 
     /** Имя некорректного параметра. */
     private final String parameterName;

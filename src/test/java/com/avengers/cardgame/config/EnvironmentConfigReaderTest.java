@@ -1,6 +1,6 @@
 package com.avengers.cardgame.config;
 
-import com.avengers.cardgame.exception.AppException;
+import com.avengers.cardgame.exception.ConfigurationException;
 import com.avengers.cardgame.exception.MissingEnvironmentVariableException;
 import com.avengers.cardgame.exception.InvalidConfigurationException;
 import org.junit.jupiter.api.Assertions;
@@ -42,7 +42,7 @@ class EnvironmentConfigReaderTest {
 
     @Test
     @DisplayName("Читает валидную конфигурацию")
-    void readsValidConfig() throws AppException {
+    void readsValidConfig() throws ConfigurationException {
         AppConfig config = readerWith(validEnv()).read();
 
         Assertions.assertEquals("test-token", config.botToken());
@@ -58,8 +58,11 @@ class EnvironmentConfigReaderTest {
         Map<String, String> env = validEnv();
         env.remove("BOT_TOKEN");
 
-        Assertions.assertThrows(MissingEnvironmentVariableException.class,
+        MissingEnvironmentVariableException ex = Assertions.assertThrows(
+                MissingEnvironmentVariableException.class,
                 () -> readerWith(env).read());
+
+        Assertions.assertEquals("BOT_TOKEN", ex.variableName());
     }
 
     @Test
@@ -121,8 +124,9 @@ class EnvironmentConfigReaderTest {
         Map<String, String> env = validEnv();
         env.put("DAILY_COOLDOWN_MINUTES", "abc");
 
-        Assertions.assertThrows(InvalidConfigurationException.class,
+        InvalidConfigurationException ex = Assertions.assertThrows(InvalidConfigurationException.class,
                 () -> readerWith(env).read());
+        Assertions.assertEquals("DAILY_COOLDOWN_MINUTES", ex.parameterName());
     }
 
     @Test
@@ -131,8 +135,9 @@ class EnvironmentConfigReaderTest {
         Map<String, String> env = validEnv();
         env.put("DAILY_COOLDOWN_MINUTES", "0");
 
-        Assertions.assertThrows(InvalidConfigurationException.class,
+        InvalidConfigurationException ex = Assertions.assertThrows(InvalidConfigurationException.class,
                 () -> readerWith(env).read());
+        Assertions.assertEquals("DAILY_COOLDOWN_MINUTES", ex.parameterName());
     }
 
     @Test
@@ -141,8 +146,9 @@ class EnvironmentConfigReaderTest {
         Map<String, String> env = validEnv();
         env.put("DAILY_COOLDOWN_MINUTES", "-5");
 
-        Assertions.assertThrows(InvalidConfigurationException.class,
+        InvalidConfigurationException ex = Assertions.assertThrows(InvalidConfigurationException.class,
                 () -> readerWith(env).read());
+        Assertions.assertEquals("DAILY_COOLDOWN_MINUTES", ex.parameterName());
     }
 
     @Test
@@ -151,13 +157,14 @@ class EnvironmentConfigReaderTest {
         Map<String, String> env = validEnv();
         env.put("DAILY_COOLDOWN_MINUTES", "999999999999999999999");
 
-        Assertions.assertThrows(InvalidConfigurationException.class,
+        InvalidConfigurationException ex = Assertions.assertThrows(InvalidConfigurationException.class,
                 () -> readerWith(env).read());
+        Assertions.assertEquals("DAILY_COOLDOWN_MINUTES", ex.parameterName());
     }
 
     @Test
     @DisplayName("Использует дефолтный кулдаун, если переменная не задана")
-    void usesDefaultCooldownWhenNotSet() throws Exception {
+    void usesDefaultCooldownWhenNotSet() throws ConfigurationException {
         AppConfig config = readerWith(validEnv()).read();
 
         Assertions.assertEquals(Duration.ofMinutes(1440), config.game().dailyCooldown());

@@ -12,8 +12,9 @@ import java.util.Optional;
 /**
  * Реализация реестра команд на основе HashMap.
  */
-public class InMemoryCommandRegistry implements CommandRegistry {
+public class CommandRegistryImpl implements CommandRegistry {
 
+    /** Хранилище команд (имя -> обработчик). */
     private final Map<String, CommandHandler> commands = new HashMap<>();
 
     @Override

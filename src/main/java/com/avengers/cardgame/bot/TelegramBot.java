@@ -30,9 +30,15 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
     private static final int MAX_SEND_ATTEMPTS = 3;
     private static final long RETRY_DELAY_MILLIS = 500;
 
+    /** Клиент для работы с Telegram API. */
     private final TelegramClient telegramClient;
+    /** Обработчик входящих сообщений. */
     private final MessageProcessingService logic;
 
+    /**
+     * @param token токен бота
+     * @param logic обработчик логики
+     */
     public TelegramBot(String token, MessageProcessingService logic) {
         this.telegramClient = new OkHttpTelegramClient(token);
         this.logic = logic;
@@ -52,7 +58,7 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
         if (!message.buttons().isEmpty()) builder.replyMarkup(toKeyboard(message.buttons()));
         SendMessage request = builder.build();
 
-        for (int attempt = 1; attempt <= MAX_SEND_ATTEMPTS; attempt++) {
+        for (int attempt = 1; ; attempt++) {
             try {
                 telegramClient.execute(request);
                 return;
@@ -64,7 +70,8 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
                 log.warn("Failed to send message to chat {}. Attempt {}/{}", chatId, attempt, MAX_SEND_ATTEMPTS, exception);
                 try {
                     // Ждем перед следующей попыткой
-                    TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MILLIS * attempt);
+                    long delay = RETRY_DELAY_MILLIS * (1L << (attempt - 1));
+                    TimeUnit.MILLISECONDS.sleep(delay);
                 } catch (InterruptedException interrupted) {
                     Thread.currentThread().interrupt();
                     throw new BotException("Interrupted while waiting to retry message sending", interrupted);

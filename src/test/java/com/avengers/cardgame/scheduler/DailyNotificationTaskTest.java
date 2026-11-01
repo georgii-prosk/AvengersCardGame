@@ -21,8 +21,8 @@ import java.time.ZoneOffset;
 /** Тесты для {@link DailyNotificationTask}. */
 class DailyNotificationTaskTest {
 
-    private static final Instant NOW_INSTANT = Instant.parse("2026-10-21T12:00:00Z");
-    private static final LocalDateTime NOW = LocalDateTime.ofInstant(NOW_INSTANT, ZoneOffset.UTC);
+    private final Instant NOW_INSTANT = Instant.parse("2026-10-21T12:00:00Z");
+    private final LocalDateTime NOW = LocalDateTime.ofInstant(NOW_INSTANT, ZoneOffset.UTC);
     private static final String NOTIFICATION = "🔔 Ежедневная награда снова доступна!";
 
     private InMemoryUserRepository userRepository;
@@ -44,7 +44,7 @@ class DailyNotificationTaskTest {
 
     private void saveUser(long id, LocalDateTime lastDailyAt, LocalDateTime notifiedAt) throws Exception {
         userRepository.save(User.of(id, PlayerName.of("Hero"), null, 0, 0,
-                null, null, lastDailyAt, notifiedAt));
+                LocalDateTime.now(), LocalDateTime.now(), lastDailyAt, notifiedAt));
     }
 
     @Test

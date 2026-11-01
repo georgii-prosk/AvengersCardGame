@@ -4,6 +4,7 @@ import com.avengers.cardgame.exception.InvalidUserException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * Профиль игрока.
@@ -24,8 +25,8 @@ public record User(
         @Nullable Bio bio,
         int balance,
         int cardCount,
-        @Nullable LocalDateTime createdAt,
-        @Nullable LocalDateTime updatedAt,
+        @NotNull LocalDateTime createdAt,
+        @NotNull LocalDateTime updatedAt,
         @Nullable LocalDateTime lastDailyAt,
         @Nullable LocalDateTime dailyNotifiedAt
 ) {
@@ -39,15 +40,11 @@ public record User(
      *                                  либо время обновления раньше времени создания
      */
     public User {
-        if (balance < 0) {
-            throw new IllegalArgumentException("Balance must be non-negative");
-        }
-        if (cardCount < 0) {
-            throw new IllegalArgumentException("Card count must be non-negative");
-        }
-        if (createdAt != null && updatedAt != null && updatedAt.isBefore(createdAt)) {
-            throw new IllegalArgumentException("UpdatedAt cannot be before createdAt");
-        }
+        if (balance < 0) throw new IllegalArgumentException("Balance must be non-negative");
+        if (cardCount < 0) throw new IllegalArgumentException("Card count must be non-negative");
+        Objects.requireNonNull(createdAt, "CreatedAt must not be null");
+        Objects.requireNonNull(updatedAt, "UpdatedAt must not be null");
+        if (updatedAt.isBefore(createdAt)) throw new IllegalArgumentException("UpdatedAt cannot be before createdAt");
     }
 
     /**
@@ -62,8 +59,7 @@ public record User(
             LocalDateTime lastDailyAt, LocalDateTime dailyNotifiedAt
     ) throws InvalidUserException {
         try {
-            return new User(userId, playerName, bio, balance, cardCount,
-                    createdAt, updatedAt, lastDailyAt, dailyNotifiedAt);
+            return new User(userId, playerName, bio, balance, cardCount, createdAt, updatedAt, lastDailyAt, dailyNotifiedAt);
         } catch (IllegalArgumentException exception) {
             throw new InvalidUserException(exception.getMessage());
         }
@@ -104,9 +100,8 @@ public record User(
      * @param playerName отображаемое имя
      */
     public User(long userId, PlayerName playerName) {
-        this(userId, playerName, null, 0, 0, null, null, null, null);
+        this(userId, playerName, null, 0, 0, LocalDateTime.now(), LocalDateTime.now(), null, null);
     }
-
     /**
      * Возвращает копию с новым именем.
      *

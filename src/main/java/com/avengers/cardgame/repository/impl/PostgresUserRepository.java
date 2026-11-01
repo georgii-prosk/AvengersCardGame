@@ -8,7 +8,6 @@ import com.avengers.cardgame.model.Bio;
 import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserRepository;
-import org.checkerframework.checker.units.qual.N;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.*;
@@ -25,8 +24,12 @@ public class PostgresUserRepository implements UserRepository {
     /** SQL-код нарушения уникальности в PostgreSQL. */
     private static final String UNIQUE_VIOLATION_SQL_STATE = "23505";
 
-    private static final String SQL_FIND_BY_ID =
-            "SELECT * FROM users WHERE telegram_id = ?";
+    private static final String SQL_FIND_BY_ID = """
+            SELECT telegram_id, display_name, bio, balance,
+                   (SELECT COALESCE(SUM(count), 0) FROM user_cards WHERE user_cards.user_id = users.telegram_id) AS card_count,
+                   created_at, updated_at, last_daily_at, daily_notified_at
+            FROM users WHERE telegram_id = ?
+            """;
 
     private static final String SQL_INSERT =
             "INSERT INTO users (telegram_id, display_name, bio) VALUES (?, ?, ?)";
@@ -41,7 +44,10 @@ public class PostgresUserRepository implements UserRepository {
             "UPDATE users SET daily_notified_at = ? WHERE telegram_id = ?";
 
     private static final String SQL_FIND_USERS_TO_NOTIFY = """
-            SELECT * FROM users
+            SELECT telegram_id, display_name, bio, balance,
+                   (SELECT COALESCE(SUM(count), 0) FROM user_cards WHERE user_cards.user_id = users.telegram_id) AS card_count,
+                   created_at, updated_at, last_daily_at, daily_notified_at
+            FROM users
             WHERE last_daily_at IS NOT NULL
               AND last_daily_at <= ?
               AND (daily_notified_at IS NULL OR daily_notified_at < last_daily_at)
@@ -107,7 +113,7 @@ public class PostgresUserRepository implements UserRepository {
     }
 
     @Override
-    public void updateLastDailyAt(long userId,@NotNull LocalDateTime lastDailyAt) throws UserNotFoundException {
+    public void updateLastDailyAt(long userId, @NotNull LocalDateTime lastDailyAt) throws UserNotFoundException {
         try (Connection conn = connectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_UPDATE_LAST_DAILY)) {
             stmt.setTimestamp(1, Timestamp.valueOf(lastDailyAt));
@@ -140,7 +146,7 @@ public class PostgresUserRepository implements UserRepository {
     }
 
     @Override
-    public void updateDailyNotifiedAt(long userId,@NotNull LocalDateTime notifiedAt) throws UserNotFoundException {
+    public void updateDailyNotifiedAt(long userId, @NotNull LocalDateTime notifiedAt) throws UserNotFoundException {
         try (Connection conn = connectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_UPDATE_DAILY_NOTIFIED)) {
             stmt.setTimestamp(1, Timestamp.valueOf(notifiedAt));

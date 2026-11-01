@@ -23,13 +23,27 @@ public class CardServiceImpl implements CardService {
     private static final int MIN_DAILY_CARDS = 1;
     private static final int MAX_DAILY_CARDS = 3;
 
+    /** Сервис пользователей. */
     private final UserService userService;
+    /** Репозиторий карточек пользователей. */
     private final UserCardRepository userCardRepository;
+    /** Сервис героев. */
     private final HeroService heroService;
+    /** Игровая конфигурация. */
     private final GameConfig gameConfig;
+    /** Источник случайности. */
     private final Random random;
+    /** Часы для отслеживания времени кулдауна. */
     private final Clock clock;
 
+    /**
+     * @param userService сервис пользователей
+     * @param userCardRepository репозиторий карточек
+     * @param heroService сервис героев
+     * @param gameConfig игровая конфигурация
+     * @param random генератор случайных чисел
+     * @param clock часы
+     */
     public CardServiceImpl(UserService userService, UserCardRepository userCardRepository,
                            HeroService heroService, GameConfig gameConfig, Random random, Clock clock) {
         this.userService = userService;
@@ -40,13 +54,6 @@ public class CardServiceImpl implements CardService {
         this.clock = clock;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Метод синхронизирован, чтобы предотвратить состояние гонки (check-then-act),
-     * когда два одновременных запроса от одного пользователя могут пройти проверку
-     * кулдауна и выдать карточки дважды.
-     */
     @Override
     public synchronized DailyRewardResult grantDaily(long userId) throws UserNotFoundException {
         User user = userService.getByUserId(userId);
@@ -61,7 +68,8 @@ public class CardServiceImpl implements CardService {
         int amount = MIN_DAILY_CARDS + random.nextInt(MAX_DAILY_CARDS - MIN_DAILY_CARDS + 1);
         List<Hero> heroes = new ArrayList<>(amount);
         for (int index = 0; index < amount; index++) {
-            Hero hero = heroService.getRandomHero();
+            Hero hero = heroService.getRandomHero()
+                    .orElseThrow(() -> new IllegalStateException("No heroes available in repository"));
             userCardRepository.addCard(userId, hero.id());
             heroes.add(hero);
         }

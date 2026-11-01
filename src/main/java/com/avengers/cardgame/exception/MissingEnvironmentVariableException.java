@@ -3,7 +3,7 @@ package com.avengers.cardgame.exception;
 /**
  * Ошибка конфигурации: обязательная переменная окружения не задана или пуста.
  */
-public class MissingEnvironmentVariableException extends AppException {
+public class MissingEnvironmentVariableException extends ConfigurationException {
 
     /** Имя отсутствующей переменной. */
     private final String variableName;

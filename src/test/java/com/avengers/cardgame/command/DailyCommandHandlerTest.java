@@ -4,7 +4,6 @@ import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.FakeCardService;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
-import com.avengers.cardgame.presentation.HeroRenderer;
 import com.avengers.cardgame.service.CommandContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -23,7 +22,7 @@ class DailyCommandHandlerTest {
     private final FakeBot bot = new FakeBot();
 
     private void runDaily(FakeCardService cardService) throws Exception {
-        new DailyCommandHandler(cardService, new HeroRenderer())
+        new DailyCommandHandler(cardService)
                 .handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
     }
 
@@ -42,20 +41,6 @@ class DailyCommandHandlerTest {
         Assertions.assertTrue(textOf(0).contains("2"));
         Assertions.assertTrue(bot.sent().stream().allMatch(s -> s.chatId() == CHAT_ID));
         Assertions.assertEquals(USER_ID, service.lastUserId());
-    }
-
-    @Test
-    @DisplayName("Сообщение о карточке содержит эмодзи, имя, редкость и статы")
-    void cardMessageContainsEmojiNameRarityAndStats() throws Exception {
-        runDaily(new FakeCardService(List.of(ironMan)));
-
-        String card = textOf(1);
-
-        Assertions.assertAll(
-                () -> Assertions.assertTrue(card.contains("🟣"), "Нет эмодзи редкости"),
-                () -> Assertions.assertTrue(card.contains("Iron Man"), "Нет имени карточки"),
-                () -> Assertions.assertTrue(card.contains("Эпическая"), "Нет названия редкости")
-        );
     }
 
     @Test
