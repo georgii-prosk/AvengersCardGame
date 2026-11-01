@@ -7,10 +7,8 @@ import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
-import com.avengers.cardgame.presentation.HeroRenderer;
 import com.avengers.cardgame.service.CommandContext;
 import com.avengers.cardgame.service.CommandRegistry;
-import com.avengers.cardgame.service.impl.InMemoryCommandRegistry;
 import com.avengers.cardgame.service.ResolvedCommand;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Assertions;
@@ -37,9 +35,7 @@ class CommandRegistryFactoryTest {
                 new UserServiceImpl(userRepository),
                 new FakeCardService(List.of(hero)),
                 cardRepository,
-                heroRepository,
-                new InventoryRenderer(cardRepository, heroRepository, new HeroRenderer()),
-                new HeroRenderer()
+                heroRepository
         ).create();
         FakeBot bot = new FakeBot();
 
@@ -62,9 +58,7 @@ class CommandRegistryFactoryTest {
                 new UserServiceImpl(userRepository),
                 new FakeCardService(List.of()),
                 cardRepository,
-                heroRepository,
-                new InventoryRenderer(cardRepository, heroRepository, new HeroRenderer()),
-                new HeroRenderer()
+                heroRepository
         ).create();
         FakeBot bot = new FakeBot();
 

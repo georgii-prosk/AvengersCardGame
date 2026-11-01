@@ -2,15 +2,13 @@ package com.avengers.cardgame;
 
 import com.avengers.cardgame.bot.TelegramBot;
 import com.avengers.cardgame.command.CommandRegistryFactory;
-import com.avengers.cardgame.command.InventoryRenderer;
 import com.avengers.cardgame.config.AppConfig;
 import com.avengers.cardgame.config.ConfigProvider;
 import com.avengers.cardgame.config.ConnectionFactory;
 import com.avengers.cardgame.config.DatabaseMigrator;
 import com.avengers.cardgame.config.EnvironmentConfigReader;
 import com.avengers.cardgame.config.GameConfig;
-import com.avengers.cardgame.exception.AppException;
-import com.avengers.cardgame.presentation.HeroRenderer;
+import com.avengers.cardgame.exception.ConfigurationException;
 import com.avengers.cardgame.repository.HeroRepository;
 import com.avengers.cardgame.repository.UserCardRepository;
 import com.avengers.cardgame.repository.UserRepository;
@@ -42,15 +40,19 @@ import com.avengers.cardgame.repository.impl.InMemoryHeroRepository;
  * обработчики команд и запускается сам бот.
  */
 public class AvengersCardGameApplication {
+    /** Логгер. */
     private final Logger log = LoggerFactory.getLogger(AvengersCardGameApplication.class);
 
+    /**
+     * Запускает приложение.
+     */
     void main() {
         // 1. Загрузка конфигурации
         ConfigProvider configProvider = new EnvironmentConfigReader();
         AppConfig config;
         try {
             config = configProvider.read();
-        } catch (AppException exception) {
+        } catch (ConfigurationException exception) {
             log.error("Invalid configuration: {}", exception.getMessage());
             return;
         }
@@ -62,7 +64,7 @@ public class AvengersCardGameApplication {
 
         // 3. Создание репозиториев
         UserRepository userRepository = new PostgresUserRepository(connectionFactory);
-        HeroRepository heroRepository = new InMemoryHeroRepository(); // Герои загружаются из JSON
+        HeroRepository heroRepository = new InMemoryHeroRepository();
         UserCardRepository userCardRepository = new PostgresUserCardRepository(connectionFactory);
 
         // 4. Создание сервисов
@@ -72,11 +74,7 @@ public class AvengersCardGameApplication {
                 heroService, gameConfig, new Random(), Clock.systemUTC());
 
         // 5. Настройка обработки команд
-        HeroRenderer heroRenderer = new HeroRenderer();
-        InventoryRenderer inventoryRenderer = new InventoryRenderer(userCardRepository, heroRepository, heroRenderer);
-
-        CommandRegistry registry = new CommandRegistryFactory(userService, cardService,
-                userCardRepository, heroRepository, inventoryRenderer, heroRenderer).create();
+        CommandRegistry registry = new CommandRegistryFactory(userService, cardService, userCardRepository, heroRepository).create();
 
         MessageProcessingService logic = new CommandMessageProcessingService(registry);
         TelegramBot bot = new TelegramBot(config.botToken(), logic);
@@ -107,7 +105,6 @@ public class AvengersCardGameApplication {
         try (TelegramBotsLongPollingApplication application = new TelegramBotsLongPollingApplication()) {
             application.registerBot(botToken, bot);
             log.info("AvengersCardGame bot started");
-            // Блокируем главный поток навсегда, пока приложение не будет остановлено
             Thread.currentThread().join();
         } catch (InterruptedException exception) {
             log.warn("Main thread was interrupted", exception);

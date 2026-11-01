@@ -26,7 +26,8 @@ public class PostgresUserCardRepository implements UserCardRepository {
             """;
 
     /** Запрос для поиска карточек пользователя. */
-    private static final String SQL_FIND_BY_USER = "SELECT * FROM user_cards WHERE user_id = ?";
+    private static final String SQL_FIND_BY_USER =
+            "SELECT user_id, hero_id, count FROM user_cards WHERE user_id = ?";
 
     /** Запрос для подсчёта общего количества карточек. */
     private static final String SQL_COUNT_BY_USER = "SELECT COALESCE(SUM(count), 0) FROM user_cards WHERE user_id = ?";

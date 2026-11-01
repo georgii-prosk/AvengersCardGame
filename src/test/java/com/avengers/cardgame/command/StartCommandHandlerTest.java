@@ -26,7 +26,7 @@ class StartCommandHandlerTest {
 
     @Test
     @DisplayName("Отправляет фиксированное приветствие")
-    void sendsFixedGreeting() throws Exception {
+    void sendsFixedGreeting() {
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         String expected = """
@@ -39,7 +39,7 @@ class StartCommandHandlerTest {
 
     @Test
     @DisplayName("Отправляет сообщение в правильный чат")
-    void sendsToCorrectChat() throws Exception {
+    void sendsToCorrectChat() {
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         Assertions.assertEquals(CHAT_ID, bot.sent().getFirst().chatId());
@@ -47,7 +47,7 @@ class StartCommandHandlerTest {
 
     @Test
     @DisplayName("Отправляет ровно одно сообщение")
-    void sendsExactlyOneMessage() throws Exception {
+    void sendsExactlyOneMessage() {
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         Assertions.assertEquals(1, bot.count());
@@ -55,7 +55,7 @@ class StartCommandHandlerTest {
 
     @Test
     @DisplayName("Не зависит от данных пользователя")
-    void doesNotDependOnUserData() throws Exception {
+    void doesNotDependOnUserData() {
         FakeBot bot1 = new FakeBot();
         FakeBot bot2 = new FakeBot();
 

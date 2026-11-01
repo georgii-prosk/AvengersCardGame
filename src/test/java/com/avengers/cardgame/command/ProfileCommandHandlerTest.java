@@ -2,7 +2,6 @@ package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.fakes.FakeBot;
-import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.Bio;
 import com.avengers.cardgame.model.PlayerName;
@@ -14,6 +13,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+
 /**
  * Тесты для {@link ProfileCommandHandler}.
  */
@@ -23,27 +24,22 @@ class ProfileCommandHandlerTest {
     private static final long CHAT_ID = 10L;
 
     private InMemoryUserRepository userRepository;
-    private InMemoryUserCardRepository cardRepository;
     private FakeBot bot;
     private ProfileCommandHandler command;
 
     @BeforeEach
-    void setUp(){
+    void setUp() {
         userRepository = new InMemoryUserRepository();
-        cardRepository = new InMemoryUserCardRepository();
         bot = new FakeBot();
-        command = new ProfileCommandHandler(new UserServiceImpl(userRepository), cardRepository);
+        command = new ProfileCommandHandler(new UserServiceImpl(userRepository));
     }
 
     @Test
     @DisplayName("Отправляет полные данные профиля")
     void sendsFullProfile() throws Exception {
         User user = User.of(USER_ID, PlayerName.of("Tony"), new Bio("Genius"),
-                100, 0, null, null);   // cardCount больше не используется
+                100, 5, LocalDateTime.now(), LocalDateTime.now());
         userRepository.save(user);
-        for (int i = 0; i < 5; i++) {
-            cardRepository.addCard(USER_ID, 1L);
-        }
 
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 

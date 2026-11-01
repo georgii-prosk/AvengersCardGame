@@ -45,7 +45,7 @@ public interface UserRepository {
      * @param lastDailyAt новое время получения /daily
      * @throws UserNotFoundException если пользователя с таким идентификатором нет
      */
-    void updateLastDailyAt(long userId,@NotNull LocalDateTime lastDailyAt) throws UserNotFoundException;
+    void updateLastDailyAt(long userId, @NotNull LocalDateTime lastDailyAt) throws UserNotFoundException;
 
     /**
      * Находит пользователей, которым пора отправить уведомление о доступной
@@ -64,5 +64,5 @@ public interface UserRepository {
      * @param notifiedAt время отправки уведомления
      * @throws UserNotFoundException если пользователя с таким идентификатором нет
      */
-    void updateDailyNotifiedAt(long userId,@NotNull LocalDateTime notifiedAt) throws UserNotFoundException;
+    void updateDailyNotifiedAt(long userId, @NotNull LocalDateTime notifiedAt) throws UserNotFoundException;
 }

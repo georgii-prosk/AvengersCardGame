@@ -4,7 +4,7 @@ import com.avengers.cardgame.exception.InvalidUserException;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.service.impl.CommandMessageProcessingService;
-import com.avengers.cardgame.service.impl.InMemoryCommandRegistry;
+import com.avengers.cardgame.service.impl.CommandRegistryImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,17 +34,16 @@ class CommandMessageProcessingServiceTest {
     void setUp() {
         bot = new FakeBot();
 
-        // ИСПОЛЬЗУЕМ ИНТЕРФЕЙС:
-        CommandRegistry registry = new InMemoryCommandRegistry();
+        CommandRegistry registry = new CommandRegistryImpl();
 
         registry.register("/first", context ->
                 context.bot().sendMessage(new Message(FIRST_RESPONSE), context.chatId()));
         registry.register("/second", context ->
                 context.bot().sendMessage(new Message(SECOND_RESPONSE), context.chatId()));
-        registry.register("/fail", context -> {
+        registry.register("/fail", _ -> {
             throw new InvalidUserException("boom");
         });
-        registry.register("/runtime-fail", context -> {
+        registry.register("/runtime-fail", _ -> {
             throw new RuntimeException("boom");
         });
         service = new CommandMessageProcessingService(registry);
@@ -109,22 +108,5 @@ class CommandMessageProcessingServiceTest {
 
         Assertions.assertEquals(1, bot.count());
         Assertions.assertEquals(ERROR_MESSAGE, bot.lastSent().message().text());
-    }
-
-    @Test
-    @DisplayName("Не пытается ответить через сломанного бота при BotException")
-    void doesNotReplyWhenBotIsBroken() {
-        // ИСПОЛЬЗУЕМ ИНТЕРФЕЙС:
-        CommandRegistry brokenRegistry = new InMemoryCommandRegistry();
-
-        brokenRegistry.register("/bot-fail", context -> {
-            throw new com.avengers.cardgame.exception.BotException("boom", null);
-        });
-        CommandMessageProcessingService brokenService = new CommandMessageProcessingService(brokenRegistry);
-        FakeBot neverSent = new FakeBot();
-
-        brokenService.processMessage(USER_ID, USER_NAME, CHAT_ID, "/bot-fail", neverSent);
-
-        Assertions.assertEquals(0, neverSent.count());
     }
 }

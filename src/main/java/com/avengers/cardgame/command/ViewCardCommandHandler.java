@@ -11,16 +11,27 @@ import com.avengers.cardgame.service.CommandHandler;
 
 import java.util.Optional;
 
+/**
+ * Обработчик команды /view_card: показывает детальную информацию о карточке героя.
+ */
 public class ViewCardCommandHandler implements CommandHandler {
+    /** Репозиторий героев. */
     private final HeroRepository heroRepository;
-    private final UserCardRepository userCardRepository;
-    private final HeroRenderer heroRenderer;
 
-    public ViewCardCommandHandler(HeroRepository heroRepository,
-            UserCardRepository userCardRepository, HeroRenderer heroRenderer) {
+    /** Репозиторий карточек пользователей. */
+    private final UserCardRepository userCardRepository;
+
+
+    /** Рендерер для карточек героев. */
+    private final HeroRenderer heroRenderer = new HeroRenderer();
+
+    /**
+     * @param heroRepository     репозиторий героев
+     * @param userCardRepository репозиторий карточек пользователей
+     */
+    public ViewCardCommandHandler(HeroRepository heroRepository, UserCardRepository userCardRepository) {
         this.heroRepository = heroRepository;
         this.userCardRepository = userCardRepository;
-        this.heroRenderer = heroRenderer;
     }
 
     @Override

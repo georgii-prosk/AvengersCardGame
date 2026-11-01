@@ -1,5 +1,3 @@
--- Коллекция карточек пользователей.
--- Справочник героев загружается из heroes.json.
 CREATE TABLE IF NOT EXISTS user_cards (
     user_id BIGINT NOT NULL,
     hero_id BIGINT NOT NULL,

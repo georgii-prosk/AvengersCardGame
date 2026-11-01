@@ -5,24 +5,25 @@ import com.avengers.cardgame.model.HeroRarity;
 import com.avengers.cardgame.repository.HeroRepository;
 import com.avengers.cardgame.service.HeroService;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 
 /**
  * Реализация {@link HeroService} на основе {@link HeroRepository}.
- * <p>
- * Бросок {@code [0, сумма весов)} сопоставляется с редкостью по накопленным
- * весам. При стандартных весах 60/25/12/3 это диапазоны 0–59 (обычная),
- * 60–84 (редкая), 85–96 (эпическая) и 97–99 (легендарная).
  */
 public class HeroServiceImpl implements HeroService {
-
-    /** Сообщение об ошибке, если справочник героев пуст. */
-    private static final String NO_HEROES_MESSAGE = "No heroes available in repository";
-
-    /** Сообщение об ошибке, если бросок не попал ни в одну редкость. */
+    /** Код ошибки при некорректном броске. */
     private static final String ROLL_OUT_OF_RANGE_MESSAGE = "Rarity roll is out of range: ";
+
+    /** Веса для выпадения каждой редкости. */
+    private static final Map<HeroRarity, Integer> WEIGHTS = Map.of(
+            HeroRarity.COMMON, 60,
+            HeroRarity.RARE, 25,
+            HeroRarity.EPIC, 12,
+            HeroRarity.LEGENDARY, 3
+    );
 
     /** Репозиторий героев. */
     private final HeroRepository heroRepository;
@@ -40,22 +41,21 @@ public class HeroServiceImpl implements HeroService {
     public HeroServiceImpl(HeroRepository heroRepository, Random random) {
         this.heroRepository = heroRepository;
         this.random = random;
-        this.totalWeight = Arrays.stream(HeroRarity.values()).mapToInt(HeroRarity::weight).sum();
+        this.totalWeight = WEIGHTS.values().stream().mapToInt(Integer::intValue).sum();
     }
 
     @Override
-    public Hero getRandomHero() {
+    public Optional<Hero> getRandomHero() {
         HeroRarity rarity = rollRarity();
 
         List<Hero> candidates = heroRepository.findByRarity(rarity);
         if (candidates.isEmpty()) {
-            // Для выпавшей редкости героев нет — берём любого, чтобы выдача не ломалась.
             candidates = heroRepository.findAll();
         }
         if (candidates.isEmpty()) {
-            throw new IllegalStateException(NO_HEROES_MESSAGE);
+            return Optional.empty();
         }
-        return candidates.get(random.nextInt(candidates.size()));
+        return Optional.of(candidates.get(random.nextInt(candidates.size())));
     }
 
     /**
@@ -67,7 +67,7 @@ public class HeroServiceImpl implements HeroService {
         int roll = random.nextInt(totalWeight);
         int threshold = 0;
         for (HeroRarity rarity : HeroRarity.values()) {
-            threshold += rarity.weight();
+            threshold += WEIGHTS.get(rarity);
             if (roll < threshold) {
                 return rarity;
             }

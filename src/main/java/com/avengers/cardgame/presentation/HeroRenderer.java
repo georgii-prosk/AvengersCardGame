@@ -49,7 +49,7 @@ public class HeroRenderer {
                 hero.health()
         );
 
-        if (hero.description() != null && !hero.description().isBlank()) {
+        if (!hero.description().isBlank()) {
             text += hero.description().strip() + "\n";
         }
 

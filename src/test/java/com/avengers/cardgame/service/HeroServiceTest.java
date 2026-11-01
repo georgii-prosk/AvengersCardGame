@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
 import java.util.Random;
 
 /**
@@ -61,7 +62,7 @@ class HeroServiceTest {
     private void assertRollGivesRarity(int roll, HeroRarity expected) {
         HeroService service = new HeroServiceImpl(fullRepository(), new ScriptedRandom(roll, 0));
 
-        Assertions.assertEquals(expected, service.getRandomHero().rarity(), "roll=" + roll);
+        Assertions.assertEquals(expected, service.getRandomHero().orElseThrow().rarity(), "roll=" + roll);
     }
 
     @Test
@@ -98,8 +99,8 @@ class HeroServiceTest {
         HeroService first = new HeroServiceImpl(fullRepository(), new ScriptedRandom(10, 0));
         HeroService second = new HeroServiceImpl(fullRepository(), new ScriptedRandom(10, 1));
 
-        Assertions.assertEquals(common1, first.getRandomHero());
-        Assertions.assertEquals(common2, second.getRandomHero());
+        Assertions.assertEquals(Optional.of(common1), first.getRandomHero());
+        Assertions.assertEquals(Optional.of(common2), second.getRandomHero());
     }
 
     @Test
@@ -107,15 +108,14 @@ class HeroServiceTest {
     void fallsBackToAnyHeroWhenRarityHasNoHeroes() {
         HeroService service = new HeroServiceImpl(repositoryOf(common1), new ScriptedRandom(99, 0));
 
-        Assertions.assertEquals(common1, service.getRandomHero());
+        Assertions.assertEquals(Optional.of(common1), service.getRandomHero());
     }
 
     @Test
-    @DisplayName("Бросает IllegalStateException, если героев нет вообще")
-    void throwsWhenNoHeroesAtAll() {
+    @DisplayName("Возвращает пустой Optional, если героев нет вообще")
+    void returnsEmptyWhenNoHeroesAtAll() {
         HeroService service = new HeroServiceImpl(repositoryOf(), new ScriptedRandom(0));
-
-        Assertions.assertThrows(IllegalStateException.class, service::getRandomHero);
+        Assertions.assertTrue(service.getRandomHero().isEmpty());
     }
 
     @Test
@@ -125,7 +125,8 @@ class HeroServiceTest {
         HeroService service = new HeroServiceImpl(repository, new Random(42));
 
         for (int i = 0; i < 1000; i++) {
-            Assertions.assertTrue(repository.findAll().contains(service.getRandomHero()));
+            Hero hero = service.getRandomHero().orElseThrow();
+            Assertions.assertTrue(repository.findAll().contains(hero));
         }
     }
 }

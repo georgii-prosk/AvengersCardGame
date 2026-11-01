@@ -4,29 +4,27 @@ import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.service.HeroService;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Сервис героев для тестов: по кругу возвращает заданных героев.
  */
 public class FakeHeroService implements HeroService {
 
-    /** Герои, выдаваемые по кругу. */
     private final List<Hero> heroes;
-
-    /** Индекс следующего героя. */
     private int next;
 
-    /**
-     * @param heroes герои, выдаваемые по кругу
-     */
     public FakeHeroService(List<Hero> heroes) {
         this.heroes = heroes;
     }
 
     @Override
-    public Hero getRandomHero() {
+    public Optional<Hero> getRandomHero() {
+        if (heroes.isEmpty()) {
+            return Optional.empty();
+        }
         Hero hero = heroes.get(next % heroes.size());
         next++;
-        return hero;
+        return Optional.of(hero);
     }
 }

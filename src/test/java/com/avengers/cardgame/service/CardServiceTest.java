@@ -64,8 +64,8 @@ class CardServiceTest {
                 null,
                 0,
                 0,
-                null,
-                null,
+                LocalDateTime.now(),
+                LocalDateTime.now(),
                 lastDailyAt,
                 null
         ));

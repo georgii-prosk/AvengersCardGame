@@ -26,66 +26,53 @@ import java.util.concurrent.TimeUnit;
  * Telegram-адаптер: передаёт сообщения и callback-данные общему обработчику команд.
  */
 public final class TelegramBot extends DefaultLongPollingUpdateConsumer implements Bot {
+    /** Логгер. */
     private static final Logger log = LoggerFactory.getLogger(TelegramBot.class);
+    /** Максимальное количество попыток отправки сообщения. */
     private static final int MAX_SEND_ATTEMPTS = 3;
+    /** Базовая задержка перед повторной отправкой в миллисекундах. */
     private static final long RETRY_DELAY_MILLIS = 500;
 
+    /** Клиент для работы с Telegram API. */
     private final TelegramClient telegramClient;
+    /** Обработчик входящих сообщений. */
     private final MessageProcessingService logic;
 
+    /**
+     * @param token токен бота
+     * @param logic обработчик логики
+     */
     public TelegramBot(String token, MessageProcessingService logic) {
         this.telegramClient = new OkHttpTelegramClient(token);
         this.logic = logic;
     }
 
-    /**
-     * Отправляет сообщение с механизмом повторных попыток (retry).
-     * При неудаче делает до 3 попыток с экспоненциальной задержкой.
-     *
-     * @param message сообщение
-     * @param chatId  идентификатор чата
-     * @throws BotException если все попытки исчерпаны
-     */
     @Override
     public void sendMessage(@NotNull Message message, long chatId) {
         SendMessage.SendMessageBuilder<?, ?> builder = SendMessage.builder().chatId(chatId).text(message.text());
         if (!message.buttons().isEmpty()) builder.replyMarkup(toKeyboard(message.buttons()));
         SendMessage request = builder.build();
 
-        for (int attempt = 1; attempt <= MAX_SEND_ATTEMPTS; attempt++) {
-            try {
-                telegramClient.execute(request);
-                return;
-            } catch (TelegramApiException exception) {
-                if (attempt == MAX_SEND_ATTEMPTS) {
-                    log.error("Failed to send message to chat {} after {} attempts", chatId, MAX_SEND_ATTEMPTS, exception);
-                    throw new BotException("Failed to send message to chat " + chatId, exception);
-                }
-                log.warn("Failed to send message to chat {}. Attempt {}/{}", chatId, attempt, MAX_SEND_ATTEMPTS, exception);
-                try {
-                    // Ждем перед следующей попыткой
-                    TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MILLIS * attempt);
-                } catch (InterruptedException interrupted) {
-                    Thread.currentThread().interrupt();
-                    throw new BotException("Interrupted while waiting to retry message sending", interrupted);
-                }
-            }
-        }
+        executeWithRetry(() -> telegramClient.execute(request), chatId);
     }
 
     @Override
     public void consume(Update update) {
-        if (update.hasCallbackQuery()) {
-            handleCallback(update.getCallbackQuery());
-            return;
+        try {
+            if (update.hasCallbackQuery()) {
+                handleCallback(update.getCallbackQuery());
+                return;
+            }
+            if (!update.hasMessage() || !update.getMessage().hasText()) return;
+
+            long chatId = update.getMessage().getChatId();
+            long userId = update.getMessage().getFrom().getId();
+            String userName = update.getMessage().getFrom().getUserName();
+
+            logic.processMessage(userId, userName, chatId, update.getMessage().getText(), this);
+        } catch (Exception exception) {
+            log.error("Unexpected error while consuming update", exception);
         }
-        if (!update.hasMessage() || !update.getMessage().hasText()) return;
-
-        long chatId = update.getMessage().getChatId();
-        long userId = update.getMessage().getFrom().getId();
-        String userName = update.getMessage().getFrom().getUserName();
-
-        logic.processMessage(userId, userName, chatId, update.getMessage().getText(), this);
     }
 
     /**
@@ -125,5 +112,41 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
             keyboard.add(keyboardRow);
         }
         return InlineKeyboardMarkup.builder().keyboard(keyboard).build();
+    }
+
+    /**
+     * Выполняет переданное действие с механизмом повторных попыток (retry).
+     *
+     * @param action действие для выполнения
+     * @param chatId идентификатор чата (для логирования)
+     */
+    private void executeWithRetry(TelegramAction action, long chatId) {
+        for (int attempt = 1; ; attempt++) {
+            try {
+                action.execute();
+                return;
+            } catch (TelegramApiException exception) {
+                if (attempt >= MAX_SEND_ATTEMPTS) {
+                    log.error("Failed to send message to chat {} after {} attempts", chatId, MAX_SEND_ATTEMPTS, exception);
+                    throw new BotException("Failed to send message to chat " + chatId, exception);
+                }
+                log.warn("Failed to send message to chat {}. Attempt {}/{}", chatId, attempt, MAX_SEND_ATTEMPTS, exception);
+                try {
+                    long delay = RETRY_DELAY_MILLIS * (1L << (attempt - 1));
+                    TimeUnit.MILLISECONDS.sleep(delay);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new BotException("Interrupted while waiting to retry message sending", interrupted);
+                }
+            }
+        }
+    }
+
+    /**
+     * Функциональный интерфейс для действий, которые могут выбросить TelegramApiException.
+     */
+    @FunctionalInterface
+    private interface TelegramAction {
+        void execute() throws TelegramApiException;
     }
 }
