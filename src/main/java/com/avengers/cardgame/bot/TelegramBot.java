@@ -26,8 +26,11 @@ import java.util.concurrent.TimeUnit;
  * Telegram-адаптер: передаёт сообщения и callback-данные общему обработчику команд.
  */
 public final class TelegramBot extends DefaultLongPollingUpdateConsumer implements Bot {
+    /** Логгер. */
     private static final Logger log = LoggerFactory.getLogger(TelegramBot.class);
+    /** Максимальное количество попыток отправки сообщения. */
     private static final int MAX_SEND_ATTEMPTS = 3;
+    /** Базовая задержка перед повторной отправкой в миллисекундах. */
     private static final long RETRY_DELAY_MILLIS = 500;
 
     /** Клиент для работы с Telegram API. */
@@ -69,7 +72,6 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
                 }
                 log.warn("Failed to send message to chat {}. Attempt {}/{}", chatId, attempt, MAX_SEND_ATTEMPTS, exception);
                 try {
-                    // Ждем перед следующей попыткой
                     long delay = RETRY_DELAY_MILLIS * (1L << (attempt - 1));
                     TimeUnit.MILLISECONDS.sleep(delay);
                 } catch (InterruptedException interrupted) {

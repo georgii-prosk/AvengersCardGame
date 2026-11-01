@@ -10,12 +10,25 @@ import java.util.List;
  * Формирует текстовое представление инвентаря пользователя с пагинацией.
  */
 public class InventoryRenderer {
+    /** Сообщение, отображаемое при отсутствии карточек. */
     private static final String EMPTY_MESSAGE = "У тебя пока нет карточек. Забери ежедневную награду командой /daily!";
+
+    /** Шаблон заголовка страницы (текущая страница / всего страниц). */
     private static final String HEADER_TEMPLATE = "Твоя коллекция (страница %d/%d):";
+
+    /** Шаблон строки карточки в тексте (эмодзи, имя, редкость, количество). */
     private static final String LINE_TEMPLATE = "%s %s — %s ×%d";
+
+    /** Шаблон надписи на inline-кнопке карточки (эмодзи, имя, количество). */
     private static final String CARD_BUTTON_TEMPLATE = "%s %s ×%d";
+
+    /** Надпись кнопки перехода на предыдущую страницу. */
     private static final String PREVIOUS_BUTTON_TEXT = "◀️ Назад";
+
+    /** Надпись кнопки перехода на следующую страницу. */
     private static final String NEXT_BUTTON_TEXT = "Вперёд ▶️";
+
+    /** Количество карточек, отображаемых на одной странице. */
     private static final int PAGE_SIZE = 5;
 
     /** Рендерер для карточек героев. */

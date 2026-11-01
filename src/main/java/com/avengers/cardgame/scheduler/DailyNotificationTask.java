@@ -2,6 +2,7 @@ package com.avengers.cardgame.scheduler;
 
 import com.avengers.cardgame.bot.Bot;
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserRepository;
 import com.avengers.cardgame.messaging.Message;
@@ -60,21 +61,18 @@ public class DailyNotificationTask implements Runnable {
 
     /**
      * Находит пользователей, готовых к получению награды, и уведомляет их.
-     * Ошибка отправки одному пользователю не прерывает цикл для остальных.
+     *
+     * @throws UserNotFoundException если пользователь был удален до обновления статуса
      */
-    private void notifyUsers() {
+    private void notifyUsers() throws UserNotFoundException {
         LocalDateTime now = LocalDateTime.now(clock);
         LocalDateTime threshold = now.minus(gameConfig.dailyCooldown());
 
         List<User> users = userRepository.findUsersToNotify(threshold);
 
         for (User user : users) {
-            try {
-                bot.sendMessage(new Message(NOTIFICATION_MESSAGE), user.userId());
-                userRepository.updateDailyNotifiedAt(user.userId(), now);
-            } catch (Exception exception) {
-                log.warn("Failed to process notification for user {}", user.userId(), exception);
-            }
+            bot.sendMessage(new Message(NOTIFICATION_MESSAGE), user.userId());
+            userRepository.updateDailyNotifiedAt(user.userId(), now);
         }
     }
 }

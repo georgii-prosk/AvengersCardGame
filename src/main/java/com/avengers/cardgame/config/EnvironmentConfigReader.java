@@ -11,17 +11,34 @@ import java.util.Map;
  * Реализация {@link ConfigProvider}, читающая конфигурацию из переменных окружения.
  */
 public class EnvironmentConfigReader implements ConfigProvider {
+    /** Имя переменной окружения с токеном Telegram-бота. */
     private static final String BOT_TOKEN = "BOT_TOKEN";
+
+    /** Имя переменной окружения с JDBC URL базы данных. */
     private static final String DB_URL = "DB_URL";
+
+    /** Имя переменной окружения с именем пользователя БД. */
     private static final String DB_USER = "DB_USER";
+
+    /** Имя переменной окружения с паролем БД. */
     private static final String DB_PASSWORD = "DB_PASSWORD";
+
+    /** Имя переменной окружения с временем кулдауна ежедневной награды (в минутах). */
     private static final String DAILY_COOLDOWN_MINUTES = "DAILY_COOLDOWN_MINUTES";
+
+    /** Имя переменной окружения с интервалом проверки уведомлений (в минутах). */
     private static final String NOTIFICATION_INTERVAL_MINUTES = "DAILY_NOTIFICATION_INTERVAL_MINUTES";
 
+    /** Значение кулдауна по умолчанию (1440 минут = 24 часа). */
     private static final long DEFAULT_DAILY_COOLDOWN_MINUTES = 1440;
+
+    /** Значение интервала уведомлений по умолчанию (30 минут). */
     private static final long DEFAULT_NOTIFICATION_INTERVAL_MINUTES = 30;
+
+    /** Максимально допустимое количество минут, чтобы избежать переполнения при создании Duration. */
     private static final long MAX_DURATION_MINUTES = Long.MAX_VALUE / 60_000_000L;
 
+    /** Источник значений переменных окружения. */
     private final Map<String, String> envSource;
 
     /**

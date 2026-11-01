@@ -20,12 +20,13 @@ public class InventoryCommandHandler implements CommandHandler {
 
     private final UserCardRepository userCardRepository;
     private final HeroRepository heroRepository;
-    private final InventoryRenderer renderer;
 
-    public InventoryCommandHandler(UserCardRepository userCardRepository, HeroRepository heroRepository, InventoryRenderer renderer) {
+    /** Рендерер для страниц инвентаря. */
+    private final InventoryRenderer renderer = new InventoryRenderer();
+
+    public InventoryCommandHandler(UserCardRepository userCardRepository, HeroRepository heroRepository) {
         this.userCardRepository = userCardRepository;
         this.heroRepository = heroRepository;
-        this.renderer = renderer;
     }
 
     @Override

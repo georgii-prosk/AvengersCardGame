@@ -14,6 +14,7 @@ import java.util.Random;
  * Реализация {@link HeroService} на основе {@link HeroRepository}.
  */
 public class HeroServiceImpl implements HeroService {
+    /** Код ошибки при некорректном броске. */
     private static final String ROLL_OUT_OF_RANGE_MESSAGE = "Rarity roll is out of range: ";
 
     /** Веса для выпадения каждой редкости. */
@@ -24,8 +25,13 @@ public class HeroServiceImpl implements HeroService {
             HeroRarity.LEGENDARY, 3
     );
 
+    /** Репозиторий героев. */
     private final HeroRepository heroRepository;
+
+    /** Источник случайности. */
     private final Random random;
+
+    /** Сумма весов всех редкостей. */
     private final int totalWeight;
 
     public HeroServiceImpl(HeroRepository heroRepository, Random random) {
@@ -43,7 +49,7 @@ public class HeroServiceImpl implements HeroService {
             candidates = heroRepository.findAll();
         }
         if (candidates.isEmpty()) {
-            return Optional.empty(); // <--- Возвращаем пустой Optional вместо исключения
+            return Optional.empty();
         }
         return Optional.of(candidates.get(random.nextInt(candidates.size())));
     }

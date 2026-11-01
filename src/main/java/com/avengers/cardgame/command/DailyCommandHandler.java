@@ -16,8 +16,13 @@ import java.util.List;
  * Обработчик команды /daily: выдает ежедневные карточки или сообщает о кулдауне.
  */
 public class DailyCommandHandler implements CommandHandler {
+    /** Шаблон сообщения при активном кулдауне; подставляется оставшееся время. */
     private static final String COOLDOWN_TEMPLATE = "Ежедневная награда пока недоступна. Загляни через %s.";
+
+    /** Шаблон поздравления с получением награды; подставляется количество выпавших карточек. */
     private static final String CONGRATS_TEMPLATE = "🎁 Ежедневная награда! Тебе выпало карточек: %d";
+
+    /** Количество минут в одном часе. */
     private static final long MINUTES_IN_HOUR = 60;
 
     /** Сервис для выдачи карточек. */

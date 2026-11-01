@@ -45,11 +45,7 @@ public class CommandMessageProcessingService implements MessageProcessingService
         Optional<ResolvedCommand> resolved = registry.resolve(text);
         if (resolved.isEmpty()) {
             log.debug("Unknown command: {}", text);
-            try {
-                bot.sendMessage(new Message(UNKNOWN_COMMAND_MESSAGE), chatId);
-            } catch (Exception exception) {
-                log.error("Failed to send unknown command message to chat {}", chatId, exception);
-            }
+            bot.sendMessage(new Message(UNKNOWN_COMMAND_MESSAGE), chatId);
             return;
         }
 
@@ -60,18 +56,10 @@ public class CommandMessageProcessingService implements MessageProcessingService
             resolvedCommand.command().handle(context);
         } catch (AppException exception) {
             log.error("Domain error while executing command", exception);
-            try {
-                bot.sendMessage(new Message(ERROR_MESSAGE), chatId);
-            } catch (Exception e) {
-                log.error("Failed to send error message to chat {}", chatId, e);
-            }
+            bot.sendMessage(new Message(ERROR_MESSAGE), chatId);
         } catch (Exception exception) {
             log.error("Unexpected error while executing command", exception);
-            try {
-                bot.sendMessage(new Message(ERROR_MESSAGE), chatId);
-            } catch (Exception e) {
-                log.error("Failed to send error message to chat {}", chatId, e);
-            }
+            bot.sendMessage(new Message(ERROR_MESSAGE), chatId);
         }
     }
 }

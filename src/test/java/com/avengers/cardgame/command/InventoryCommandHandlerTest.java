@@ -36,7 +36,7 @@ class InventoryCommandHandlerTest {
         heroRepository = new InMemoryHeroRepository();
         bot = new FakeBot();
         renderer = new InventoryRenderer();
-        command = new InventoryCommandHandler(cardRepository, heroRepository, renderer);
+        command = new InventoryCommandHandler(cardRepository, heroRepository);
     }
 
     private void run(){

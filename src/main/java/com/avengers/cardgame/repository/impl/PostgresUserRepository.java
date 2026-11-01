@@ -24,6 +24,7 @@ public class PostgresUserRepository implements UserRepository {
     /** SQL-код нарушения уникальности в PostgreSQL. */
     private static final String UNIQUE_VIOLATION_SQL_STATE = "23505";
 
+    /** Запрос для поиска пользователя по идентификатору с вычислением количества карточек. */
     private static final String SQL_FIND_BY_ID = """
             SELECT telegram_id, display_name, bio, balance,
                    (SELECT COALESCE(SUM(count), 0) FROM user_cards WHERE user_cards.user_id = users.telegram_id) AS card_count,
@@ -31,18 +32,23 @@ public class PostgresUserRepository implements UserRepository {
             FROM users WHERE telegram_id = ?
             """;
 
+    /** Запрос для вставки нового пользователя. */
     private static final String SQL_INSERT =
             "INSERT INTO users (telegram_id, display_name, bio) VALUES (?, ?, ?)";
 
+    /** Запрос для обновления отображаемого имени и описания профиля. */
     private static final String SQL_UPDATE =
             "UPDATE users SET display_name = ?, bio = ? WHERE telegram_id = ?";
 
+    /** Запрос для обновления времени последнего получения ежедневной награды. */
     private static final String SQL_UPDATE_LAST_DAILY =
             "UPDATE users SET last_daily_at = ? WHERE telegram_id = ?";
 
+    /** Запрос для обновления времени последнего уведомления о готовности награды. */
     private static final String SQL_UPDATE_DAILY_NOTIFIED =
             "UPDATE users SET daily_notified_at = ? WHERE telegram_id = ?";
 
+    /** Запрос для поиска пользователей, которым пора отправить уведомление о награде. */
     private static final String SQL_FIND_USERS_TO_NOTIFY = """
             SELECT telegram_id, display_name, bio, balance,
                    (SELECT COALESCE(SUM(count), 0) FROM user_cards WHERE user_cards.user_id = users.telegram_id) AS card_count,

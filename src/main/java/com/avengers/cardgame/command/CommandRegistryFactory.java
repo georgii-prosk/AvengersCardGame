@@ -1,6 +1,5 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.presentation.InventoryRenderer;
 import com.avengers.cardgame.repository.HeroRepository;
 import com.avengers.cardgame.repository.UserCardRepository;
 import com.avengers.cardgame.service.CardService;
@@ -40,9 +39,6 @@ public class CommandRegistryFactory {
     public CommandRegistry create() {
         CommandRegistry registry = new CommandRegistryImpl();
 
-        // Создаем рендерер внутри, так как он больше не хранит состояние
-        InventoryRenderer inventoryRenderer = new InventoryRenderer();
-
         registry.register("/start", wrap(new StartCommandHandler()));
         registry.register("/help", new HelpCommandHandler());
         registry.register("/profile", wrap(new ProfileCommandHandler(userService)));
@@ -50,8 +46,8 @@ public class CommandRegistryFactory {
         registry.register("/setbio", wrap(new SetBioCommandHandler(userService)));
         registry.register("/daily", wrap(new DailyCommandHandler(cardService)));
 
-        registry.register("/inventory", wrap(new InventoryCommandHandler(userCardRepository, heroRepository, inventoryRenderer)));
-        registry.register("/inventory_page", new InventoryPageCommandHandler(userCardRepository, heroRepository, inventoryRenderer));
+        registry.register("/inventory", wrap(new InventoryCommandHandler(userCardRepository, heroRepository)));
+        registry.register("/inventory_page", new InventoryPageCommandHandler(userCardRepository, heroRepository));
 
         registry.register("/view_card", new ViewCardCommandHandler(heroRepository, userCardRepository));
 

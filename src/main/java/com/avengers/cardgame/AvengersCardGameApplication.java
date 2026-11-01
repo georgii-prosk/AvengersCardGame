@@ -40,8 +40,12 @@ import com.avengers.cardgame.repository.impl.InMemoryHeroRepository;
  * обработчики команд и запускается сам бот.
  */
 public class AvengersCardGameApplication {
+    /** Логгер. */
     private final Logger log = LoggerFactory.getLogger(AvengersCardGameApplication.class);
 
+    /**
+     * Запускает приложение.
+     */
     void main() {
         // 1. Загрузка конфигурации
         ConfigProvider configProvider = new EnvironmentConfigReader();
@@ -101,7 +105,6 @@ public class AvengersCardGameApplication {
         try (TelegramBotsLongPollingApplication application = new TelegramBotsLongPollingApplication()) {
             application.registerBot(botToken, bot);
             log.info("AvengersCardGame bot started");
-            // Блокируем главный поток навсегда, пока приложение не будет остановлено
             Thread.currentThread().join();
         } catch (InterruptedException exception) {
             log.warn("Main thread was interrupted", exception);

@@ -28,7 +28,7 @@ class ProfileCommandHandlerTest {
     private ProfileCommandHandler command;
 
     @BeforeEach
-    void setUp(){
+    void setUp() {
         userRepository = new InMemoryUserRepository();
         bot = new FakeBot();
         command = new ProfileCommandHandler(new UserServiceImpl(userRepository));
