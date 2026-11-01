@@ -58,6 +58,13 @@ public class CardServiceImpl implements CardService {
         this.clock = clock;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Метод синхронизирован для предотвращения состояния гонки (check-then-act):
+     * без этого два параллельных запроса от одного пользователя могли бы
+     * одновременно пройти проверку кулдауна и выдать награду дважды.
+     */
     @Override
     public synchronized DailyRewardResult grantDaily(long userId) throws UserNotFoundException {
         User user = userService.getByUserId(userId);
