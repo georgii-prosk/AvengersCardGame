@@ -3,6 +3,8 @@ package com.avengers.cardgame.fakes;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.service.CardService;
 import com.avengers.cardgame.service.DailyRewardResult;
+import com.avengers.cardgame.service.Cooldown;
+import com.avengers.cardgame.service.Success;
 
 import java.time.Duration;
 import java.util.List;
@@ -30,9 +32,9 @@ public class FakeCardService implements CardService {
     public DailyRewardResult grantDaily(long userId) {
         lastUserId = userId;
         if (cooldown != null) {
-            return DailyRewardResult.cooldown(cooldown);
+            return new Cooldown(cooldown);
         }
-        return DailyRewardResult.success(heroes);
+        return new Success(heroes);
     }
 
     public long lastUserId() {

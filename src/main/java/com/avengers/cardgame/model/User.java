@@ -80,7 +80,7 @@ public record User(
     }
 
     /**
-     * Создаёт профиль с семью полями; данные о /daily пустые.
+     * Создаёт профиль без данных о /daily.
      *
      * @throws IllegalArgumentException если данные некорректны
      */

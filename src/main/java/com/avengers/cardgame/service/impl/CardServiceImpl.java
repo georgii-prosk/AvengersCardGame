@@ -7,6 +7,8 @@ import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserCardRepository;
 import com.avengers.cardgame.service.CardService;
 import com.avengers.cardgame.service.DailyRewardResult;
+import com.avengers.cardgame.service.Cooldown;
+import com.avengers.cardgame.service.Success;
 import com.avengers.cardgame.service.HeroService;
 import com.avengers.cardgame.service.UserService;
 import java.time.Clock;
@@ -60,19 +62,19 @@ public class CardServiceImpl implements CardService {
 
     /**
      * {@inheritDoc}
-     * <p>
-     * Метод синхронизирован для предотвращения состояния гонки (check-then-act):
-     * без этого два параллельных запроса от одного пользователя могли бы
-     * одновременно пройти проверку кулдауна и выдать награду дважды.
      */
     @Override
     public synchronized DailyRewardResult grantDaily(long userId) throws UserNotFoundException {
+        // Метод синхронизирован для предотвращения состояния гонки (check-then-act):
+        // без этого два параллельных запроса от одного пользователя могли бы
+        // одновременно пройти проверку кулдауна и выдать награду дважды.
+
         User user = userService.getByUserId(userId);
         LocalDateTime now = LocalDateTime.now(clock);
 
         Duration remaining = timeUntilNextClaim(user.lastDailyAt(), now);
         if (remaining != null) {
-            return DailyRewardResult.cooldown(remaining);
+            return new Cooldown(remaining);
         }
 
         // Генерируем от 1 до 3 карточек
@@ -86,7 +88,7 @@ public class CardServiceImpl implements CardService {
         }
 
         userService.updateLastDailyAt(userId, now);
-        return DailyRewardResult.success(heroes);
+        return new Success(heroes);
     }
 
     /**

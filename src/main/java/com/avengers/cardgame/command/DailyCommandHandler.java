@@ -7,6 +7,8 @@ import com.avengers.cardgame.service.CardService;
 import com.avengers.cardgame.service.CommandContext;
 import com.avengers.cardgame.service.CommandHandler;
 import com.avengers.cardgame.service.DailyRewardResult;
+import com.avengers.cardgame.service.Cooldown;
+import com.avengers.cardgame.service.Success;
 import com.avengers.cardgame.messaging.Message;
 
 import java.time.Duration;
@@ -42,17 +44,17 @@ public class DailyCommandHandler implements CommandHandler {
     public void handle(CommandContext context) throws UserNotFoundException {
         DailyRewardResult result = cardService.grantDaily(context.userId());
 
-        if (!result.claimed()) {
+        if (result instanceof Cooldown(Duration timeLeft)) {
             context.bot().sendMessage(new Message(COOLDOWN_TEMPLATE.formatted(
-                    formatTimeLeft(result.timeUntilNextClaim()))), context.chatId());
+                    formatTimeLeft(timeLeft))), context.chatId());
             return;
         }
 
-        List<Hero> heroes = result.heroes();
-        context.bot().sendMessage(new Message(CONGRATS_TEMPLATE.formatted(heroes.size())), context.chatId());
-
-        for (Hero hero : heroes) {
-            context.bot().sendMessage(new Message(heroRenderer.render(hero)), context.chatId());
+        if (result instanceof Success(List<Hero> heroes)) {
+            context.bot().sendMessage(new Message(CONGRATS_TEMPLATE.formatted(heroes.size())), context.chatId());
+            for (Hero hero : heroes) {
+                context.bot().sendMessage(new Message(heroRenderer.render(hero)), context.chatId());
+            }
         }
     }
 

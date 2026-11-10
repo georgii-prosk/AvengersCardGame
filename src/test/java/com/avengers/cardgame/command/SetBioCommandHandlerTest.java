@@ -40,8 +40,10 @@ class SetBioCommandHandlerTest {
 
         Assertions.assertEquals(
                 "Вы обновили описание своего профиля на Genius billionaire", bot.lastSent().message().text());
-        Assertions.assertEquals("Genius billionaire",
-                userRepository.findByUserId(USER_ID).orElseThrow().bio().value());
+
+        User savedUser = userRepository.findByUserId(USER_ID).orElseThrow();
+        Assertions.assertNotNull(savedUser.bio());
+        Assertions.assertEquals("Genius billionaire", savedUser.bio().value());
     }
 
     @Test
