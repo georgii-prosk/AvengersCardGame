@@ -78,9 +78,8 @@ class CardServiceTest {
 
         DailyRewardResult result = serviceWith(1).grantDaily(USER_ID);
 
-        Assertions.assertTrue(result.claimed());
-        Assertions.assertEquals(List.of(ironMan, widow), result.heroes());
-        Assertions.assertNull(result.timeUntilNextClaim());
+        Success success = Assertions.assertInstanceOf(Success.class, result);
+        Assertions.assertEquals(List.of(ironMan, widow), success.heroes());
         Assertions.assertEquals(2, userCardRepository.countByUserId(USER_ID));
     }
 
@@ -88,10 +87,14 @@ class CardServiceTest {
     @DisplayName("Выдаёт от одной до трёх карточек")
     void grantsBetweenOneAndThreeCards() throws Exception {
         registerUser(null);
-        Assertions.assertEquals(1, serviceWith(0).grantDaily(USER_ID).heroes().size());
+
+        Success first = Assertions.assertInstanceOf(Success.class, serviceWith(0).grantDaily(USER_ID));
+        Assertions.assertEquals(1, first.heroes().size());
 
         userRepository.updateLastDailyAt(USER_ID, now.minus(COOLDOWN));
-        Assertions.assertEquals(3, serviceWith(2).grantDaily(USER_ID).heroes().size());
+
+        Success second = Assertions.assertInstanceOf(Success.class, serviceWith(2).grantDaily(USER_ID));
+        Assertions.assertEquals(3, second.heroes().size());
     }
 
     @Test
@@ -112,9 +115,8 @@ class CardServiceTest {
 
         DailyRewardResult result = serviceWith(0).grantDaily(USER_ID);
 
-        Assertions.assertFalse(result.claimed());
-        Assertions.assertTrue(result.heroes().isEmpty());
-        Assertions.assertEquals(Duration.ofHours(1), result.timeUntilNextClaim());
+        Cooldown cooldown = Assertions.assertInstanceOf(Cooldown.class, result);
+        Assertions.assertEquals(Duration.ofHours(1), cooldown.timeUntilNextClaim());
         Assertions.assertEquals(0, userCardRepository.countByUserId(USER_ID));
         Assertions.assertEquals(last, userService.getByUserId(USER_ID).lastDailyAt());
     }
@@ -128,9 +130,9 @@ class CardServiceTest {
         DailyRewardResult first = service.grantDaily(USER_ID);
         DailyRewardResult second = service.grantDaily(USER_ID);
 
-        Assertions.assertTrue(first.claimed());
-        Assertions.assertFalse(second.claimed());
-        Assertions.assertEquals(COOLDOWN, second.timeUntilNextClaim());
+        Assertions.assertInstanceOf(Success.class, first);
+        Cooldown secondCooldown = Assertions.assertInstanceOf(Cooldown.class, second);
+        Assertions.assertEquals(COOLDOWN, secondCooldown.timeUntilNextClaim());
         Assertions.assertEquals(1, userCardRepository.countByUserId(USER_ID));
     }
 
@@ -141,8 +143,8 @@ class CardServiceTest {
 
         DailyRewardResult result = serviceWith(0).grantDaily(USER_ID);
 
-        Assertions.assertTrue(result.claimed());
-        Assertions.assertEquals(1, result.heroes().size());
+        Success success = Assertions.assertInstanceOf(Success.class, result);
+        Assertions.assertEquals(1, success.heroes().size());
     }
 
     @Test

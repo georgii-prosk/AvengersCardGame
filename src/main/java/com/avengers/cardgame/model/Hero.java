@@ -13,7 +13,7 @@ import java.util.Objects;
  * @param attack сила атаки
  * @param defense сила защиты
  * @param health здоровье
- * @param description описание героя (может быть пустым)
+ * @param description описание героя
  */
 public record Hero(
         long id,
