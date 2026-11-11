@@ -6,6 +6,7 @@ import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserRepository;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -69,6 +70,34 @@ public class InMemoryUserRepository implements UserRepository {
         storage.put(userId, user.withDailyNotifiedAt(notifiedAt));
     }
 
+    @Override
+    public boolean spendBalance(@NotNull Connection connection, long userId, int amount) {
+        return spend(userId, amount, true);
+    }
+
+    @Override
+    public boolean spendShards(@NotNull Connection connection, long userId, int amount) {
+        return spend(userId, amount, false);
+    }
+
+    @Override
+    public boolean addBalance(@NotNull Connection connection, long userId, int amount) {
+        requireNonNegative(amount);
+        User user = storage.get(userId);
+        if (user == null) return false;
+        storage.put(userId, user.withBalance(user.balance() + amount));
+        return true;
+    }
+
+    @Override
+    public boolean addShards(@NotNull Connection connection, long userId, int amount) {
+        requireNonNegative(amount);
+        User user = storage.get(userId);
+        if (user == null) return false;
+        storage.put(userId, user.withShards(user.shards() + amount));
+        return true;
+    }
+
     /**
      * Возвращает количество сохранённых пользователей.
      *
@@ -76,5 +105,35 @@ public class InMemoryUserRepository implements UserRepository {
      */
     public int size() {
         return storage.size();
+    }
+
+    /**
+     * Списывает валюту или кусочки, если средств достаточно.
+     *
+     * @param userId   идентификатор пользователя
+     * @param amount   сумма списания
+     * @param currency {@code true} для валюты, {@code false} для кусочков
+     * @return {@code true}, если списание выполнено
+     */
+    private boolean spend(long userId, int amount, boolean currency) {
+        requireNonNegative(amount);
+        User user = storage.get(userId);
+        if (user == null) return false;
+        int available = currency ? user.balance() : user.shards();
+        if (available < amount) return false;
+        storage.put(userId, currency
+                ? user.withBalance(available - amount)
+                : user.withShards(available - amount));
+        return true;
+    }
+
+    /**
+     * Проверяет, что сумма операции неотрицательная.
+     *
+     * @param amount сумма операции
+     * @throws IllegalArgumentException если сумма отрицательная
+     */
+    private void requireNonNegative(int amount) {
+        if (amount < 0) throw new IllegalArgumentException("Amount must be non-negative");
     }
 }

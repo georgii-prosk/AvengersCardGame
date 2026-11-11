@@ -29,11 +29,23 @@ public class EnvironmentConfigReader implements ConfigProvider {
     /** Имя переменной окружения с интервалом проверки уведомлений (в минутах). */
     private static final String NOTIFICATION_INTERVAL_MINUTES = "DAILY_NOTIFICATION_INTERVAL_MINUTES";
 
+    /** Имя переменной окружения с названием основной игровой валюты. */
+    private static final String CURRENCY_NAME = "CURRENCY_NAME";
+
+    /** Имя переменной окружения с эмодзи основной игровой валюты. */
+    private static final String CURRENCY_EMOJI = "CURRENCY_EMOJI";
+
     /** Значение кулдауна по умолчанию (1440 минут = 24 часа). */
     private static final long DEFAULT_DAILY_COOLDOWN_MINUTES = 1440;
 
     /** Значение интервала уведомлений по умолчанию (30 минут). */
     private static final long DEFAULT_NOTIFICATION_INTERVAL_MINUTES = 30;
+
+    /** Название валюты по умолчанию. */
+    private static final String DEFAULT_CURRENCY_NAME = "Кристаллы";
+
+    /** Эмодзи валюты по умолчанию. */
+    private static final String DEFAULT_CURRENCY_EMOJI = "💎";
 
     /** Максимально допустимое количество минут, чтобы избежать переполнения при создании Duration. */
     private static final long MAX_DURATION_MINUTES = Long.MAX_VALUE / 60_000_000L;
@@ -59,7 +71,9 @@ public class EnvironmentConfigReader implements ConfigProvider {
                 require(DB_URL), require(DB_USER), require(DB_PASSWORD));
         GameConfig game = new GameConfig(
                 Duration.ofMinutes(readPositiveLong(DAILY_COOLDOWN_MINUTES, DEFAULT_DAILY_COOLDOWN_MINUTES)),
-                Duration.ofMinutes(readPositiveLong(NOTIFICATION_INTERVAL_MINUTES, DEFAULT_NOTIFICATION_INTERVAL_MINUTES)));
+                Duration.ofMinutes(readPositiveLong(NOTIFICATION_INTERVAL_MINUTES, DEFAULT_NOTIFICATION_INTERVAL_MINUTES)),
+                readOptional(CURRENCY_NAME, DEFAULT_CURRENCY_NAME),
+                readOptional(CURRENCY_EMOJI, DEFAULT_CURRENCY_EMOJI));
         return new AppConfig(require(BOT_TOKEN), database, game);
     }
 
@@ -74,6 +88,19 @@ public class EnvironmentConfigReader implements ConfigProvider {
         String value = envSource.get(name);
         if (value == null || value.isBlank()) throw new MissingEnvironmentVariableException(name);
         return value;
+    }
+
+    /**
+     * Читает необязательное строковое значение из переменной окружения.
+     *
+     * @param name         имя переменной
+     * @param defaultValue значение по умолчанию (используется, если переменная не задана или пуста)
+     * @return непустое значение переменной либо значение по умолчанию
+     */
+    private String readOptional(String name, String defaultValue) {
+        String value = envSource.get(name);
+        if (value == null || value.isBlank()) return defaultValue;
+        return value.strip();
     }
 
     /**

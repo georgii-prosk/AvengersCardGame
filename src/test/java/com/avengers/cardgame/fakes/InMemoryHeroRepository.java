@@ -45,13 +45,4 @@ public class InMemoryHeroRepository implements HeroRepository {
     public void save(Hero hero) {
         storage.put(hero.id(), hero);
     }
-
-    /**
-     * Возвращает количество сохранённых героев.
-     *
-     * @return количество героев
-     */
-    public int size() {
-        return storage.size();
-    }
 }

@@ -25,6 +25,14 @@ public class PostgresUserCardRepository implements UserCardRepository {
                 count = user_cards.count + 1
             """;
 
+    /** Запрос для уменьшения количества копий карточки. */
+    private static final String SQL_DECREASE_CARD =
+            "UPDATE user_cards SET count = count - 1 WHERE user_id = ? AND hero_id = ? AND count > 0";
+
+    /** Запрос для удаления опустевшей строки карточки. */
+    private static final String SQL_DELETE_EMPTY_CARD =
+            "DELETE FROM user_cards WHERE user_id = ? AND hero_id = ? AND count = 0";
+
     /** Запрос для поиска карточек пользователя. */
     private static final String SQL_FIND_BY_USER =
             "SELECT user_id, hero_id, count FROM user_cards WHERE user_id = ?";
@@ -44,28 +52,59 @@ public class PostgresUserCardRepository implements UserCardRepository {
 
     @Override
     public void addCard(long userId, long heroId) {
-        try (Connection conn = connectionFactory.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(SQL_ADD_CARD)) {
-            stmt.setLong(1, userId);
-            stmt.setLong(2, heroId);
-            stmt.executeUpdate();
+        try (Connection connection = connectionFactory.getConnection()) {
+            addCard(connection, userId, heroId);
         } catch (SQLException exception) {
             throw new RuntimeException("Error adding card", exception);
         }
     }
 
     @Override
+    public void addCard(@NotNull Connection connection, long userId, long heroId) {
+        try (PreparedStatement statement = connection.prepareStatement(SQL_ADD_CARD)) {
+            statement.setLong(1, userId);
+            statement.setLong(2, heroId);
+            statement.executeUpdate();
+        } catch (SQLException exception) {
+            throw new RuntimeException("Error adding card", exception);
+        }
+    }
+
+    @Override
+    public boolean removeCard(@NotNull Connection connection, long userId, long heroId) {
+        try {
+            int updatedRows;
+            try (PreparedStatement statement = connection.prepareStatement(SQL_DECREASE_CARD)) {
+                statement.setLong(1, userId);
+                statement.setLong(2, heroId);
+                updatedRows = statement.executeUpdate();
+            }
+            if (updatedRows == 0) {
+                return false;
+            }
+            try (PreparedStatement statement = connection.prepareStatement(SQL_DELETE_EMPTY_CARD)) {
+                statement.setLong(1, userId);
+                statement.setLong(2, heroId);
+                statement.executeUpdate();
+            }
+            return true;
+        } catch (SQLException exception) {
+            throw new RuntimeException("Error removing card", exception);
+        }
+    }
+
+    @Override
     public @NotNull List<UserCard> findByUserId(long userId) {
         List<UserCard> cards = new ArrayList<>();
-        try (Connection conn = connectionFactory.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(SQL_FIND_BY_USER)) {
-            stmt.setLong(1, userId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
+        try (Connection connection = connectionFactory.getConnection();
+             PreparedStatement statement = connection.prepareStatement(SQL_FIND_BY_USER)) {
+            statement.setLong(1, userId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
                     cards.add(new UserCard(
-                            rs.getLong("user_id"),
-                            rs.getLong("hero_id"),
-                            rs.getInt("count")
+                            resultSet.getLong("user_id"),
+                            resultSet.getLong("hero_id"),
+                            resultSet.getInt("count")
                     ));
                 }
             }
@@ -77,12 +116,12 @@ public class PostgresUserCardRepository implements UserCardRepository {
 
     @Override
     public int countByUserId(long userId) {
-        try (Connection conn = connectionFactory.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(SQL_COUNT_BY_USER)) {
-            stmt.setLong(1, userId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1);
+        try (Connection connection = connectionFactory.getConnection();
+             PreparedStatement statement = connection.prepareStatement(SQL_COUNT_BY_USER)) {
+            statement.setLong(1, userId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt(1);
                 }
             }
         } catch (SQLException exception) {

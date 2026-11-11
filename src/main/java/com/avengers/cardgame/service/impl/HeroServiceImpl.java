@@ -4,9 +4,11 @@ import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
 import com.avengers.cardgame.repository.HeroRepository;
 import com.avengers.cardgame.service.HeroService;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 
@@ -52,6 +54,22 @@ public class HeroServiceImpl implements HeroService {
         if (candidates.isEmpty()) {
             candidates = heroRepository.findAll();
         }
+        return pickRandom(candidates);
+    }
+
+    @Override
+    public Optional<Hero> getRandomHero(@NotNull HeroRarity rarity) {
+        Objects.requireNonNull(rarity, "Rarity must not be null");
+        return pickRandom(heroRepository.findByRarity(rarity));
+    }
+
+    /**
+     * Выбирает случайного героя из непустого списка.
+     *
+     * @param candidates список кандидатов
+     * @return случайный герой, либо пустой {@link Optional}, если список пуст
+     */
+    private Optional<Hero> pickRandom(List<Hero> candidates) {
         if (candidates.isEmpty()) {
             return Optional.empty();
         }

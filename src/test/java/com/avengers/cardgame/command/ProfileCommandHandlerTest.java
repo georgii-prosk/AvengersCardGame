@@ -1,5 +1,6 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.config.GameConfig;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
@@ -31,14 +33,16 @@ class ProfileCommandHandlerTest {
     void setUp() {
         userRepository = new InMemoryUserRepository();
         bot = new FakeBot();
-        command = new ProfileCommandHandler(new UserServiceImpl(userRepository));
+        GameConfig gameConfig = new GameConfig(
+                Duration.ofHours(24), Duration.ofMinutes(30), "Кристаллы", "💎");
+        command = new ProfileCommandHandler(new UserServiceImpl(userRepository), gameConfig);
     }
 
     @Test
     @DisplayName("Отправляет полные данные профиля")
     void sendsFullProfile() throws Exception {
         User user = User.of(USER_ID, PlayerName.of("Tony"), new Bio("Genius"),
-                100, 5, LocalDateTime.now(), LocalDateTime.now());
+                100, 12, 5, LocalDateTime.now(), LocalDateTime.now());
         userRepository.save(user);
 
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
@@ -46,7 +50,8 @@ class ProfileCommandHandlerTest {
         String expected = """
             Имя: Tony
             Описание: Genius
-            Твой баланс: 100 щитов
+            Твой баланс: 100 💎
+            Кусочки: 12 🧩
             В твоей коллекции: 5 карточек
             """;
         Assertions.assertEquals(expected, bot.lastSent().message().text());
@@ -62,7 +67,8 @@ class ProfileCommandHandlerTest {
         String expected = """
                 Имя: Tony
                 Описание: не задано
-                Твой баланс: 0 щитов
+                Твой баланс: 0 💎
+                Кусочки: 0 🧩
                 В твоей коллекции: 0 карточек
                 """;
         Assertions.assertEquals(expected, bot.lastSent().message().text());

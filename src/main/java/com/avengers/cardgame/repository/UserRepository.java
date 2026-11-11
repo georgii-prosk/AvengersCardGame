@@ -5,6 +5,7 @@ import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -65,4 +66,46 @@ public interface UserRepository {
      * @throws UserNotFoundException если пользователя с таким идентификатором нет
      */
     void updateDailyNotifiedAt(long userId, @NotNull LocalDateTime notifiedAt) throws UserNotFoundException;
+
+    /**
+     * Атомарно списывает валюту с баланса пользователя в рамках переданного соединения.
+     *
+     * @param connection соединение с активной транзакцией
+     * @param userId     идентификатор пользователя
+     * @param amount     сумма списания (неотрицательная)
+     * @return {@code true}, если списание выполнено; {@code false}, если средств недостаточно
+     *         или пользователь не найден
+     */
+    boolean spendBalance(@NotNull Connection connection, long userId, int amount);
+
+    /**
+     * Атомарно списывает кусочки у пользователя в рамках переданного соединения.
+     *
+     * @param connection соединение с активной транзакцией
+     * @param userId     идентификатор пользователя
+     * @param amount     количество кусочков (неотрицательное)
+     * @return {@code true}, если списание выполнено; {@code false}, если кусочков недостаточно
+     *         или пользователь не найден
+     */
+    boolean spendShards(@NotNull Connection connection, long userId, int amount);
+
+    /**
+     * Атомарно начисляет валюту на баланс пользователя в рамках переданного соединения.
+     *
+     * @param connection соединение с активной транзакцией
+     * @param userId     идентификатор пользователя
+     * @param amount     сумма начисления (неотрицательная)
+     * @return {@code true}, если начисление выполнено; {@code false}, если пользователь не найден
+     */
+    boolean addBalance(@NotNull Connection connection, long userId, int amount);
+
+    /**
+     * Атомарно начисляет кусочки пользователю в рамках переданного соединения.
+     *
+     * @param connection соединение с активной транзакцией
+     * @param userId     идентификатор пользователя
+     * @param amount     количество кусочков (неотрицательное)
+     * @return {@code true}, если начисление выполнено; {@code false}, если пользователь не найден
+     */
+    boolean addShards(@NotNull Connection connection, long userId, int amount);
 }

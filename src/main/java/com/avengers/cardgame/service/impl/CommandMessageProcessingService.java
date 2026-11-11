@@ -28,7 +28,7 @@ public class CommandMessageProcessingService implements MessageProcessingService
             "Произошла ошибка при обработке команды.";
 
     /** Логгер. */
-    private final Logger log = LoggerFactory.getLogger(CommandMessageProcessingService.class);
+    private final Logger logger = LoggerFactory.getLogger(CommandMessageProcessingService.class);
 
     /** Реестр команд. */
     private final CommandRegistry registry;
@@ -44,7 +44,7 @@ public class CommandMessageProcessingService implements MessageProcessingService
     public void processMessage(long userId, @Nullable String userName, long chatId, @NotNull String text, @NotNull Bot bot) {
         Optional<ResolvedCommand> resolved = registry.resolve(text);
         if (resolved.isEmpty()) {
-            log.debug("Unknown command: {}", text);
+            logger.debug("Unknown command: {}", text);
             bot.sendMessage(new Message(UNKNOWN_COMMAND_MESSAGE), chatId);
             return;
         }
@@ -55,10 +55,10 @@ public class CommandMessageProcessingService implements MessageProcessingService
         try {
             resolvedCommand.command().handle(context);
         } catch (AppException exception) {
-            log.error("Domain error while executing command", exception);
+            logger.error("Domain error while executing command", exception);
             bot.sendMessage(new Message(ERROR_MESSAGE), chatId);
         } catch (Exception exception) {
-            log.error("Unexpected error while executing command", exception);
+            logger.error("Unexpected error while executing command", exception);
             bot.sendMessage(new Message(ERROR_MESSAGE), chatId);
         }
     }

@@ -1,5 +1,6 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.config.GameConfig;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.messaging.Message;
@@ -12,11 +13,15 @@ import com.avengers.cardgame.service.UserService;
  */
 public class ProfileCommandHandler implements CommandHandler {
 
+    /** Эмодзи кусочков. */
+    private static final String SHARDS_EMOJI = "🧩";
+
     /** Шаблон для вывода профиля. */
     private static final String PROFILE_TEMPLATE = """
             Имя: %s
             Описание: %s
-            Твой баланс: %d щитов
+            Твой баланс: %d %s
+            Кусочки: %d %s
             В твоей коллекции: %d карточек
             """;
 
@@ -26,11 +31,16 @@ public class ProfileCommandHandler implements CommandHandler {
     /** Сервис пользователей. */
     private final UserService userService;
 
+    /** Игровая конфигурация. */
+    private final GameConfig gameConfig;
+
     /**
-     * @param userService        сервис пользователей
+     * @param userService сервис пользователей
+     * @param gameConfig  игровая конфигурация
      */
-    public ProfileCommandHandler(UserService userService) {
+    public ProfileCommandHandler(UserService userService, GameConfig gameConfig) {
         this.userService = userService;
+        this.gameConfig = gameConfig;
     }
 
     @Override
@@ -40,7 +50,8 @@ public class ProfileCommandHandler implements CommandHandler {
         String displayName = user.playerName().value();
         String bio = user.bio() == null ? NOT_SET : user.bio().value();
 
-        String text = PROFILE_TEMPLATE.formatted(displayName, bio, user.balance(), user.cardCount());
+        String text = PROFILE_TEMPLATE.formatted(displayName, bio, user.balance(),
+                gameConfig.currencyEmoji(), user.shards(), SHARDS_EMOJI, user.cardCount());
 
         context.bot().sendMessage(new Message(text), context.chatId());
     }

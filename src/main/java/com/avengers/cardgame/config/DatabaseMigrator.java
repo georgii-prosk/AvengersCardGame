@@ -10,16 +10,16 @@ import org.slf4j.LoggerFactory;
 public class DatabaseMigrator {
 
     /** Логгер. */
-    private final Logger log = LoggerFactory.getLogger(DatabaseMigrator.class);
+    private final Logger logger = LoggerFactory.getLogger(DatabaseMigrator.class);
 
     /** Параметры подключения к базе данных. */
-    private final DatabaseConfig config;
+    private final DatabaseConfig databaseConfiguration;
 
     /**
-     * @param config параметры подключения к базе данных
+     * @param databaseConfiguration параметры подключения к базе данных
      */
-    public DatabaseMigrator(DatabaseConfig config) {
-        this.config = config;
+    public DatabaseMigrator(DatabaseConfig databaseConfiguration) {
+        this.databaseConfiguration = databaseConfiguration;
     }
 
     /**
@@ -27,9 +27,10 @@ public class DatabaseMigrator {
      */
     public void migrate() {
         Flyway flyway = Flyway.configure()
-                .dataSource(config.url(), config.user(), config.password())
+                .dataSource(databaseConfiguration.url(), databaseConfiguration.user(),
+                        databaseConfiguration.password())
                 .load();
         flyway.migrate();
-        log.info("Database migrations applied");
+        logger.info("Database migrations applied");
     }
 }

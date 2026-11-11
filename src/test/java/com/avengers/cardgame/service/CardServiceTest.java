@@ -1,8 +1,13 @@
 package com.avengers.cardgame.service;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.exception.InsufficientShardsException;
+import com.avengers.cardgame.exception.NotEnoughCardsException;
 import com.avengers.cardgame.exception.UserNotFoundException;
+import com.avengers.cardgame.fakes.FakeConnection;
+import com.avengers.cardgame.fakes.FakeConnectionFactory;
 import com.avengers.cardgame.fakes.FakeHeroService;
+import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.fakes.ScriptedRandom;
@@ -24,6 +29,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 
+/**
+ * Тесты для {@link CardServiceImpl}.
+ */
 class CardServiceTest {
 
     private static final long USER_ID = 42L;
@@ -37,32 +45,57 @@ class CardServiceTest {
 
     private InMemoryUserRepository userRepository;
     private InMemoryUserCardRepository userCardRepository;
+    private InMemoryHeroRepository heroRepository;
+    private FakeConnection connection;
+    private FakeConnectionFactory connectionFactory;
     private UserService userService;
 
     @BeforeEach
     void setUp() {
         userRepository = new InMemoryUserRepository();
         userCardRepository = new InMemoryUserCardRepository();
+        heroRepository = new InMemoryHeroRepository();
+        heroRepository.save(ironMan);
+        heroRepository.save(widow);
+        connection = new FakeConnection();
+        connectionFactory = new FakeConnectionFactory(connection);
         userService = new UserServiceImpl(userRepository);
     }
 
+    /**
+     * Создаёт сервис с заданным сценарием случайных чисел.
+     *
+     * @param scripted значения для последовательных вызовов random
+     * @return сервис карточек
+     */
     private CardService serviceWith(int... scripted) {
         return new CardServiceImpl(
                 userService,
                 userCardRepository,
                 new FakeHeroService(List.of(ironMan, widow)),
-                new GameConfig(COOLDOWN, Duration.ofMinutes(30)),
+                new GameConfig(COOLDOWN, Duration.ofMinutes(30), "Кристаллы", "💎"),
                 new ScriptedRandom(scripted),
-                clock
+                clock,
+                connectionFactory,
+                heroRepository,
+                userRepository
         );
     }
 
-    private void registerUser(LocalDateTime lastDailyAt) throws Exception {
+    /**
+     * Сохраняет пользователя с заданными кусочками.
+     *
+     * @param shards      количество кусочков
+     * @param lastDailyAt время последней награды
+     * @throws Exception если данные пользователя некорректны
+     */
+    private void registerUser(int shards, LocalDateTime lastDailyAt) throws Exception {
         userRepository.save(User.of(
                 USER_ID,
                 PlayerName.of("Tony"),
                 null,
                 0,
+                shards,
                 0,
                 LocalDateTime.now(),
                 LocalDateTime.now(),
@@ -74,7 +107,7 @@ class CardServiceTest {
     @Test
     @DisplayName("Первая выдача возвращает героев и сохраняет их в коллекцию")
     void firstDailyGrantsCardsAndSavesThem() throws Exception {
-        registerUser(null);
+        registerUser(0, null);
 
         DailyRewardResult result = serviceWith(1).grantDaily(USER_ID);
 
@@ -86,7 +119,7 @@ class CardServiceTest {
     @Test
     @DisplayName("Выдаёт от одной до трёх карточек")
     void grantsBetweenOneAndThreeCards() throws Exception {
-        registerUser(null);
+        registerUser(0, null);
 
         Success first = Assertions.assertInstanceOf(Success.class, serviceWith(0).grantDaily(USER_ID));
         Assertions.assertEquals(1, first.heroes().size());
@@ -100,7 +133,7 @@ class CardServiceTest {
     @Test
     @DisplayName("После выдачи обновляет lastDailyAt")
     void updatesLastDailyAtAfterGrant() throws Exception {
-        registerUser(null);
+        registerUser(0, null);
 
         serviceWith(0).grantDaily(USER_ID);
 
@@ -111,7 +144,7 @@ class CardServiceTest {
     @DisplayName("При активном кулдауне возвращает оставшееся время и ничего не выдаёт")
     void cooldownReturnsTimeLeftAndGivesNothing() throws Exception {
         LocalDateTime last = now.minusHours(23);
-        registerUser(last);
+        registerUser(0, last);
 
         DailyRewardResult result = serviceWith(0).grantDaily(USER_ID);
 
@@ -124,7 +157,7 @@ class CardServiceTest {
     @Test
     @DisplayName("Повторный вызов сразу после выдачи возвращает кулдаун")
     void secondDailyRightAfterFirstIsRejected() throws Exception {
-        registerUser(null);
+        registerUser(0, null);
         CardService service = serviceWith(0);
 
         DailyRewardResult first = service.grantDaily(USER_ID);
@@ -139,7 +172,7 @@ class CardServiceTest {
     @Test
     @DisplayName("Выдаёт снова, когда кулдаун истёк ровно сейчас")
     void grantsAgainWhenCooldownExactlyElapsed() throws Exception {
-        registerUser(now.minus(COOLDOWN));
+        registerUser(0, now.minus(COOLDOWN));
 
         DailyRewardResult result = serviceWith(0).grantDaily(USER_ID);
 
@@ -151,5 +184,72 @@ class CardServiceTest {
     @DisplayName("Бросает UserNotFoundException для неизвестного пользователя")
     void throwsWhenUserNotFound() {
         Assertions.assertThrows(UserNotFoundException.class, () -> serviceWith(0).grantDaily(USER_ID));
+    }
+
+    @Test
+    @DisplayName("Разбор карточек начисляет кусочки и фиксирует транзакцию")
+    void disassembleAddsShardsAndCommits() throws Exception {
+        registerUser(0, null);
+        userCardRepository.addCard(USER_ID, ironMan.id());
+        userCardRepository.addCard(USER_ID, ironMan.id());
+
+        int shards = serviceWith().disassemble(USER_ID, ironMan.id(), 2);
+
+        Assertions.assertEquals(ironMan.rarity().shardsYield() * 2, shards);
+        Assertions.assertEquals(0, userCardRepository.countOf(USER_ID, ironMan.id()));
+        Assertions.assertEquals(shards, userService.getByUserId(USER_ID).shards());
+        Assertions.assertEquals(1, connection.commitCount());
+        Assertions.assertEquals(0, connection.rollbackCount());
+    }
+
+    @Test
+    @DisplayName("Разбор без карточек откатывает транзакцию")
+    void disassembleWithoutCardsRollsBack() throws Exception {
+        registerUser(0, null);
+
+        Assertions.assertThrows(NotEnoughCardsException.class,
+                () -> serviceWith().disassemble(USER_ID, ironMan.id(), 1));
+
+        Assertions.assertEquals(1, connection.rollbackCount());
+        Assertions.assertEquals(0, connection.commitCount());
+        Assertions.assertEquals(0, userService.getByUserId(USER_ID).shards());
+    }
+
+    @Test
+    @DisplayName("Разбор большего количества, чем есть, откатывает транзакцию")
+    void disassembleTooManyCardsRollsBack() throws Exception {
+        registerUser(0, null);
+        userCardRepository.addCard(USER_ID, ironMan.id());
+
+        Assertions.assertThrows(NotEnoughCardsException.class,
+                () -> serviceWith().disassemble(USER_ID, ironMan.id(), 2));
+
+        Assertions.assertEquals(1, connection.rollbackCount());
+    }
+
+    @Test
+    @DisplayName("Крафт списывает кусочки и добавляет карточку")
+    void craftSpendsShardsAndAddsCard() throws Exception {
+        registerUser(HeroRarity.EPIC.craftCost() + 1, null);
+
+        Hero hero = serviceWith().craft(USER_ID, HeroRarity.EPIC);
+
+        Assertions.assertEquals(ironMan, hero);
+        Assertions.assertEquals(1, userService.getByUserId(USER_ID).shards());
+        Assertions.assertEquals(1, userCardRepository.countOf(USER_ID, ironMan.id()));
+        Assertions.assertEquals(1, connection.commitCount());
+    }
+
+    @Test
+    @DisplayName("Крафт без кусочков откатывает транзакцию")
+    void craftWithoutShardsRollsBack() throws Exception {
+        registerUser(0, null);
+
+        Assertions.assertThrows(InsufficientShardsException.class,
+                () -> serviceWith().craft(USER_ID, HeroRarity.LEGENDARY));
+
+        Assertions.assertEquals(1, connection.rollbackCount());
+        Assertions.assertEquals(0, userCardRepository.countByUserId(USER_ID));
+        Assertions.assertEquals(0, userService.getByUserId(USER_ID).shards());
     }
 }

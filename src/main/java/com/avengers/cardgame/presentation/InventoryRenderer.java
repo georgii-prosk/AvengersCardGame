@@ -2,19 +2,30 @@ package com.avengers.cardgame.presentation;
 
 import com.avengers.cardgame.messaging.Button;
 import com.avengers.cardgame.messaging.Message;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Формирует текстовое представление инвентаря пользователя с пагинацией.
+ * <p>
+ * Рендерер не хранит зависимости и не ходит в БД: он работает только
+ * с готовыми DTO и создаётся на месте использования.
  */
 public class InventoryRenderer {
     /** Сообщение, отображаемое при отсутствии карточек. */
     private static final String EMPTY_MESSAGE = "У тебя пока нет карточек. Забери ежедневную награду командой /daily!";
 
-    /** Шаблон заголовка страницы (текущая страница / всего страниц). */
-    private static final String HEADER_TEMPLATE = "Твоя коллекция (страница %d/%d):";
+    /** Заголовок страницы инвентаря по умолчанию. */
+    private static final String DEFAULT_HEADER_TEMPLATE = "Твоя коллекция (страница %d/%d):";
+
+    /** Команда просмотра карточки по умолчанию. */
+    private static final String DEFAULT_CARD_COMMAND = "/view_card";
+
+    /** Команда перехода между страницами инвентаря по умолчанию. */
+    private static final String DEFAULT_PAGE_COMMAND = "/inventory_page";
 
     /** Шаблон строки карточки в тексте (эмодзи, имя, редкость, количество). */
     private static final String LINE_TEMPLATE = "%s %s — %s ×%d";
@@ -44,6 +55,26 @@ public class InventoryRenderer {
      * @return сообщение с текстом и кнопками навигации
      */
     public Message render(List<InventoryItem> items, int page) {
+        return render(items, page, DEFAULT_HEADER_TEMPLATE, DEFAULT_CARD_COMMAND, DEFAULT_PAGE_COMMAND);
+    }
+
+    /**
+     * Формирует сообщение со страницей инвентаря с настраиваемым заголовком и командами кнопок.
+     *
+     * @param items             отсортированный список записей
+     * @param page              запрошенная страница (начиная с 1)
+     * @param headerTemplate    шаблон заголовка с двумя подстановками: текущая и всего страниц
+     * @param cardCommandPrefix команда кнопки карточки, к которой добавляется идентификатор героя
+     * @param pageCommandPrefix команда кнопки навигации, к которой добавляется номер страницы
+     * @return сообщение с текстом и кнопками навигации
+     */
+    public Message render(List<InventoryItem> items, int page, @NotNull String headerTemplate,
+                          @NotNull String cardCommandPrefix, @NotNull String pageCommandPrefix) {
+        Objects.requireNonNull(items, "Items must not be null");
+        Objects.requireNonNull(headerTemplate, "Header template must not be null");
+        Objects.requireNonNull(cardCommandPrefix, "Card command prefix must not be null");
+        Objects.requireNonNull(pageCommandPrefix, "Page command prefix must not be null");
+
         if (items.isEmpty()) {
             return new Message(EMPTY_MESSAGE);
         }
@@ -54,7 +85,7 @@ public class InventoryRenderer {
         int from = (currentPage - 1) * PAGE_SIZE;
         List<InventoryItem> pageItems = items.subList(from, Math.min(from + PAGE_SIZE, items.size()));
 
-        StringBuilder text = new StringBuilder(HEADER_TEMPLATE.formatted(currentPage, totalPages));
+        StringBuilder text = new StringBuilder(headerTemplate.formatted(currentPage, totalPages));
         List<List<Button>> rows = new ArrayList<>();
 
         for (InventoryItem item : pageItems) {
@@ -63,12 +94,17 @@ public class InventoryRenderer {
             text.append('\n').append(LINE_TEMPLATE.formatted(
                     heroRenderer.emoji(rarity), hero.name(), heroRenderer.title(rarity), item.count()));
             rows.add(List.of(new Button(CARD_BUTTON_TEMPLATE.formatted(
-                    heroRenderer.emoji(rarity), hero.name(), item.count()), "/view_card " + hero.id())));
+                    heroRenderer.emoji(rarity), hero.name(), item.count()),
+                    cardCommandPrefix + " " + hero.id())));
         }
 
         List<Button> navigation = new ArrayList<>();
-        if (currentPage > 1) navigation.add(new Button(PREVIOUS_BUTTON_TEXT, "/inventory_page " + (currentPage - 1)));
-        if (currentPage < totalPages) navigation.add(new Button(NEXT_BUTTON_TEXT, "/inventory_page " + (currentPage + 1)));
+        if (currentPage > 1) {
+            navigation.add(new Button(PREVIOUS_BUTTON_TEXT, pageCommandPrefix + " " + (currentPage - 1)));
+        }
+        if (currentPage < totalPages) {
+            navigation.add(new Button(NEXT_BUTTON_TEXT, pageCommandPrefix + " " + (currentPage + 1)));
+        }
         if (!navigation.isEmpty()) rows.add(navigation);
 
         return new Message(text.toString(), rows);

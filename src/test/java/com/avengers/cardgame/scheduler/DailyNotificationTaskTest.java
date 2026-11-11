@@ -26,23 +26,23 @@ class DailyNotificationTaskTest {
 
     private InMemoryUserRepository userRepository;
     private FakeBot bot;
-    private GameConfig config;
+    private GameConfig gameConfiguration;
     private Clock clock;
 
     @BeforeEach
     void setUp() {
         userRepository = new InMemoryUserRepository();
         bot = new FakeBot();
-        config = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+        gameConfiguration = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30), "Кристаллы", "💎");
         clock = Clock.fixed(NOW_INSTANT, ZoneOffset.UTC);
     }
 
     private DailyNotificationTask task(Bot taskBot) {
-        return new DailyNotificationTask(userRepository, taskBot, config, clock);
+        return new DailyNotificationTask(userRepository, taskBot, gameConfiguration, clock);
     }
 
     private void saveUser(LocalDateTime lastDailyAt, LocalDateTime notifiedAt) throws Exception {
-        userRepository.save(User.of(1L, PlayerName.of("Hero"), null, 0, 0,
+        userRepository.save(User.of(1L, PlayerName.of("Hero"), null, 0, 0, 0,
                 LocalDateTime.now(), LocalDateTime.now(), lastDailyAt, notifiedAt));
     }
 

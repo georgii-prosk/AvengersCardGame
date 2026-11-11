@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  */
 public final class TelegramBot extends DefaultLongPollingUpdateConsumer implements Bot {
     /** Логгер. */
-    private static final Logger log = LoggerFactory.getLogger(TelegramBot.class);
+    private static final Logger logger = LoggerFactory.getLogger(TelegramBot.class);
     /** Максимальное количество попыток отправки сообщения. */
     private static final int MAX_SEND_ATTEMPTS = 3;
     /** Базовая задержка перед повторной отправкой в миллисекундах. */
@@ -71,7 +71,7 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
 
             logic.processMessage(userId, userName, chatId, update.getMessage().getText(), this);
         } catch (Exception exception) {
-            log.error("Unexpected error while consuming update", exception);
+            logger.error("Unexpected error while consuming update", exception);
         }
     }
 
@@ -94,7 +94,7 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
         try {
             telegramClient.execute(AnswerCallbackQuery.builder().callbackQueryId(callbackQueryId).build());
         } catch (TelegramApiException exception) {
-            log.error("Failed to answer callback query", exception);
+            logger.error("Failed to answer callback query", exception);
         }
     }
 
@@ -127,10 +127,10 @@ public final class TelegramBot extends DefaultLongPollingUpdateConsumer implemen
                 return;
             } catch (TelegramApiException exception) {
                 if (attempt >= MAX_SEND_ATTEMPTS) {
-                    log.error("Failed to send message to chat {} after {} attempts", chatId, MAX_SEND_ATTEMPTS, exception);
+                    logger.error("Failed to send message to chat {} after {} attempts", chatId, MAX_SEND_ATTEMPTS, exception);
                     throw new BotException("Failed to send message to chat " + chatId, exception);
                 }
-                log.warn("Failed to send message to chat {}. Attempt {}/{}", chatId, attempt, MAX_SEND_ATTEMPTS, exception);
+                logger.warn("Failed to send message to chat {}. Attempt {}/{}", chatId, attempt, MAX_SEND_ATTEMPTS, exception);
                 try {
                     long delay = RETRY_DELAY_MILLIS * (1L << (attempt - 1));
                     TimeUnit.MILLISECONDS.sleep(delay);

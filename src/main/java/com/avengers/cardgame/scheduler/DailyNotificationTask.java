@@ -22,7 +22,7 @@ public class DailyNotificationTask implements Runnable {
             "🔔 Ежедневная награда снова доступна!";
 
     /** Логгер. */
-    private final Logger log = LoggerFactory.getLogger(DailyNotificationTask.class);
+    private final Logger logger = LoggerFactory.getLogger(DailyNotificationTask.class);
     /** Репозиторий пользователей. */
     private final UserRepository userRepository;
     /** Бот для отправки сообщений. */
@@ -55,7 +55,7 @@ public class DailyNotificationTask implements Runnable {
         try {
             notifyUsers();
         } catch (Exception exception) {
-            log.error("Daily notification run failed", exception);
+            logger.error("Daily notification run failed", exception);
         }
     }
 

@@ -49,7 +49,19 @@ class UserServiceTest {
             Assertions.assertNotNull(created);
             Assertions.assertEquals(1L, created.userId());
             Assertions.assertEquals("Tony", created.playerName().value());
+            Assertions.assertEquals(0, created.shards());
             Assertions.assertTrue(userRepository.findByUserId(1L).isPresent());
+        }
+
+        @Test
+        @DisplayName("Возвращает пользователя с сохранёнными кусочками")
+        void returnsUserWithShards() throws Exception {
+            userRepository.save(User.of(1L, new PlayerName("Tony"), null,
+                    0, 17, 0, LocalDateTime.now(), LocalDateTime.now()));
+
+            User found = userService.registerIfAbsent(1L, new PlayerName("Tony"));
+
+            Assertions.assertEquals(17, found.shards());
         }
 
         @Test
@@ -114,21 +126,21 @@ class UserServiceTest {
         @Test
         @DisplayName("Сообщение об ошибке содержит идентификатор")
         void errorMessageContainsUserId() {
-            UserNotFoundException ex = Assertions.assertThrows(
+            UserNotFoundException exception = Assertions.assertThrows(
                     UserNotFoundException.class,
                     () -> userService.getByUserId(42L));
 
-            Assertions.assertTrue(ex.getMessage().contains("42"));
+            Assertions.assertTrue(exception.getMessage().contains("42"));
         }
 
         @Test
         @DisplayName("Исключение содержит правильный идентификатор")
         void exceptionCarriesUserId() {
-            UserNotFoundException ex = Assertions.assertThrows(
+            UserNotFoundException exception = Assertions.assertThrows(
                     UserNotFoundException.class,
                     () -> userService.getByUserId(42L));
 
-            Assertions.assertEquals(42L, ex.userId());
+            Assertions.assertEquals(42L, exception.userId());
         }
 
         @Test
@@ -171,11 +183,11 @@ class UserServiceTest {
         @Test
         @DisplayName("Исключение содержит правильный идентификатор")
         void exceptionCarriesUserId() {
-            UserNotFoundException ex = Assertions.assertThrows(
+            UserNotFoundException exception = Assertions.assertThrows(
                     UserNotFoundException.class,
                     () -> userService.updateDisplayName(999L, new PlayerName("IronMan")));
 
-            Assertions.assertEquals(999L, ex.userId());
+            Assertions.assertEquals(999L, exception.userId());
         }
 
         @Test
@@ -190,7 +202,8 @@ class UserServiceTest {
         @Test
         @DisplayName("Сохраняет bio при обновлении имени")
         void keepsBioUnchanged() throws Exception {
-            User user = new User(1L, new PlayerName("Tony"), new Bio("Genius"), 0, 0, LocalDateTime.now(), LocalDateTime.now());
+            User user = new User(1L, new PlayerName("Tony"), new Bio("Genius"), 0, 0, 0,
+                    LocalDateTime.now(), LocalDateTime.now(), null, null);
             userRepository.save(user);
 
             userService.updateDisplayName(1L, new PlayerName("IronMan"));
@@ -203,7 +216,8 @@ class UserServiceTest {
         @Test
         @DisplayName("Сохраняет balance при обновлении имени")
         void keepsBalanceUnchanged() throws Exception {
-            User user = new User(1L, new PlayerName("Tony"), null, 500, 0, LocalDateTime.now(), LocalDateTime.now());
+            User user = new User(1L, new PlayerName("Tony"), null, 500, 0, 0,
+                    LocalDateTime.now(), LocalDateTime.now(), null, null);
             userRepository.save(user);
 
             userService.updateDisplayName(1L, new PlayerName("IronMan"));
@@ -215,7 +229,8 @@ class UserServiceTest {
         @Test
         @DisplayName("Сохраняет cardCount при обновлении имени")
         void keepsCardCountUnchanged() throws Exception {
-            User user = new User(1L, new PlayerName("Tony"), null, 0, 10, LocalDateTime.now(), LocalDateTime.now());
+            User user = new User(1L, new PlayerName("Tony"), null, 0, 0, 10,
+                    LocalDateTime.now(), LocalDateTime.now(), null, null);
             userRepository.save(user);
 
             userService.updateDisplayName(1L, new PlayerName("IronMan"));
@@ -254,11 +269,11 @@ class UserServiceTest {
         @Test
         @DisplayName("Исключение содержит правильный идентификатор")
         void exceptionCarriesUserId() {
-            UserNotFoundException ex = Assertions.assertThrows(
+            UserNotFoundException exception = Assertions.assertThrows(
                     UserNotFoundException.class,
                     () -> userService.updateBio(777L, new Bio("New bio")));
 
-            Assertions.assertEquals(777L, ex.userId());
+            Assertions.assertEquals(777L, exception.userId());
         }
 
         @Test
@@ -284,7 +299,8 @@ class UserServiceTest {
         @Test
         @DisplayName("Сохраняет balance при обновлении bio")
         void keepsBalanceUnchanged() throws Exception {
-            User user = new User(1L, new PlayerName("Tony"), new Bio("Genius"), 500, 0, LocalDateTime.now(), LocalDateTime.now());
+            User user = new User(1L, new PlayerName("Tony"), new Bio("Genius"), 500, 0, 0,
+                    LocalDateTime.now(), LocalDateTime.now(), null, null);
             userRepository.save(user);
 
             userService.updateBio(1L, new Bio("New bio"));

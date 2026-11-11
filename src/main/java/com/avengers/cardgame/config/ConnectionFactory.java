@@ -10,14 +10,14 @@ import java.sql.SQLException;
 public class ConnectionFactory {
 
     /** Параметры подключения к базе данных. */
-    private final DatabaseConfig config;
+    private final DatabaseConfig databaseConfiguration;
 
 
     /**
-     * @param config параметры подключения
+     * @param databaseConfiguration параметры подключения
      */
-    public ConnectionFactory(DatabaseConfig config) {
-        this.config = config;
+    public ConnectionFactory(DatabaseConfig databaseConfiguration) {
+        this.databaseConfiguration = databaseConfiguration;
     }
 
     /**
@@ -27,6 +27,7 @@ public class ConnectionFactory {
      * @throws SQLException при ошибке подключения
      */
     public Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(config.url(), config.user(), config.password());
+        return DriverManager.getConnection(databaseConfiguration.url(), databaseConfiguration.user(),
+                databaseConfiguration.password());
     }
 }
