@@ -3,6 +3,8 @@ package com.avengers.cardgame.command;
 import com.avengers.cardgame.exception.AppException;
 import com.avengers.cardgame.exception.InvalidPlayerNameException;
 import com.avengers.cardgame.model.PlayerName;
+import com.avengers.cardgame.service.CommandContext;
+import com.avengers.cardgame.service.CommandHandler;
 import com.avengers.cardgame.service.UserService;
 
 /**
@@ -52,8 +54,8 @@ public class RegisteringCommandHandler implements CommandHandler {
         }
         try {
             return PlayerName.of(DEFAULT_USER_NAME);
-        } catch (InvalidPlayerNameException e) {
-            throw new IllegalStateException("Default name is invalid", e);
+        } catch (InvalidPlayerNameException exception) {
+            throw new IllegalStateException("Default name is invalid", exception);
         }
     }
 }

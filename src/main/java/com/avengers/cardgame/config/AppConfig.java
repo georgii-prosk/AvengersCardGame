@@ -1,10 +1,11 @@
 package com.avengers.cardgame.config;
 
 /**
- * Конфигурация приложения.
+ * Корневая конфигурация приложения.
  *
  * @param botToken токен Telegram-бота
  * @param database параметры подключения к базе данных
+ * @param game     игровые настройки (кулдауны, интервалы планировщика)
  */
-public record AppConfig(String botToken, DatabaseConfig database) {
+public record AppConfig(String botToken, DatabaseConfig database, GameConfig game) {
 }

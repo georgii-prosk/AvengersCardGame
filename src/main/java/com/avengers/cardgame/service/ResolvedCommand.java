@@ -1,4 +1,4 @@
-package com.avengers.cardgame.command;
+package com.avengers.cardgame.service;
 
 /**
  * Найденная команда вместе с аргументом запроса.

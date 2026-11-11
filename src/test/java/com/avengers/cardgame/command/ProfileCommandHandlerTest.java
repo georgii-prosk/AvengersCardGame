@@ -6,11 +6,14 @@ import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.Bio;
 import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.model.User;
+import com.avengers.cardgame.service.CommandContext;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.time.LocalDateTime;
 
 /**
  * Тесты для {@link ProfileCommandHandler}.
@@ -25,7 +28,7 @@ class ProfileCommandHandlerTest {
     private ProfileCommandHandler command;
 
     @BeforeEach
-    void setUp(){
+    void setUp() {
         userRepository = new InMemoryUserRepository();
         bot = new FakeBot();
         command = new ProfileCommandHandler(new UserServiceImpl(userRepository));
@@ -35,17 +38,17 @@ class ProfileCommandHandlerTest {
     @DisplayName("Отправляет полные данные профиля")
     void sendsFullProfile() throws Exception {
         User user = User.of(USER_ID, PlayerName.of("Tony"), new Bio("Genius"),
-                100, 5, null, null);
+                100, 5, LocalDateTime.now(), LocalDateTime.now());
         userRepository.save(user);
 
         command.handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
 
         String expected = """
-                Имя: Tony
-                Описание: Genius
-                Твой баланс: 100 щитов
-                В твоей коллекции: 5 карточек
-                """;
+            Имя: Tony
+            Описание: Genius
+            Твой баланс: 100 щитов
+            В твоей коллекции: 5 карточек
+            """;
         Assertions.assertEquals(expected, bot.lastSent().message().text());
     }
 

@@ -17,6 +17,7 @@
 
     <!-- Свойства проекта -->
     <properties>
+        <jetbrains.annotations.version>26.0.2</jetbrains.annotations.version>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -87,6 +88,19 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
+        </dependency>
+
+        <!-- Аннотации @NotNull / @Nullable -->
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>${jetbrains.annotations.version}</version>
+        </dependency>
+
+        <!-- JSON для heroes.json (версия берётся из jackson-bom) -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
 
         <!-- Тесты -->

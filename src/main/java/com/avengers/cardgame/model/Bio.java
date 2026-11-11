@@ -55,8 +55,8 @@ public record Bio(String value) {
     public static Bio of(String value) throws InvalidBioException {
         try {
             return new Bio(value);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidBioException(e.getMessage());
+        } catch (IllegalArgumentException exception) {
+            throw new InvalidBioException(exception.getMessage());
         }
     }
 }
