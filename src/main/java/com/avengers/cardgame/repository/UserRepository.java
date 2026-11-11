@@ -4,7 +4,9 @@ import com.avengers.cardgame.exception.UserAlreadyExistsException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +23,15 @@ public interface UserRepository {
      * @return пользователь, если найден
      */
     @NotNull Optional<User> findByUserId(long userId);
+
+    /**
+     * Находит пользователя по идентификатору в рамках заданного соединения.
+     *
+     * @param connection соединение с БД, может быть {@code null}
+     * @param userId     идентификатор пользователя
+     * @return пользователь, если найден
+     */
+    @NotNull Optional<User> findByUserId(@Nullable Connection connection, long userId);
 
     /**
      * Сохраняет нового пользователя.
@@ -65,4 +76,44 @@ public interface UserRepository {
      * @throws UserNotFoundException если пользователя с таким идентификатором нет
      */
     void updateDailyNotifiedAt(long userId, @NotNull LocalDateTime notifiedAt) throws UserNotFoundException;
+
+    /**
+     * Списывает валюту с баланса пользователя.
+     *
+     * @param connection соединение с БД, может быть {@code null}
+     * @param userId     идентификатор пользователя
+     * @param amount     сумма списания
+     * @return {@code true}, если списание выполнено; {@code false}, если средств недостаточно
+     */
+    boolean spendBalance(@Nullable Connection connection, long userId, int amount);
+
+    /**
+     * Списывает кусочки с баланса пользователя.
+     *
+     * @param connection соединение с БД, может быть {@code null}
+     * @param userId     идентификатор пользователя
+     * @param amount     количество кусочков
+     * @return {@code true}, если списание выполнено; {@code false}, если кусочков недостаточно
+     */
+    boolean spendShards(@Nullable Connection connection, long userId, int amount);
+
+    /**
+     * Начисляет валюту на баланс пользователя.
+     *
+     * @param connection соединение с БД, может быть {@code null}
+     * @param userId     идентификатор пользователя
+     * @param amount     сумма начисления
+     * @throws UserNotFoundException если пользователь не найден
+     */
+    void addBalance(@Nullable Connection connection, long userId, int amount) throws UserNotFoundException;
+
+    /**
+     * Начисляет кусочки на баланс пользователя.
+     *
+     * @param connection соединение с БД, может быть {@code null}
+     * @param userId     идентификатор пользователя
+     * @param amount     количество кусочков
+     * @throws UserNotFoundException если пользователь не найден
+     */
+    void addShards(@Nullable Connection connection, long userId, int amount) throws UserNotFoundException;
 }

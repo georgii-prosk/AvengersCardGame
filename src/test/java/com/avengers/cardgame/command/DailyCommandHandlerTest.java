@@ -1,7 +1,7 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.fakes.FakeBot;
-import com.avengers.cardgame.fakes.FakeCardService;
+import com.avengers.cardgame.fakes.FakeDailyRewardService;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
 import com.avengers.cardgame.service.CommandContext;
@@ -21,8 +21,8 @@ class DailyCommandHandlerTest {
     private final Hero pepper = new Hero(1, "Pepper Potts", HeroRarity.COMMON, 5, 15, 20, "c");
     private final FakeBot bot = new FakeBot();
 
-    private void runDaily(FakeCardService cardService) throws Exception {
-        new DailyCommandHandler(cardService)
+    private void runDaily(FakeDailyRewardService dailyRewardService) throws Exception {
+        new DailyCommandHandler(dailyRewardService)
                 .handle(new CommandContext(USER_ID, CHAT_ID, "Tony", "", bot));
     }
 
@@ -33,7 +33,7 @@ class DailyCommandHandlerTest {
     @Test
     @DisplayName("При успехе отправляет поздравление и по сообщению на каждую карточку")
     void successSendsCongratsAndOneMessagePerCard() throws Exception {
-        FakeCardService service = new FakeCardService(List.of(ironMan, pepper));
+        FakeDailyRewardService service = new FakeDailyRewardService(List.of(ironMan, pepper));
 
         runDaily(service);
 
@@ -46,7 +46,7 @@ class DailyCommandHandlerTest {
     @Test
     @DisplayName("Карточки отправляются в порядке выдачи")
     void cardsAreSentInGrantedOrder() throws Exception {
-        runDaily(new FakeCardService(List.of(ironMan, pepper)));
+        runDaily(new FakeDailyRewardService(List.of(ironMan, pepper)));
 
         Assertions.assertTrue(textOf(1).contains("Iron Man"));
         Assertions.assertTrue(textOf(2).contains("Pepper Potts"));
@@ -55,7 +55,7 @@ class DailyCommandHandlerTest {
     @Test
     @DisplayName("При кулдауне отправляет одно сообщение с часами и минутами")
     void cooldownSendsSingleMessageWithHoursAndMinutes() throws Exception {
-        runDaily(new FakeCardService(Duration.ofHours(5).plusMinutes(32)));
+        runDaily(new FakeDailyRewardService(Duration.ofHours(5).plusMinutes(32)));
 
         Assertions.assertEquals(1, bot.count());
         Assertions.assertTrue(bot.lastSent().message().text().contains("5 ч 32 мин"));
@@ -64,7 +64,7 @@ class DailyCommandHandlerTest {
     @Test
     @DisplayName("Неполная минута округляется вверх")
     void cooldownRoundsPartialMinuteUp() throws Exception {
-        runDaily(new FakeCardService(Duration.ofHours(5).plusMinutes(31).plusSeconds(20)));
+        runDaily(new FakeDailyRewardService(Duration.ofHours(5).plusMinutes(31).plusSeconds(20)));
 
         Assertions.assertTrue(bot.lastSent().message().text().contains("5 ч 32 мин"));
     }
@@ -72,7 +72,7 @@ class DailyCommandHandlerTest {
     @Test
     @DisplayName("Целые часы выводятся без минут")
     void cooldownWithWholeHoursShowsOnlyHours() throws Exception {
-        runDaily(new FakeCardService(Duration.ofHours(2)));
+        runDaily(new FakeDailyRewardService(Duration.ofHours(2)));
 
         Assertions.assertTrue(bot.lastSent().message().text().contains("2 ч"));
         Assertions.assertFalse(bot.lastSent().message().text().contains("мин"));
@@ -81,7 +81,7 @@ class DailyCommandHandlerTest {
     @Test
     @DisplayName("Меньше минуты показывается как 1 мин")
     void cooldownUnderOneMinuteShowsOneMinute() throws Exception {
-        runDaily(new FakeCardService(Duration.ofSeconds(20)));
+        runDaily(new FakeDailyRewardService(Duration.ofSeconds(20)));
 
         Assertions.assertTrue(bot.lastSent().message().text().contains("1 мин"));
     }

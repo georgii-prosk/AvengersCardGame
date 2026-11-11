@@ -29,6 +29,15 @@ public class EnvironmentConfigReader implements ConfigProvider {
     /** Имя переменной окружения с интервалом проверки уведомлений (в минутах). */
     private static final String NOTIFICATION_INTERVAL_MINUTES = "DAILY_NOTIFICATION_INTERVAL_MINUTES";
 
+    /** Имя переменной окружения с названием игровой валюты. */
+    private static final String CURRENCY_NAME = "CURRENCY_NAME";
+
+    /** Имя переменной окружения с эмодзи игровой валюты. */
+    private static final String CURRENCY_EMOJI = "CURRENCY_EMOJI";
+
+    /** Имя переменной окружения с эмодзи игровых кусочков. */
+    private static final String SHARDS_EMOJI = "SHARDS_EMOJI";
+
     /** Значение кулдауна по умолчанию (1440 минут = 24 часа). */
     private static final long DEFAULT_DAILY_COOLDOWN_MINUTES = 1440;
 
@@ -59,7 +68,10 @@ public class EnvironmentConfigReader implements ConfigProvider {
                 require(DB_URL), require(DB_USER), require(DB_PASSWORD));
         GameConfig game = new GameConfig(
                 Duration.ofMinutes(readPositiveLong(DAILY_COOLDOWN_MINUTES, DEFAULT_DAILY_COOLDOWN_MINUTES)),
-                Duration.ofMinutes(readPositiveLong(NOTIFICATION_INTERVAL_MINUTES, DEFAULT_NOTIFICATION_INTERVAL_MINUTES)));
+                Duration.ofMinutes(readPositiveLong(NOTIFICATION_INTERVAL_MINUTES, DEFAULT_NOTIFICATION_INTERVAL_MINUTES)),
+                readNonBlank(CURRENCY_NAME, GameConfig.DEFAULT_CURRENCY_NAME),
+                readNonBlank(CURRENCY_EMOJI, GameConfig.DEFAULT_CURRENCY_EMOJI),
+                readNonBlank(SHARDS_EMOJI, GameConfig.DEFAULT_SHARDS_EMOJI));
         return new AppConfig(require(BOT_TOKEN), database, game);
     }
 
@@ -74,6 +86,20 @@ public class EnvironmentConfigReader implements ConfigProvider {
         String value = envSource.get(name);
         if (value == null || value.isBlank()) throw new MissingEnvironmentVariableException(name);
         return value;
+    }
+
+    /**
+     * Читает непустое строковое значение из переменной окружения.
+     * <p>
+     * Если переменная не задана или содержит только пробелы, возвращает значение по умолчанию.
+     *
+     * @param name         имя переменной
+     * @param defaultValue значение по умолчанию
+     * @return непустое значение переменной или значение по умолчанию
+     */
+    private String readNonBlank(String name, String defaultValue) {
+        String value = envSource.get(name);
+        return value == null || value.isBlank() ? defaultValue : value;
     }
 
     /**

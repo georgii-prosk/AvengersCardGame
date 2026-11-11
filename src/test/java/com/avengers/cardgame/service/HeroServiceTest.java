@@ -1,6 +1,6 @@
 package com.avengers.cardgame.service;
 
-import com.avengers.cardgame.fakes.InMemoryHeroRepository;
+import com.avengers.cardgame.fakes.FakeHeroRepository;
 import com.avengers.cardgame.fakes.ScriptedRandom;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
@@ -38,8 +38,8 @@ class HeroServiceTest {
      * @param heroes герои
      * @return наполненный репозиторий
      */
-    private InMemoryHeroRepository repositoryOf(Hero... heroes) {
-        InMemoryHeroRepository repository = new InMemoryHeroRepository();
+    private FakeHeroRepository repositoryOf(Hero... heroes) {
+        FakeHeroRepository repository = new FakeHeroRepository();
         for (Hero hero : heroes) {
             repository.save(hero);
         }
@@ -49,7 +49,7 @@ class HeroServiceTest {
     /**
      * @return репозиторий со всеми пятью героями
      */
-    private InMemoryHeroRepository fullRepository() {
+    private FakeHeroRepository fullRepository() {
         return repositoryOf(common1, common2, rare, epic, legendary);
     }
 
@@ -121,12 +121,41 @@ class HeroServiceTest {
     @Test
     @DisplayName("Не падает на множестве вызовов и возвращает известных героев")
     void neverFailsAndReturnsKnownHeroesOnManyCalls() {
-        InMemoryHeroRepository repository = fullRepository();
+        FakeHeroRepository repository = fullRepository();
         HeroService service = new HeroServiceImpl(repository, new Random(42));
 
         for (int i = 0; i < 1000; i++) {
             Hero hero = service.getRandomHero().orElseThrow();
             Assertions.assertTrue(repository.findAll().contains(hero));
         }
+    }
+
+    @Test
+    @DisplayName("getRandomHero(rarity) возвращает героя нужной редкости")
+    void randomHeroOfRarityReturnsMatchingHero() {
+        HeroService service = new HeroServiceImpl(fullRepository(), new ScriptedRandom(0));
+
+        Hero hero = service.getRandomHero(HeroRarity.LEGENDARY).orElseThrow();
+
+        Assertions.assertEquals(legendary, hero);
+        Assertions.assertEquals(HeroRarity.LEGENDARY, hero.rarity());
+    }
+
+    @Test
+    @DisplayName("getRandomHero(rarity) выбирает героя по случайному индексу")
+    void randomHeroOfRarityUsesRandomIndex() {
+        HeroService first = new HeroServiceImpl(fullRepository(), new ScriptedRandom(0));
+        HeroService second = new HeroServiceImpl(fullRepository(), new ScriptedRandom(1));
+
+        Assertions.assertEquals(Optional.of(common1), first.getRandomHero(HeroRarity.COMMON));
+        Assertions.assertEquals(Optional.of(common2), second.getRandomHero(HeroRarity.COMMON));
+    }
+
+    @Test
+    @DisplayName("getRandomHero(rarity) возвращает пустой Optional, если такой редкости нет")
+    void randomHeroOfRarityReturnsEmptyWhenAbsent() {
+        HeroService service = new HeroServiceImpl(repositoryOf(common1), new ScriptedRandom(0));
+
+        Assertions.assertTrue(service.getRandomHero(HeroRarity.LEGENDARY).isEmpty());
     }
 }
