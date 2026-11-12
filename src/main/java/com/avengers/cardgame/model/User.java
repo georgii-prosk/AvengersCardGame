@@ -3,6 +3,7 @@ package com.avengers.cardgame.model;
 import com.avengers.cardgame.exception.InvalidUserException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -13,6 +14,7 @@ import java.util.Objects;
  * @param playerName      отображаемое имя
  * @param bio             описание профиля, может быть {@code null}
  * @param balance         баланс игровой валюты
+ * @param shards          баланс кусочков
  * @param cardCount       количество карточек в коллекции
  * @param createdAt       дата и время создания записи
  * @param updatedAt       дата и время последнего обновления записи
@@ -24,6 +26,7 @@ public record User(
         @NotNull PlayerName playerName,
         @Nullable Bio bio,
         int balance,
+        int shards,
         int cardCount,
         @NotNull LocalDateTime createdAt,
         @NotNull LocalDateTime updatedAt,
@@ -34,13 +37,14 @@ public record User(
     /**
      * Создаёт профиль с проверкой инвариантов.
      * <p>
-     * Предпочтительнее использовать {@link #of(long, PlayerName, Bio, int, int, LocalDateTime, LocalDateTime, LocalDateTime, LocalDateTime)}.
+     * Предпочтительнее использовать {@link #of(long, PlayerName, Bio, int, int, int, LocalDateTime, LocalDateTime, LocalDateTime, LocalDateTime)}.
      *
-     * @throws IllegalArgumentException если баланс или количество карточек отрицательные,
+     * @throws IllegalArgumentException если баланс, кусочки или количество карточек отрицательные,
      *                                  либо время обновления раньше времени создания
      */
     public User {
         if (balance < 0) throw new IllegalArgumentException("Balance must be non-negative");
+        if (shards < 0) throw new IllegalArgumentException("Shards must be non-negative");
         if (cardCount < 0) throw new IllegalArgumentException("Card count must be non-negative");
         Objects.requireNonNull(createdAt, "CreatedAt must not be null");
         Objects.requireNonNull(updatedAt, "UpdatedAt must not be null");
@@ -54,19 +58,34 @@ public record User(
      */
     public static User of(
             long userId, PlayerName playerName, Bio bio,
-            int balance, int cardCount,
+            int balance, int shards, int cardCount,
             LocalDateTime createdAt, LocalDateTime updatedAt,
             LocalDateTime lastDailyAt, LocalDateTime dailyNotifiedAt
     ) throws InvalidUserException {
         try {
-            return new User(userId, playerName, bio, balance, cardCount, createdAt, updatedAt, lastDailyAt, dailyNotifiedAt);
+            return new User(userId, playerName, bio, balance, shards, cardCount,
+                    createdAt, updatedAt, lastDailyAt, dailyNotifiedAt);
         } catch (IllegalArgumentException exception) {
             throw new InvalidUserException(exception.getMessage());
         }
     }
 
     /**
-     * Создаёт профиль без данных о /daily.
+     * Создаёт профиль с проверкой инвариантов и без данных о /daily.
+     *
+     * @throws InvalidUserException если данные некорректны
+     */
+    public static User of(
+            long userId, PlayerName playerName, Bio bio,
+            int balance, int shards, int cardCount,
+            LocalDateTime createdAt, LocalDateTime updatedAt
+    ) throws InvalidUserException {
+        return of(userId, playerName, bio, balance, shards, cardCount,
+                createdAt, updatedAt, null, null);
+    }
+
+    /**
+     * Создаёт профиль без кусочков и данных о /daily.
      *
      * @throws InvalidUserException если данные некорректны
      */
@@ -75,12 +94,27 @@ public record User(
             int balance, int cardCount,
             LocalDateTime createdAt, LocalDateTime updatedAt
     ) throws InvalidUserException {
-        return of(userId, playerName, bio, balance, cardCount,
+        return of(userId, playerName, bio, balance, 0, cardCount,
                 createdAt, updatedAt, null, null);
     }
 
     /**
-     * Создаёт профиль без данных о /daily.
+     * Создаёт профиль с данными о /daily, но без кусочков.
+     *
+     * @throws InvalidUserException если данные некорректны
+     */
+    public static User of(
+            long userId, PlayerName playerName, Bio bio,
+            int balance, int cardCount,
+            LocalDateTime createdAt, LocalDateTime updatedAt,
+            LocalDateTime lastDailyAt, LocalDateTime dailyNotifiedAt
+    ) throws InvalidUserException {
+        return of(userId, playerName, bio, balance, 0, cardCount,
+                createdAt, updatedAt, lastDailyAt, dailyNotifiedAt);
+    }
+
+    /**
+     * Создаёт профиль с проверкой инвариантов и без данных о /daily.
      *
      * @throws IllegalArgumentException если данные некорректны
      */
@@ -89,7 +123,7 @@ public record User(
             int balance, int cardCount,
             LocalDateTime createdAt, LocalDateTime updatedAt
     ) {
-        this(userId, playerName, bio, balance, cardCount,
+        this(userId, playerName, bio, balance, 0, cardCount,
                 createdAt, updatedAt, null, null);
     }
 
@@ -100,8 +134,10 @@ public record User(
      * @param playerName отображаемое имя
      */
     public User(long userId, PlayerName playerName) {
-        this(userId, playerName, null, 0, 0, LocalDateTime.now(), LocalDateTime.now(), null, null);
+        this(userId, playerName, null, 0, 0, 0,
+                LocalDateTime.now(), LocalDateTime.now(), null, null);
     }
+
     /**
      * Возвращает копию с новым именем.
      *
@@ -109,7 +145,7 @@ public record User(
      * @return копия
      */
     public User withPlayerName(PlayerName newName) {
-        return new User(userId, newName, bio, balance, cardCount,
+        return new User(userId, newName, bio, balance, shards, cardCount,
                 createdAt, updatedAt, lastDailyAt, dailyNotifiedAt);
     }
 
@@ -120,7 +156,29 @@ public record User(
      * @return копия
      */
     public User withBio(Bio newBio) {
-        return new User(userId, playerName, newBio, balance, cardCount,
+        return new User(userId, playerName, newBio, balance, shards, cardCount,
+                createdAt, updatedAt, lastDailyAt, dailyNotifiedAt);
+    }
+
+    /**
+     * Возвращает копию с новым балансом валюты.
+     *
+     * @param newBalance новый баланс
+     * @return копия
+     */
+    public User withBalance(int newBalance) {
+        return new User(userId, playerName, bio, newBalance, shards, cardCount,
+                createdAt, updatedAt, lastDailyAt, dailyNotifiedAt);
+    }
+
+    /**
+     * Возвращает копию с новым балансом кусочков.
+     *
+     * @param newShards новый баланс кусочков
+     * @return копия
+     */
+    public User withShards(int newShards) {
+        return new User(userId, playerName, bio, balance, newShards, cardCount,
                 createdAt, updatedAt, lastDailyAt, dailyNotifiedAt);
     }
 
@@ -131,7 +189,7 @@ public record User(
      * @return копия
      */
     public User withLastDailyAt(LocalDateTime newLastDailyAt) {
-        return new User(userId, playerName, bio, balance, cardCount,
+        return new User(userId, playerName, bio, balance, shards, cardCount,
                 createdAt, updatedAt, newLastDailyAt, dailyNotifiedAt);
     }
 
@@ -142,7 +200,7 @@ public record User(
      * @return копия
      */
     public User withDailyNotifiedAt(LocalDateTime newDailyNotifiedAt) {
-        return new User(userId, playerName, bio, balance, cardCount,
+        return new User(userId, playerName, bio, balance, shards, cardCount,
                 createdAt, updatedAt, lastDailyAt, newDailyNotifiedAt);
     }
 }

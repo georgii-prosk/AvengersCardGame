@@ -1,12 +1,13 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.fakes.FakeBot;
-import com.avengers.cardgame.fakes.InMemoryHeroRepository;
+import com.avengers.cardgame.fakes.FakeHeroRepository;
 import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
 import com.avengers.cardgame.messaging.Button;
 import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
+import com.avengers.cardgame.presentation.InventoryLoader;
 import com.avengers.cardgame.presentation.InventoryRenderer;
 import com.avengers.cardgame.service.CommandContext;
 import org.junit.jupiter.api.Assertions;
@@ -25,7 +26,7 @@ class InventoryCommandHandlerTest {
     private static final long CHAT_ID = 10L;
 
     private InMemoryUserCardRepository cardRepository;
-    private InMemoryHeroRepository heroRepository;
+    private FakeHeroRepository heroRepository;
     private FakeBot bot;
     private InventoryRenderer renderer;
     private InventoryCommandHandler command;
@@ -33,7 +34,7 @@ class InventoryCommandHandlerTest {
     @BeforeEach
     void setUp() {
         cardRepository = new InMemoryUserCardRepository();
-        heroRepository = new InMemoryHeroRepository();
+        heroRepository = new FakeHeroRepository();
         bot = new FakeBot();
         renderer = new InventoryRenderer();
         command = new InventoryCommandHandler(cardRepository, heroRepository);
@@ -137,7 +138,7 @@ class InventoryCommandHandlerTest {
             cardRepository.addCard(USER_ID, id);
         }
 
-        var items = command.loadAndSortItems(USER_ID);
+        var items = new InventoryLoader(cardRepository, heroRepository).loadAndSortItems(USER_ID);
         Message message = renderer.render(items, 2);
 
         Assertions.assertTrue(message.text().startsWith("Твоя коллекция (страница 2/2):"));
@@ -153,7 +154,7 @@ class InventoryCommandHandlerTest {
         addHero(1, "Thor", HeroRarity.EPIC);
         cardRepository.addCard(USER_ID, 1);
 
-        var items =command.loadAndSortItems(USER_ID);
+        var items = new InventoryLoader(cardRepository, heroRepository).loadAndSortItems(USER_ID);
 
         Assertions.assertTrue(renderer.render(items, 99).text().contains("страница 1/1"));
         Assertions.assertTrue(renderer.render(items, -5).text().contains("страница 1/1"));

@@ -1,13 +1,13 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.model.Hero;
-import com.avengers.cardgame.model.UserCard;
 import com.avengers.cardgame.presentation.HeroRenderer;
 import com.avengers.cardgame.repository.HeroRepository;
 import com.avengers.cardgame.repository.UserCardRepository;
 import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.service.CommandContext;
 import com.avengers.cardgame.service.CommandHandler;
+import com.avengers.cardgame.service.command.CommandArguments;
 
 import java.util.Optional;
 
@@ -36,21 +36,18 @@ public class ViewCardCommandHandler implements CommandHandler {
 
     @Override
     public void handle(CommandContext context) {
-        long heroId;
-        try {
-            heroId = Long.parseLong(context.argument());
-        } catch (NumberFormatException exception) {
+        Optional<Long> parsedHeroId = CommandArguments.parseId(context.argument());
+        if (parsedHeroId.isEmpty()) {
             context.bot().sendMessage(new Message("Некорректный идентификатор карточки."), context.chatId());
             return;
         }
+        long heroId = parsedHeroId.get();
         Optional<Hero> hero = heroRepository.findById(heroId);
         if (hero.isEmpty()) {
             context.bot().sendMessage(new Message("Такой карточки не существует."), context.chatId());
             return;
         }
-        int count = userCardRepository.findByUserId(context.userId()).stream()
-                .filter(card -> card.heroId() == heroId)
-                .mapToInt(UserCard::count).sum();
+        int count = userCardRepository.countByUserIdAndHeroId(context.userId(), heroId);
         if (count <= 0) {
             context.bot().sendMessage(new Message("Этой карточки нет в твоей коллекции."), context.chatId());
             return;

@@ -5,7 +5,9 @@ import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.UserRepository;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +24,11 @@ public class InMemoryUserRepository implements UserRepository {
 
     @Override
     public @NotNull Optional<User> findByUserId(long userId) {
+        return findByUserId(null, userId);
+    }
+
+    @Override
+    public @NotNull Optional<User> findByUserId(@Nullable Connection connection, long userId) {
         return Optional.ofNullable(storage.get(userId));
     }
 
@@ -67,6 +74,63 @@ public class InMemoryUserRepository implements UserRepository {
             throw new UserNotFoundException(userId);
         }
         storage.put(userId, user.withDailyNotifiedAt(notifiedAt));
+    }
+
+    @Override
+    public boolean spendBalance(@Nullable Connection connection, long userId, int amount) {
+        return spend(userId, amount, User::balance, User::withBalance);
+    }
+
+    @Override
+    public boolean spendShards(@Nullable Connection connection, long userId, int amount) {
+        return spend(userId, amount, User::shards, User::withShards);
+    }
+
+    @Override
+    public void addBalance(@Nullable Connection connection, long userId, int amount) throws UserNotFoundException {
+        User user = storage.get(userId);
+        if (user == null) {
+            throw new UserNotFoundException(userId);
+        }
+        if (amount < 0) {
+            throw new IllegalArgumentException("Amount to add must be non-negative");
+        }
+        storage.put(userId, user.withBalance(user.balance() + amount));
+    }
+
+    @Override
+    public void addShards(@Nullable Connection connection, long userId, int amount) throws UserNotFoundException {
+        User user = storage.get(userId);
+        if (user == null) {
+            throw new UserNotFoundException(userId);
+        }
+        if (amount < 0) {
+            throw new IllegalArgumentException("Amount to add must be non-negative");
+        }
+        storage.put(userId, user.withShards(user.shards() + amount));
+    }
+
+    /**
+     * Списывает ресурс с баланса пользователя.
+     *
+     * @param userId     идентификатор пользователя
+     * @param amount     количество для списания
+     * @param balance    функция чтения баланса
+     * @param withAmount функция создания копии пользователя с новым балансом
+     * @return {@code true}, если списание выполнено
+     */
+    private boolean spend(long userId, int amount,
+                          java.util.function.ToIntFunction<User> balance,
+                          java.util.function.BiFunction<User, Integer, User> withAmount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount to spend must be positive");
+        }
+        User user = storage.get(userId);
+        if (user == null || balance.applyAsInt(user) < amount) {
+            return false;
+        }
+        storage.put(userId, withAmount.apply(user, balance.applyAsInt(user) - amount));
+        return true;
     }
 
     /**

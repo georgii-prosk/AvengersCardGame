@@ -169,4 +169,45 @@ class EnvironmentConfigReaderTest {
 
         Assertions.assertEquals(Duration.ofMinutes(1440), config.game().dailyCooldown());
     }
+
+    @Test
+    @DisplayName("Использует валюту по умолчанию, если переменные не заданы")
+    void usesDefaultCurrencyWhenNotSet() throws ConfigurationException {
+        AppConfig config = readerWith(validEnv()).read();
+
+        Assertions.assertEquals(GameConfig.DEFAULT_CURRENCY_NAME, config.game().currencyName());
+        Assertions.assertEquals(GameConfig.DEFAULT_CURRENCY_EMOJI, config.game().currencyEmoji());
+    }
+
+    @Test
+    @DisplayName("Читает настраиваемое название и эмодзи валюты")
+    void readsCustomCurrency() throws ConfigurationException {
+        Map<String, String> env = validEnv();
+        env.put("CURRENCY_NAME", "Гири");
+        env.put("CURRENCY_EMOJI", "🪙");
+
+        AppConfig config = readerWith(env).read();
+
+        Assertions.assertEquals("Гири", config.game().currencyName());
+        Assertions.assertEquals("🪙", config.game().currencyEmoji());
+    }
+
+    @Test
+    @DisplayName("Использует эмодзи кусочков по умолчанию, если переменная не задана")
+    void usesDefaultShardsEmojiWhenNotSet() throws ConfigurationException {
+        AppConfig config = readerWith(validEnv()).read();
+
+        Assertions.assertEquals(GameConfig.DEFAULT_SHARDS_EMOJI, config.game().shardsEmoji());
+    }
+
+    @Test
+    @DisplayName("Читает настраиваемый эмодзи кусочков")
+    void readsCustomShardsEmoji() throws ConfigurationException {
+        Map<String, String> env = validEnv();
+        env.put("SHARDS_EMOJI", "⭐");
+
+        AppConfig config = readerWith(env).read();
+
+        Assertions.assertEquals("⭐", config.game().shardsEmoji());
+    }
 }

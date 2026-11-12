@@ -10,23 +10,30 @@ import com.avengers.cardgame.config.EnvironmentConfigReader;
 import com.avengers.cardgame.config.GameConfig;
 import com.avengers.cardgame.exception.ConfigurationException;
 import com.avengers.cardgame.repository.HeroRepository;
+import com.avengers.cardgame.repository.MarketRepository;
 import com.avengers.cardgame.repository.UserCardRepository;
 import com.avengers.cardgame.repository.UserRepository;
+import com.avengers.cardgame.repository.impl.PostgresMarketRepository;
 import com.avengers.cardgame.repository.impl.PostgresUserCardRepository;
 import com.avengers.cardgame.repository.impl.PostgresUserRepository;
 import com.avengers.cardgame.service.CardService;
 import com.avengers.cardgame.service.CommandRegistry;
+import com.avengers.cardgame.service.DailyRewardService;
 import com.avengers.cardgame.service.HeroService;
+import com.avengers.cardgame.service.MarketService;
 import com.avengers.cardgame.service.MessageProcessingService;
 import com.avengers.cardgame.service.UserService;
 import com.avengers.cardgame.service.impl.CardServiceImpl;
 import com.avengers.cardgame.service.impl.CommandMessageProcessingService;
+import com.avengers.cardgame.service.impl.DailyRewardServiceImpl;
 import com.avengers.cardgame.service.impl.HeroServiceImpl;
+import com.avengers.cardgame.service.impl.MarketServiceImpl;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import java.time.Clock;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -41,12 +48,18 @@ import com.avengers.cardgame.repository.impl.InMemoryHeroRepository;
  */
 public class AvengersCardGameApplication {
     /** Логгер. */
-    private final Logger log = LoggerFactory.getLogger(AvengersCardGameApplication.class);
+    private static final Logger log = LoggerFactory.getLogger(AvengersCardGameApplication.class);
 
     /**
      * Запускает приложение.
+     *
+     * @param args аргументы командной строки (не поддерживаются)
      */
-    void main() {
+    static void main(String[] args) {
+        if (args.length > 0) {
+            log.warn("Command line arguments are not supported: {}", Arrays.toString(args));
+        }
+
         // 1. Загрузка конфигурации
         ConfigProvider configProvider = new EnvironmentConfigReader();
         AppConfig config;
@@ -66,15 +79,21 @@ public class AvengersCardGameApplication {
         UserRepository userRepository = new PostgresUserRepository(connectionFactory);
         HeroRepository heroRepository = new InMemoryHeroRepository();
         UserCardRepository userCardRepository = new PostgresUserCardRepository(connectionFactory);
+        MarketRepository marketRepository = new PostgresMarketRepository(connectionFactory);
 
         // 4. Создание сервисов
         UserService userService = new UserServiceImpl(userRepository);
         HeroService heroService = new HeroServiceImpl(heroRepository, new Random());
-        CardService cardService = new CardServiceImpl(userService, userCardRepository,
+        CardService cardService = new CardServiceImpl(userRepository, userCardRepository,
+                heroRepository, heroService, connectionFactory);
+        DailyRewardService dailyRewardService = new DailyRewardServiceImpl(userService, userCardRepository,
                 heroService, gameConfig, new Random(), Clock.systemUTC());
+        MarketService marketService = new MarketServiceImpl(connectionFactory, userRepository,
+                userCardRepository, marketRepository, heroRepository);
 
         // 5. Настройка обработки команд
-        CommandRegistry registry = new CommandRegistryFactory(userService, cardService, userCardRepository, heroRepository).create();
+        CommandRegistry registry = new CommandRegistryFactory(userService, cardService, dailyRewardService,
+                marketService, userCardRepository, heroRepository, gameConfig).create();
 
         MessageProcessingService logic = new CommandMessageProcessingService(registry);
         TelegramBot bot = new TelegramBot(config.botToken(), logic);
@@ -100,8 +119,11 @@ public class AvengersCardGameApplication {
     /**
      * Регистрирует бота в Telegram и блокирует текущий поток,
      * поддерживая работу приложения до его принудительной остановки.
+     *
+     * @param botToken токен Telegram-бота
+     * @param bot      бот для регистрации
      */
-    private void startBot(String botToken, TelegramBot bot) {
+    private static void startBot(String botToken, TelegramBot bot) {
         try (TelegramBotsLongPollingApplication application = new TelegramBotsLongPollingApplication()) {
             application.registerBot(botToken, bot);
             log.info("AvengersCardGame bot started");
