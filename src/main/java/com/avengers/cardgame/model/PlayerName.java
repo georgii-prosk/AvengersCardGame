@@ -47,8 +47,8 @@ public record PlayerName(String value) {
     public static PlayerName of(String value) throws InvalidPlayerNameException {
         try {
             return new PlayerName(value);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidPlayerNameException(e.getMessage());
+        } catch (IllegalArgumentException exception) {
+            throw new InvalidPlayerNameException(exception.getMessage());
         }
     }
 }

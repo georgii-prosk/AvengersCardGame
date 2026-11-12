@@ -1,6 +1,8 @@
 package com.avengers.cardgame.command;
 
-import com.avengers.cardgame.service.Message;
+import com.avengers.cardgame.messaging.Message;
+import com.avengers.cardgame.service.CommandContext;
+import com.avengers.cardgame.service.CommandHandler;
 
 /**
  * Обработчик команды /help.
@@ -12,6 +14,13 @@ public class HelpCommandHandler implements CommandHandler {
             /start - запуск бота.
             /help - помощь.
             /profile - информация о твоём профиле в боте.
+            /daily - получить ежедневные карточки.
+            /inventory - показать твою коллекцию карточек.
+            /disassemble - разобрать карточки на кусочки.
+            /craft - скрафтить карточку выбранной редкости за кусочки.
+            /sell - выставить карточку на продажу.
+            /market - открыть рынок лотов.
+            /cancel - отменить текущее действие.
             /setname <name> - позволяет сменить отображаемое для других пользователей имя. Максимум 128 символов латиницей.
             /setbio <bio> - позволяет обновить короткое описание профиля. Максимум 256 символов латиницей или кириллицей + эмодзи и знаков препинания, пробелов, цифр, спецсимволы (/|\\<>@#$%^&*(){}[]`~;:'"-_=+).
             """;

@@ -1,9 +1,10 @@
 package com.avengers.cardgame.service;
 
-import com.avengers.cardgame.command.CommandRegistry;
 import com.avengers.cardgame.exception.InvalidUserException;
 import com.avengers.cardgame.fakes.FakeBot;
+import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.service.impl.CommandMessageProcessingService;
+import com.avengers.cardgame.service.impl.CommandRegistryImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,15 +33,17 @@ class CommandMessageProcessingServiceTest {
     @BeforeEach
     void setUp() {
         bot = new FakeBot();
-        CommandRegistry registry = new CommandRegistry();
+
+        CommandRegistry registry = new CommandRegistryImpl();
+
         registry.register("/first", context ->
                 context.bot().sendMessage(new Message(FIRST_RESPONSE), context.chatId()));
         registry.register("/second", context ->
                 context.bot().sendMessage(new Message(SECOND_RESPONSE), context.chatId()));
-        registry.register("/fail", context -> {
+        registry.register("/fail", _ -> {
             throw new InvalidUserException("boom");
         });
-        registry.register("/runtime-fail", context -> {
+        registry.register("/runtime-fail", _ -> {
             throw new RuntimeException("boom");
         });
         service = new CommandMessageProcessingService(registry);
