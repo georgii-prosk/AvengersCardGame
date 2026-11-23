@@ -1,5 +1,6 @@
 package com.avengers.cardgame.presentation;
 
+import com.avengers.cardgame.config.GameConfig;
 import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
@@ -7,6 +8,8 @@ import com.avengers.cardgame.service.CraftResult;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.time.Duration;
 
 /**
  * Тесты для {@link CraftRenderer}.
@@ -16,8 +19,12 @@ class CraftRendererTest {
     /** Эмодзи кусочков. */
     private static final String SHARDS_EMOJI = "🧩";
 
+    /** Игровая конфигурация для тестов. */
+    private final GameConfig GAME_CONFIG =
+            new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+
     /** Герой для тестов. */
-    private static final Hero HERO =
+    private final Hero HERO =
             new Hero(1L, "Pepper", HeroRarity.COMMON, 5, 15, 20, "c");
 
     /** Рендерер крафта. */
@@ -29,7 +36,7 @@ class CraftRendererTest {
     @Test
     @DisplayName("Формирует меню выбора редкости")
     void rendersMenu() {
-        Message message = renderer.renderMenu(50, SHARDS_EMOJI);
+        Message message = renderer.renderMenu(50, SHARDS_EMOJI, GAME_CONFIG);
 
         Assertions.assertTrue(message.text().contains("Твой баланс кусочков: 50 🧩"));
         Assertions.assertEquals(2, message.buttons().size());
@@ -66,14 +73,5 @@ class CraftRendererTest {
 
         Assertions.assertEquals("❌ Недостаточно кусочков. Нужно: 100, у тебя: 15. Не хватает: 85.",
                 message.text());
-    }
-
-    /**
-     * Проверяет сообщение о неизвестной редкости.
-     */
-    @Test
-    @DisplayName("Формирует сообщение о неизвестной редкости")
-    void rendersUnknownRarity() {
-        Assertions.assertEquals("Неизвестная редкость крафта.", renderer.renderUnknownRarity().text());
     }
 }

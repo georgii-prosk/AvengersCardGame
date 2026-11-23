@@ -3,7 +3,6 @@ package com.avengers.cardgame.command;
 import com.avengers.cardgame.config.GameConfig;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.FakeCardService;
-import com.avengers.cardgame.fakes.FakeDailyRewardService;
 import com.avengers.cardgame.fakes.FakeMarketService;
 import com.avengers.cardgame.fakes.FakeHeroRepository;
 import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
@@ -34,28 +33,25 @@ class CommandRegistryFactoryTest {
     private static final long CHAT_ID = 110L;
 
     /** Игровая конфигурация для тестов. */
-    private static final GameConfig GAME_CONFIG =
+    private final GameConfig GAME_CONFIG =
             new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
 
     /**
      * Создаёт реестр команд.
      *
-     * @param userRepository    репозиторий пользователей
-     * @param cardRepository   репозиторий карточек
-     * @param heroRepository   репозиторий героев
-     * @param cardService      сервис карточек
-     * @param dailyRewardService сервис ежедневной награды
+     * @param userRepository  репозиторий пользователей
+     * @param cardRepository  репозиторий карточек
+     * @param heroRepository  репозиторий героев
+     * @param cardService     сервис карточек
      * @return реестр команд
      */
     private CommandRegistry registryWith(InMemoryUserRepository userRepository,
                                          InMemoryUserCardRepository cardRepository,
                                          FakeHeroRepository heroRepository,
-                                         FakeCardService cardService,
-                                         FakeDailyRewardService dailyRewardService) {
+                                         FakeCardService cardService) {
         return new CommandRegistryFactory(
                 new UserServiceImpl(userRepository),
                 cardService,
-                dailyRewardService,
                 new FakeMarketService(),
                 cardRepository,
                 heroRepository,
@@ -72,7 +68,7 @@ class CommandRegistryFactoryTest {
         FakeHeroRepository heroRepository = new FakeHeroRepository();
 
         CommandRegistry registry = registryWith(userRepository, cardRepository, heroRepository,
-                new FakeCardService(List.of(hero)), new FakeDailyRewardService(List.of(hero)));
+                new FakeCardService(List.of(hero)));
         FakeBot bot = new FakeBot();
 
         Optional<ResolvedCommand> resolved = registry.resolve("/daily");
@@ -91,7 +87,7 @@ class CommandRegistryFactoryTest {
         FakeHeroRepository heroRepository = new FakeHeroRepository();
 
         CommandRegistry registry = registryWith(userRepository, cardRepository, heroRepository,
-                new FakeCardService(List.of()), new FakeDailyRewardService(List.of()));
+                new FakeCardService(List.of()));
         FakeBot bot = new FakeBot();
 
         Optional<ResolvedCommand> resolved = registry.resolve("/inventory");
@@ -107,7 +103,7 @@ class CommandRegistryFactoryTest {
     void economyCommandsAreRegistered() {
         CommandRegistry registry = registryWith(new InMemoryUserRepository(),
                 new InMemoryUserCardRepository(), new FakeHeroRepository(),
-                new FakeCardService(List.of()), new FakeDailyRewardService(List.of()));
+                new FakeCardService(List.of()));
 
         Assertions.assertTrue(registry.resolve("/disassemble").isPresent());
         Assertions.assertTrue(registry.resolve("/craft").isPresent());

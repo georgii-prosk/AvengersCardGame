@@ -1,6 +1,11 @@
 package com.avengers.cardgame.repository.impl;
 
 import com.avengers.cardgame.config.ConnectionFactory;
+import com.avengers.cardgame.exception.AppException;
+import com.avengers.cardgame.exception.InsufficientFundsException;
+import com.avengers.cardgame.exception.ListingUnavailableException;
+import com.avengers.cardgame.exception.NotEnoughCardsException;
+import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.MarketListing;
 import com.avengers.cardgame.repository.MarketRepository;
 import org.jetbrains.annotations.NotNull;
@@ -14,18 +19,12 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 /**
  * Реализация {@link MarketRepository} на основе JDBC (PostgreSQL).
  */
 public class PostgresMarketRepository extends JdbcSupport implements MarketRepository {
-
-    /** Запрос для сохранения лота. */
-    private static final String SQL_INSERT = """
-            INSERT INTO market_listings (seller_id, hero_id, price)
-            VALUES (?, ?, ?)
-            RETURNING id, seller_id, hero_id, price, created_at
-            """;
 
     /** Запрос для поиска лота по идентификатору. */
     private static final String SQL_FIND_BY_ID = """
@@ -45,17 +44,8 @@ public class PostgresMarketRepository extends JdbcSupport implements MarketRepos
             FROM market_listings WHERE seller_id = ? ORDER BY id
             """;
 
-    /** Запрос для удаления лота с возвратом данных. */
-    private static final String SQL_DELETE_AND_RETURN = """
-            DELETE FROM market_listings WHERE id = ?
-            RETURNING id, seller_id, hero_id, price, created_at
-            """;
-
-    /** Запрос для удаления лота продавца с возвратом данных. */
-    private static final String SQL_DELETE_BY_SELLER_AND_RETURN = """
-            DELETE FROM market_listings WHERE id = ? AND seller_id = ?
-            RETURNING id, seller_id, hero_id, price, created_at
-            """;
+    /** SQL-операции экономики. */
+    private final EconomySql economySql = new EconomySql();
 
     /**
      * @param connectionFactory фабрика соединений с БД
@@ -65,26 +55,45 @@ public class PostgresMarketRepository extends JdbcSupport implements MarketRepos
     }
 
     @Override
-    public @NotNull MarketListing saveListing(@Nullable Connection connection, @NotNull MarketListing listing) {
-        Connection actualConnection = null;
-        try {
-            actualConnection = acquireConnection(connection);
-            try (PreparedStatement statement = actualConnection.prepareStatement(SQL_INSERT)) {
-                statement.setLong(1, listing.sellerId());
-                statement.setLong(2, listing.heroId());
-                statement.setInt(3, listing.price());
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return mapRowToListing(resultSet);
-                    }
-                }
+    public @NotNull MarketListing createListing(long sellerId, long heroId, int price) throws AppException {
+        return inTransaction(connection -> {
+            if (!economySql.removeCard(connection, sellerId, heroId, 1)) {
+                throw new NotEnoughCardsException(heroId, 1,
+                        economySql.countCards(connection, sellerId, heroId));
             }
-            throw new IllegalStateException("Failed to save market listing");
-        } catch (SQLException exception) {
-            throw new RuntimeException("Error saving market listing", exception);
-        } finally {
-            closeIfOwned(connection, actualConnection);
-        }
+            return economySql.insertListing(connection, sellerId, heroId, price);
+        });
+    }
+
+    @Override
+    public @NotNull MarketListing buy(long buyerId, long listingId, int sellerAmount) throws AppException {
+        return inTransaction(connection -> {
+            MarketListing deleted = economySql.deleteListing(connection, listingId)
+                    .orElseThrow(() -> new ListingUnavailableException(listingId));
+            OptionalInt balance = economySql.spendBalance(connection, buyerId, deleted.price());
+            if (balance.isEmpty()) {
+                OptionalInt available = economySql.findBalance(connection, buyerId);
+                if (available.isEmpty()) {
+                    throw new UserNotFoundException(buyerId);
+                }
+                throw new InsufficientFundsException(deleted.price(), available.getAsInt());
+            }
+            if (!economySql.addBalance(connection, deleted.sellerId(), sellerAmount)) {
+                throw new UserNotFoundException(deleted.sellerId());
+            }
+            economySql.addCard(connection, buyerId, deleted.heroId());
+            return deleted;
+        });
+    }
+
+    @Override
+    public @NotNull MarketListing cancelListing(long sellerId, long listingId) throws AppException {
+        return inTransaction(connection -> {
+            MarketListing deleted = economySql.deleteListingBySeller(connection, listingId, sellerId)
+                    .orElseThrow(() -> new ListingUnavailableException(listingId));
+            economySql.addCard(connection, sellerId, deleted.heroId());
+            return deleted;
+        });
     }
 
     /**
@@ -95,21 +104,16 @@ public class PostgresMarketRepository extends JdbcSupport implements MarketRepos
      */
     @Override
     public @NotNull Optional<MarketListing> findById(long listingId) {
-        Connection actualConnection = null;
-        try {
-            actualConnection = acquireConnection(null);
-            try (PreparedStatement statement = actualConnection.prepareStatement(SQL_FIND_BY_ID)) {
-                statement.setLong(1, listingId);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return Optional.of(mapRowToListing(resultSet));
-                    }
+        try (Connection connection = connectionFactory.getConnection();
+             PreparedStatement statement = connection.prepareStatement(SQL_FIND_BY_ID)) {
+            statement.setLong(1, listingId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return Optional.of(mapRowToListing(resultSet));
                 }
             }
         } catch (SQLException exception) {
             throw new RuntimeException("Error finding market listing", exception);
-        } finally {
-            closeIfOwned(null, actualConnection);
         }
         return Optional.empty();
     }
@@ -124,23 +128,11 @@ public class PostgresMarketRepository extends JdbcSupport implements MarketRepos
         return findMany(SQL_FIND_BY_SELLER, sellerId);
     }
 
-    @Override
-    public @NotNull Optional<MarketListing> deleteListingAndReturn(
-            @Nullable Connection connection, long listingId) {
-        return deleteAndReturn(connection, SQL_DELETE_AND_RETURN, listingId, null);
-    }
-
-    @Override
-    public @NotNull Optional<MarketListing> deleteListingBySellerAndReturn(
-            @Nullable Connection connection, long listingId, long sellerId) {
-        return deleteAndReturn(connection, SQL_DELETE_BY_SELLER_AND_RETURN, listingId, sellerId);
-    }
-
     /**
      * Выполняет запрос, возвращающий список лотов.
      *
-     * @param sql           SQL-запрос
-     * @param sellerId      идентификатор продавца, либо {@code null}, если параметр не нужен
+     * @param sql      SQL-запрос
+     * @param sellerId идентификатор продавца, либо {@code null}, если параметр не нужен
      * @return список лотов
      */
     private List<MarketListing> findMany(String sql, @Nullable Long sellerId) {
@@ -159,39 +151,6 @@ public class PostgresMarketRepository extends JdbcSupport implements MarketRepos
             throw new RuntimeException("Error finding market listings", exception);
         }
         return listings;
-    }
-
-    /**
-     * Удаляет лот и возвращает его данные.
-     *
-     * @param connection соединение с БД, может быть {@code null}
-     * @param sql        SQL-запрос удаления
-     * @param listingId  идентификатор лота
-     * @param sellerId   идентификатор продавца, либо {@code null}, если проверка не нужна
-     * @return удалённый лот, если он существовал
-     */
-    private Optional<MarketListing> deleteAndReturn(
-            @Nullable Connection connection, String sql, long listingId, @Nullable Long sellerId) {
-        Connection actualConnection = null;
-        try {
-            actualConnection = acquireConnection(connection);
-            try (PreparedStatement statement = actualConnection.prepareStatement(sql)) {
-                statement.setLong(1, listingId);
-                if (sellerId != null) {
-                    statement.setLong(2, sellerId);
-                }
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return Optional.of(mapRowToListing(resultSet));
-                    }
-                }
-            }
-        } catch (SQLException exception) {
-            throw new RuntimeException("Error deleting market listing", exception);
-        } finally {
-            closeIfOwned(connection, actualConnection);
-        }
-        return Optional.empty();
     }
 
     /**

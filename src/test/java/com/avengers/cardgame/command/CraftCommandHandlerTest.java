@@ -34,11 +34,11 @@ class CraftCommandHandlerTest {
     private static final long CHAT_ID = 10L;
 
     /** Обычный герой. */
-    private static final Hero COMMON_HERO =
+    private final Hero COMMON_HERO =
             new Hero(1L, "Pepper", HeroRarity.COMMON, 5, 15, 20, "c");
 
     /** Игровая конфигурация для тестов. */
-    private static final GameConfig GAME_CONFIG =
+    private final GameConfig GAME_CONFIG =
             new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
 
     /** Сервис пользователей. */
@@ -105,17 +105,6 @@ class CraftCommandHandlerTest {
         Assertions.assertTrue(message.text().contains("Pepper"));
         Assertions.assertTrue(message.text().contains("Потрачено кусочков: 5"));
         Assertions.assertTrue(message.text().contains("Остаток кусочков: 0"));
-    }
-
-    /**
-     * Проверяет неизвестную редкость.
-     */
-    @Test
-    @DisplayName("Сообщает о неизвестной редкости")
-    void rejectsUnknownRarity() throws Exception {
-        handler.handleMake(context("mythic"));
-
-        Assertions.assertTrue(bot.lastSent().message().text().contains("Неизвестная редкость"));
     }
 
     /**

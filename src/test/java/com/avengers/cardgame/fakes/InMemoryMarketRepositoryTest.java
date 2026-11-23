@@ -1,6 +1,12 @@
 package com.avengers.cardgame.fakes;
 
+import com.avengers.cardgame.exception.InsufficientFundsException;
+import com.avengers.cardgame.exception.ListingUnavailableException;
+import com.avengers.cardgame.exception.NotEnoughCardsException;
+import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.MarketListing;
+import com.avengers.cardgame.model.PlayerName;
+import com.avengers.cardgame.model.User;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,15 +20,32 @@ import java.util.List;
  */
 class InMemoryMarketRepositoryTest {
 
+    /** Идентификатор продавца. */
+    private static final long SELLER_ID = 1L;
+
+    /** Идентификатор покупателя. */
+    private static final long BUYER_ID = 2L;
+
+    /** Идентификатор героя. */
+    private static final long HERO_ID = 10L;
+
     /** Время создания лота для тестов. */
-    private static final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 1, 1, 12, 0);
+    private final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 1, 1, 12, 0);
+
+    /** Репозиторий пользователей. */
+    private InMemoryUserRepository userRepository;
+
+    /** Репозиторий карточек. */
+    private InMemoryUserCardRepository userCardRepository;
 
     /** Репозиторий рынка. */
     private InMemoryMarketRepository repository;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryMarketRepository();
+        userRepository = new InMemoryUserRepository();
+        userCardRepository = new InMemoryUserCardRepository(userRepository);
+        repository = new InMemoryMarketRepository(userRepository, userCardRepository);
     }
 
     /**
@@ -35,6 +58,18 @@ class InMemoryMarketRepositoryTest {
      */
     private MarketListing listing(long sellerId, long heroId, int price) {
         return new MarketListing(0, sellerId, heroId, price, CREATED_AT);
+    }
+
+    /**
+     * Регистрирует пользователя с заданным балансом валюты.
+     *
+     * @param userId  идентификатор пользователя
+     * @param balance баланс валюты
+     * @throws Exception при ошибке сохранения
+     */
+    private void registerUser(long userId, int balance) throws Exception {
+        userRepository.save(User.of(userId, PlayerName.of(userId == SELLER_ID ? "Seller" : "Buyer"), null,
+                balance, 0, 0, CREATED_AT, CREATED_AT));
     }
 
     /**
@@ -109,42 +144,135 @@ class InMemoryMarketRepositoryTest {
     }
 
     /**
-     * Проверяет удаление лота с возвратом.
+     * Проверяет успешное выставление лота: карточка снимается, лот сохраняется.
      */
     @Test
-    @DisplayName("Удаляет лот и возвращает его")
-    void deletesListingAndReturns() {
-        MarketListing saved = repository.saveListing(listing(1L, 10L, 100));
+    @DisplayName("Выставление лота снимает карточку и сохраняет лот")
+    void createListingRemovesCardAndSavesListing() throws Exception {
+        registerUser(SELLER_ID, 0);
+        userCardRepository.addCard(SELLER_ID, HERO_ID);
 
-        var deleted = repository.deleteListingAndReturn(null, saved.id());
+        MarketListing created = repository.createListing(SELLER_ID, HERO_ID, 100);
 
-        Assertions.assertTrue(deleted.isPresent());
-        Assertions.assertEquals(saved.id(), deleted.get().id());
-        Assertions.assertTrue(repository.findById(saved.id()).isEmpty());
+        Assertions.assertTrue(created.id() > 0);
+        Assertions.assertEquals(0, userCardRepository.countByUserIdAndHeroId(SELLER_ID, HERO_ID));
+        Assertions.assertEquals(1, repository.size());
     }
 
     /**
-     * Проверяет, что удаление отсутствующего лота возвращает пустой результат.
+     * Проверяет, что при отсутствии карточки лот не создаётся.
      */
     @Test
-    @DisplayName("Возвращает пустой результат для отсутствующего лота")
-    void returnsEmptyForMissingListing() {
-        Assertions.assertTrue(repository.deleteListingAndReturn(null, 999L).isEmpty());
+    @DisplayName("Выставление лота без карточки не меняет состояние")
+    void createListingKeepsStateWhenNoCard() throws Exception {
+        registerUser(SELLER_ID, 0);
+
+        NotEnoughCardsException exception = Assertions.assertThrows(NotEnoughCardsException.class,
+                () -> repository.createListing(SELLER_ID, HERO_ID, 100));
+
+        Assertions.assertEquals(HERO_ID, exception.heroId());
+        Assertions.assertEquals(1, exception.requested());
+        Assertions.assertEquals(0, exception.available());
+        Assertions.assertEquals(0, repository.size());
     }
 
     /**
-     * Проверяет удаление лота только его продавцом.
+     * Проверяет успешную покупку: средства списываются, продавцу начисляется сумма, карточка переходит.
      */
     @Test
-    @DisplayName("Удаляет лот только правильным продавцом")
-    void deletesBySellerOnly() {
-        MarketListing saved = repository.saveListing(listing(1L, 10L, 100));
+    @DisplayName("Покупка переводит средства и карточку")
+    void buyTransfersFundsAndCard() throws Exception {
+        registerUser(BUYER_ID, 150);
+        registerUser(SELLER_ID, 0);
+        MarketListing saved = repository.saveListing(listing(SELLER_ID, HERO_ID, 100));
 
-        var wrongSeller = repository.deleteListingBySellerAndReturn(null, saved.id(), 2L);
-        var rightSeller = repository.deleteListingBySellerAndReturn(null, saved.id(), 1L);
+        MarketListing deleted = repository.buy(BUYER_ID, saved.id(), 95);
 
-        Assertions.assertTrue(wrongSeller.isEmpty());
-        Assertions.assertTrue(rightSeller.isPresent());
-        Assertions.assertTrue(repository.findById(saved.id()).isEmpty());
+        Assertions.assertEquals(saved.id(), deleted.id());
+        Assertions.assertEquals(50, userRepository.findByUserId(BUYER_ID).orElseThrow().balance());
+        Assertions.assertEquals(95, userRepository.findByUserId(SELLER_ID).orElseThrow().balance());
+        Assertions.assertEquals(1, userCardRepository.countByUserIdAndHeroId(BUYER_ID, HERO_ID));
+        Assertions.assertEquals(0, repository.size());
+    }
+
+    /**
+     * Проверяет, что при недостатке средств покупка не меняет состояние.
+     */
+    @Test
+    @DisplayName("Покупка при недостатке средств не меняет состояние")
+    void buyKeepsStateWhenInsufficientFunds() throws Exception {
+        registerUser(BUYER_ID, 30);
+        registerUser(SELLER_ID, 0);
+        MarketListing saved = repository.saveListing(listing(SELLER_ID, HERO_ID, 100));
+
+        InsufficientFundsException exception = Assertions.assertThrows(InsufficientFundsException.class,
+                () -> repository.buy(BUYER_ID, saved.id(), 95));
+
+        Assertions.assertEquals(100, exception.required());
+        Assertions.assertEquals(30, exception.available());
+        Assertions.assertEquals(30, userRepository.findByUserId(BUYER_ID).orElseThrow().balance());
+        Assertions.assertEquals(0, userRepository.findByUserId(SELLER_ID).orElseThrow().balance());
+        Assertions.assertEquals(0, userCardRepository.countByUserIdAndHeroId(BUYER_ID, HERO_ID));
+        Assertions.assertEquals(1, repository.size());
+    }
+
+    /**
+     * Проверяет, что покупка отсутствующего лота отклоняется.
+     */
+    @Test
+    @DisplayName("Покупка отсутствующего лота отклоняется")
+    void buyRejectsMissingListing() throws Exception {
+        registerUser(BUYER_ID, 150);
+
+        Assertions.assertThrows(ListingUnavailableException.class,
+                () -> repository.buy(BUYER_ID, 999L, 95));
+    }
+
+    /**
+     * Проверяет, что покупка отсутствующим покупателем возвращает лот на место.
+     */
+    @Test
+    @DisplayName("Покупка отсутствующим покупателем не меняет состояние")
+    void buyKeepsStateWhenBuyerMissing() throws Exception {
+        registerUser(SELLER_ID, 0);
+        MarketListing saved = repository.saveListing(listing(SELLER_ID, HERO_ID, 100));
+
+        Assertions.assertThrows(UserNotFoundException.class,
+                () -> repository.buy(999L, saved.id(), 95));
+
+        Assertions.assertEquals(1, repository.size());
+        Assertions.assertTrue(repository.findById(saved.id()).isPresent());
+    }
+
+    /**
+     * Проверяет успешное снятие лота: карточка возвращается продавцу.
+     */
+    @Test
+    @DisplayName("Снятие лота возвращает карточку продавцу")
+    void cancelListingReturnsCard() throws Exception {
+        registerUser(SELLER_ID, 0);
+        MarketListing saved = repository.saveListing(listing(SELLER_ID, HERO_ID, 100));
+
+        MarketListing cancelled = repository.cancelListing(SELLER_ID, saved.id());
+
+        Assertions.assertEquals(saved.id(), cancelled.id());
+        Assertions.assertEquals(1, userCardRepository.countByUserIdAndHeroId(SELLER_ID, HERO_ID));
+        Assertions.assertEquals(0, repository.size());
+    }
+
+    /**
+     * Проверяет, что чужой или отсутствующий лот снять нельзя.
+     */
+    @Test
+    @DisplayName("Снятие чужого лота не меняет состояние")
+    void cancelListingKeepsStateWhenForeign() throws Exception {
+        registerUser(SELLER_ID, 0);
+        MarketListing saved = repository.saveListing(listing(SELLER_ID, HERO_ID, 100));
+
+        Assertions.assertThrows(ListingUnavailableException.class,
+                () -> repository.cancelListing(BUYER_ID, saved.id()));
+
+        Assertions.assertEquals(1, repository.size());
+        Assertions.assertEquals(0, userCardRepository.countByUserIdAndHeroId(BUYER_ID, HERO_ID));
     }
 }

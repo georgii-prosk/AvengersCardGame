@@ -11,6 +11,8 @@ import com.avengers.cardgame.service.CommandContext;
 import com.avengers.cardgame.service.CommandHandler;
 import com.avengers.cardgame.service.CraftResult;
 import com.avengers.cardgame.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Locale;
 
@@ -18,6 +20,9 @@ import java.util.Locale;
  * Обработчик команды /craft и шага крафта.
  */
 public class CraftCommandHandler implements CommandHandler {
+
+    /** Логгер. */
+    private final Logger log = LoggerFactory.getLogger(CraftCommandHandler.class);
 
     /** Сервис карточек. */
     private final CardService cardService;
@@ -46,7 +51,7 @@ public class CraftCommandHandler implements CommandHandler {
     public void handle(CommandContext context) throws AppException {
         User user = userService.getByUserId(context.userId());
         context.bot().sendMessage(
-                craftRenderer.renderMenu(user.shards(), gameConfig.shardsEmoji()), context.chatId());
+                craftRenderer.renderMenu(user.shards(), gameConfig.shardsEmoji(), gameConfig), context.chatId());
     }
 
     /**
@@ -60,7 +65,7 @@ public class CraftCommandHandler implements CommandHandler {
         try {
             rarity = HeroRarity.valueOf(context.argument().trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException exception) {
-            context.bot().sendMessage(craftRenderer.renderUnknownRarity(), context.chatId());
+            log.error("Unknown craft rarity argument: {}", context.argument(), exception);
             return;
         }
 

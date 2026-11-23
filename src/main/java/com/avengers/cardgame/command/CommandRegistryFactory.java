@@ -6,7 +6,6 @@ import com.avengers.cardgame.repository.UserCardRepository;
 import com.avengers.cardgame.service.CardService;
 import com.avengers.cardgame.service.CommandHandler;
 import com.avengers.cardgame.service.CommandRegistry;
-import com.avengers.cardgame.service.DailyRewardService;
 import com.avengers.cardgame.service.MarketService;
 import com.avengers.cardgame.service.UserService;
 import com.avengers.cardgame.service.impl.CommandRegistryImpl;
@@ -20,9 +19,6 @@ public class CommandRegistryFactory {
 
     /** Сервис карточек. */
     private final CardService cardService;
-
-    /** Сервис выдачи ежедневной награды. */
-    private final DailyRewardService dailyRewardService;
 
     /** Сервис рынка. */
     private final MarketService marketService;
@@ -39,20 +35,18 @@ public class CommandRegistryFactory {
     /**
      * @param userService        сервис пользователей
      * @param cardService        сервис карточек
-     * @param dailyRewardService сервис выдачи ежедневной награды
      * @param marketService      сервис рынка
      * @param userCardRepository репозиторий карточек
      * @param heroRepository     репозиторий героев
      * @param gameConfig         игровая конфигурация
      */
     public CommandRegistryFactory(UserService userService, CardService cardService,
-                                  DailyRewardService dailyRewardService, MarketService marketService,
+                                  MarketService marketService,
                                   UserCardRepository userCardRepository,
                                   HeroRepository heroRepository,
                                   GameConfig gameConfig) {
         this.userService = userService;
         this.cardService = cardService;
-        this.dailyRewardService = dailyRewardService;
         this.marketService = marketService;
         this.userCardRepository = userCardRepository;
         this.heroRepository = heroRepository;
@@ -69,10 +63,10 @@ public class CommandRegistryFactory {
 
         registry.register("/start", wrap(new StartCommandHandler()));
         registry.register("/help", new HelpCommandHandler());
-        registry.register("/profile", wrap(new ProfileCommandHandler(userService, gameConfig)));
+        registry.register("/profile", wrap(new ProfileCommandHandler(userService)));
         registry.register("/setname", wrap(new SetNameCommandHandler(userService)));
         registry.register("/setbio", wrap(new SetBioCommandHandler(userService)));
-        registry.register("/daily", wrap(new DailyCommandHandler(dailyRewardService)));
+        registry.register("/daily", wrap(new DailyCommandHandler(cardService)));
 
         InventoryCommandHandler inventoryHandler =
                 new InventoryCommandHandler(userCardRepository, heroRepository);
@@ -93,23 +87,20 @@ public class CommandRegistryFactory {
         registry.register("/craft", wrap(craftHandler));
         registry.register("/craft_make", craftHandler::handleMake);
 
-        SellCommandHandler sellHandler = new SellCommandHandler(
-                userCardRepository, heroRepository, marketService, gameConfig);
-        registry.register("/sell", wrap(sellHandler));
-        registry.register("/sell_page", sellHandler::handlePage);
-        registry.register("/sell_pick", sellHandler::handlePick);
-        registry.register("/sell_price", sellHandler::handlePrice);
-        registry.register("/sell_confirm", sellHandler::handleConfirm);
+        registry.register("/sell", wrap(new SellCommandHandler(userCardRepository, heroRepository)));
+        registry.register("/sell_page", new SellPageCommandHandler(userCardRepository, heroRepository));
+        registry.register("/sell_pick", new SellPickCommandHandler(userCardRepository, heroRepository, gameConfig));
+        registry.register("/sell_price", new SellPriceCommandHandler(heroRepository, gameConfig));
+        registry.register("/sell_confirm", new SellConfirmCommandHandler(marketService, heroRepository, gameConfig));
 
-        MarketCommandHandler marketHandler = new MarketCommandHandler(
-                marketService, heroRepository, userService, gameConfig);
-        registry.register("/market", wrap(marketHandler));
-        registry.register("/market_page", marketHandler::handlePage);
-        registry.register("/market_filter", marketHandler::handleFilter);
-        registry.register("/market_buy", marketHandler::handleBuy);
-        registry.register("/market_buy_confirm", marketHandler::handleBuyConfirm);
-        registry.register("/market_mine", marketHandler::handleMine);
-        registry.register("/market_cancel", marketHandler::handleCancel);
+        registry.register("/market", wrap(new MarketCommandHandler(marketService, gameConfig)));
+        registry.register("/market_page", new MarketPageCommandHandler(marketService, gameConfig));
+        registry.register("/market_filter", new MarketFilterCommandHandler(marketService, gameConfig));
+        registry.register("/market_buy", new MarketBuyCommandHandler(marketService, gameConfig));
+        registry.register("/market_buy_confirm", new MarketBuyConfirmCommandHandler(
+                marketService, heroRepository, userService, gameConfig));
+        registry.register("/market_mine", new MarketMineCommandHandler(marketService, gameConfig));
+        registry.register("/market_cancel", new MarketCancelCommandHandler(marketService, heroRepository));
 
         registry.register("/cancel", new CancelCommandHandler());
 
@@ -117,7 +108,7 @@ public class CommandRegistryFactory {
     }
 
     /**
-     * Оборачивает команду в декоратор, который регистрирует пользователя перед выполнением.
+     * Оборачивает команду декоратором, который регистрирует пользователя перед выполнением.
      *
      * @param command обрабатываемая команда
      * @return команда с регистрацией пользователя

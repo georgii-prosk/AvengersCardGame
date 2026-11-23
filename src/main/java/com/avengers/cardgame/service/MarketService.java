@@ -16,9 +16,6 @@ import java.util.List;
  */
 public interface MarketService {
 
-    /** Комиссия рынка при продаже в процентах. */
-    int COMMISSION_PERCENT = 5;
-
     /**
      * Выставляет карточку игрока на продажу.
      * <p>

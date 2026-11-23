@@ -144,7 +144,7 @@ public class DisassembleCommandHandler implements CommandHandler {
             return;
         }
 
-        int shardsToGain = quantity * hero.rarity().shardsYield();
+        int shardsToGain = quantity * gameConfig.rarity(hero.rarity()).shardsYield();
         context.bot().sendMessage(disassembleRenderer.renderConfirmation(
                 hero, available, quantity, shardsToGain, gameConfig.shardsEmoji()), context.chatId());
     }

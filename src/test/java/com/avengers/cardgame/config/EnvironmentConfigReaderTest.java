@@ -210,4 +210,15 @@ class EnvironmentConfigReaderTest {
 
         Assertions.assertEquals("⭐", config.game().shardsEmoji());
     }
+
+    @Test
+    @DisplayName("Использует параметры экономики по умолчанию")
+    void usesDefaultEconomyParams() throws ConfigurationException {
+        AppConfig config = readerWith(validEnv()).read();
+
+        Assertions.assertEquals(GameConfig.DEFAULT_MARKET_COMMISSION_PERCENT,
+                config.game().marketCommissionPercent());
+        Assertions.assertEquals(new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30)).rarityConfigs(),
+                config.game().rarityConfigs());
+    }
 }

@@ -1,59 +1,111 @@
 package com.avengers.cardgame.service.impl;
 
-import com.avengers.cardgame.config.ConnectionFactory;
+import com.avengers.cardgame.config.GameConfig;
 import com.avengers.cardgame.exception.AppException;
-import com.avengers.cardgame.exception.InsufficientShardsException;
-import com.avengers.cardgame.exception.NotEnoughCardsException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.HeroRepository;
 import com.avengers.cardgame.repository.UserCardRepository;
-import com.avengers.cardgame.repository.UserRepository;
 import com.avengers.cardgame.service.CardService;
+import com.avengers.cardgame.service.Cooldown;
 import com.avengers.cardgame.service.CraftResult;
+import com.avengers.cardgame.service.DailyRewardResult;
 import com.avengers.cardgame.service.DisassembleResult;
 import com.avengers.cardgame.service.HeroService;
+import com.avengers.cardgame.service.Success;
+import com.avengers.cardgame.service.UserService;
 import org.jetbrains.annotations.NotNull;
+
+import java.time.Clock;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 /**
  * Реализация {@link CardService}.
  */
 public class CardServiceImpl implements CardService {
+    /** Минимальное количество карточек, выдаваемых за одну ежедневную награду. */
+    private static final int MIN_DAILY_CARDS = 1;
 
-    /** Репозиторий пользователей. */
-    private final UserRepository userRepository;
+    /** Максимальное количество карточек, выдаваемых за одну ежедневную награду. */
+    private static final int MAX_DAILY_CARDS = 3;
 
+
+    /** Сервис пользователей. */
+    private final UserService userService;
     /** Репозиторий карточек пользователей. */
     private final UserCardRepository userCardRepository;
-
-    /** Репозиторий героев. */
-    private final HeroRepository heroRepository;
-
     /** Сервис героев. */
     private final HeroService heroService;
-
-    /** Фабрика соединений. */
-    private final ConnectionFactory connectionFactory;
+    /** Репозиторий героев. */
+    private final HeroRepository heroRepository;
+    /** Игровая конфигурация. */
+    private final GameConfig gameConfig;
+    /** Источник случайности. */
+    private final Random random;
+    /** Часы для отслеживания времени кулдауна. */
+    private final Clock clock;
 
     /**
-     * @param userRepository     репозиторий пользователей
+     * @param userService сервис пользователей
      * @param userCardRepository репозиторий карточек
-     * @param heroRepository     репозиторий героев
-     * @param heroService        сервис героев
-     * @param connectionFactory  фабрика соединений
+     * @param heroService сервис героев
+     * @param heroRepository репозиторий героев
+     * @param gameConfig игровая конфигурация
+     * @param random генератор случайных чисел
+     * @param clock часы
      */
-    public CardServiceImpl(UserRepository userRepository,
-                           UserCardRepository userCardRepository, HeroRepository heroRepository,
-                           HeroService heroService, ConnectionFactory connectionFactory) {
-        this.userRepository = userRepository;
+    public CardServiceImpl(UserService userService, UserCardRepository userCardRepository,
+                           HeroService heroService, HeroRepository heroRepository,
+                           GameConfig gameConfig, Random random, Clock clock) {
+        this.userService = userService;
         this.userCardRepository = userCardRepository;
-        this.heroRepository = heroRepository;
         this.heroService = heroService;
-        this.connectionFactory = connectionFactory;
+        this.heroRepository = heroRepository;
+        this.gameConfig = gameConfig;
+        this.random = random;
+        this.clock = clock;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public synchronized DailyRewardResult grantDaily(long userId) throws UserNotFoundException {
+        // Метод синхронизирован для предотвращения состояния гонки (check-then-act):
+        // без этого два параллельных запроса от одного пользователя могли бы
+        // одновременно пройти проверку кулдауна и выдать награду дважды.
+
+        User user = userService.getByUserId(userId);
+        LocalDateTime now = LocalDateTime.now(clock);
+
+        Duration remaining = timeUntilNextClaim(user.lastDailyAt(), now);
+        if (remaining != null) {
+            return new Cooldown(remaining);
+        }
+
+        // Генерируем от 1 до 3 карточек
+        int amount = MIN_DAILY_CARDS + random.nextInt(MAX_DAILY_CARDS - MIN_DAILY_CARDS + 1);
+        List<Hero> heroes = new ArrayList<>(amount);
+        for (int index = 0; index < amount; index++) {
+            Hero hero = heroService.getRandomHero()
+                    .orElseThrow(() -> new IllegalStateException("No heroes available in repository"));
+            userCardRepository.addCard(userId, hero.id());
+            heroes.add(hero);
+        }
+
+        userService.updateLastDailyAt(userId, now);
+        return new Success(heroes);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public DisassembleResult disassemble(long userId, long heroId, int count) throws AppException {
         if (count <= 0) {
@@ -62,42 +114,34 @@ public class CardServiceImpl implements CardService {
         Hero hero = heroRepository.findById(heroId)
                 .orElseThrow(() -> new IllegalArgumentException("Hero not found: " + heroId));
 
-        int available = userCardRepository.countByUserIdAndHeroId(userId, heroId);
-        int shardsGained = hero.rarity().shardsYield() * count;
+        int shardsGained = gameConfig.rarity(hero.rarity()).shardsYield() * count;
+        int shardsBalance = userCardRepository.disassemble(userId, heroId, count, shardsGained);
 
-        JdbcTransactions.execute(connectionFactory, connection -> {
-            if (!userCardRepository.removeCard(connection, userId, heroId, count)) {
-                throw new NotEnoughCardsException(heroId, count, available);
-            }
-            userRepository.addShards(connection, userId, shardsGained);
-            return null;
-        });
-
-        int shardsBalance = userRepository.findByUserId(userId)
-                .map(User::shards)
-                .orElseThrow(() -> new UserNotFoundException(userId));
         return new DisassembleResult(hero, count, shardsGained, shardsBalance);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public @NotNull CraftResult craft(long userId, @NotNull HeroRarity rarity) throws AppException {
-        int craftCost = rarity.craftCost();
+        int craftCost = gameConfig.rarity(rarity).craftCost();
+        Hero hero = heroService.getRandomHero(rarity)
+                .orElseThrow(() -> new IllegalStateException("No heroes available for rarity " + rarity));
 
-        return JdbcTransactions.execute(connectionFactory, connection -> {
-            User user = userRepository.findByUserId(connection, userId)
-                    .orElseThrow(() -> new UserNotFoundException(userId));
-            int available = user.shards();
-            if (available < craftCost) {
-                throw new InsufficientShardsException(craftCost, available);
-            }
-            Hero hero = heroService.getRandomHero(rarity)
-                    .orElseThrow(() -> new IllegalStateException(
-                            "No heroes available for rarity " + rarity));
-            if (!userRepository.spendShards(connection, userId, craftCost)) {
-                throw new InsufficientShardsException(craftCost, available);
-            }
-            userCardRepository.addCard(connection, userId, hero.id());
-            return new CraftResult(hero, craftCost, available - craftCost);
-        });
+        int shardsBalance = userCardRepository.craft(userId, hero.id(), craftCost);
+
+        return new CraftResult(hero, craftCost, shardsBalance);
+    }
+
+    /**
+     * Проверяет, истёк ли кулдаун.
+     * @return оставшееся время или null, если награда доступна
+     */
+    private Duration timeUntilNextClaim(LocalDateTime lastDailyAt, LocalDateTime now) {
+        if (lastDailyAt == null) return null;
+        Duration elapsed = Duration.between(lastDailyAt, now);
+        Duration cooldown = gameConfig.dailyCooldown();
+        return elapsed.compareTo(cooldown) >= 0 ? null : cooldown.minus(elapsed);
     }
 }
