@@ -1,6 +1,6 @@
 package com.avengers.cardgame.service;
 
-import com.avengers.cardgame.fakes.FakeHeroRepository;
+import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.fakes.ScriptedRandom;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
@@ -38,8 +38,8 @@ class HeroServiceTest {
      * @param heroes герои
      * @return наполненный репозиторий
      */
-    private FakeHeroRepository repositoryOf(Hero... heroes) {
-        FakeHeroRepository repository = new FakeHeroRepository();
+    private InMemoryHeroRepository repositoryOf(Hero... heroes) {
+        InMemoryHeroRepository repository = new InMemoryHeroRepository();
         for (Hero hero : heroes) {
             repository.save(hero);
         }
@@ -49,7 +49,7 @@ class HeroServiceTest {
     /**
      * @return репозиторий со всеми пятью героями
      */
-    private FakeHeroRepository fullRepository() {
+    private InMemoryHeroRepository fullRepository() {
         return repositoryOf(common1, common2, rare, epic, legendary);
     }
 
@@ -121,7 +121,7 @@ class HeroServiceTest {
     @Test
     @DisplayName("Не падает на множестве вызовов и возвращает известных героев")
     void neverFailsAndReturnsKnownHeroesOnManyCalls() {
-        FakeHeroRepository repository = fullRepository();
+        InMemoryHeroRepository repository = fullRepository();
         HeroService service = new HeroServiceImpl(repository, new Random(42));
 
         for (int i = 0; i < 1000; i++) {

@@ -1,7 +1,7 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.fakes.FakeBot;
-import com.avengers.cardgame.fakes.FakeHeroRepository;
+import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
 import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.model.Hero;
@@ -39,7 +39,7 @@ class SellCommandHandlerTest {
     @BeforeEach
     void setUp() {
         cardRepository = new InMemoryUserCardRepository();
-        FakeHeroRepository heroRepository = new FakeHeroRepository();
+        InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
         heroRepository.save(COMMON_HERO);
         bot = new FakeBot();
         handler = new SellCommandHandler(cardRepository, heroRepository);

@@ -76,21 +76,6 @@ public class HeroRenderer {
     }
 
     /**
-     * Возвращает название редкости для отображения пользователю.
-     *
-     * @param rarity редкость
-     * @return название редкости (например, "Common", "Legendary")
-     */
-    public String displayName(HeroRarity rarity) {
-        return switch (rarity) {
-            case COMMON -> "Common";
-            case RARE -> "Rare";
-            case EPIC -> "Epic";
-            case LEGENDARY -> "Legendary";
-        };
-    }
-
-    /**
      * Возвращает текстовое название редкости для отображения пользователю.
      *
      * @param rarity редкость

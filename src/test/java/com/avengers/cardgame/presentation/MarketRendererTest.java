@@ -89,7 +89,7 @@ class MarketRendererTest {
         Assertions.assertTrue(message.text().contains("страница 1/1"));
         Assertions.assertTrue(message.text().contains("#7"));
         Assertions.assertTrue(message.text().contains("Hero7"));
-        Assertions.assertTrue(message.text().contains("Epic"));
+        Assertions.assertTrue(message.text().contains("Эпическая"));
         Assertions.assertTrue(message.text().contains("500 " + CURRENCY));
         Assertions.assertTrue(message.text().contains("продавец: Seller"));
         Assertions.assertEquals("/market_buy 7", message.buttons().getFirst().getFirst().callbackData());
@@ -331,7 +331,6 @@ class MarketRendererTest {
         Assertions.assertEquals("❌ Недостаточно средств. Нужно: 500 💎, у тебя: 100 💎.",
                 renderer.renderInsufficientFunds(500, 100, CURRENCY).text());
         Assertions.assertEquals("Некорректный номер страницы.", renderer.renderInvalidPage().text());
-        Assertions.assertEquals("Неизвестный фильтр редкости.", renderer.renderInvalidFilter().text());
         Assertions.assertEquals("Некорректный идентификатор лота.", renderer.renderInvalidListingId().text());
     }
 }

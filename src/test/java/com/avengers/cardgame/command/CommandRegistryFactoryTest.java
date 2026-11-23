@@ -4,7 +4,7 @@ import com.avengers.cardgame.config.GameConfig;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.FakeCardService;
 import com.avengers.cardgame.fakes.FakeMarketService;
-import com.avengers.cardgame.fakes.FakeHeroRepository;
+import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.Hero;
@@ -47,7 +47,7 @@ class CommandRegistryFactoryTest {
      */
     private CommandRegistry registryWith(InMemoryUserRepository userRepository,
                                          InMemoryUserCardRepository cardRepository,
-                                         FakeHeroRepository heroRepository,
+                                         InMemoryHeroRepository heroRepository,
                                          FakeCardService cardService) {
         return new CommandRegistryFactory(
                 new UserServiceImpl(userRepository),
@@ -65,7 +65,7 @@ class CommandRegistryFactoryTest {
         InMemoryUserRepository userRepository = new InMemoryUserRepository();
         Hero hero = new Hero(1, "Pepper Potts", HeroRarity.COMMON, 5, 15, 20, "c");
         InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository();
-        FakeHeroRepository heroRepository = new FakeHeroRepository();
+        InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
 
         CommandRegistry registry = registryWith(userRepository, cardRepository, heroRepository,
                 new FakeCardService(List.of(hero)));
@@ -84,7 +84,7 @@ class CommandRegistryFactoryTest {
     void inventoryIsRegisteredAndRegistersUserBeforeRunning() throws Exception {
         InMemoryUserRepository userRepository = new InMemoryUserRepository();
         InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository();
-        FakeHeroRepository heroRepository = new FakeHeroRepository();
+        InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
 
         CommandRegistry registry = registryWith(userRepository, cardRepository, heroRepository,
                 new FakeCardService(List.of()));
@@ -102,7 +102,7 @@ class CommandRegistryFactoryTest {
     @DisplayName("Новые команды экономики зарегистрированы")
     void economyCommandsAreRegistered() {
         CommandRegistry registry = registryWith(new InMemoryUserRepository(),
-                new InMemoryUserCardRepository(), new FakeHeroRepository(),
+                new InMemoryUserCardRepository(), new InMemoryHeroRepository(),
                 new FakeCardService(List.of()));
 
         Assertions.assertTrue(registry.resolve("/disassemble").isPresent());

@@ -46,7 +46,7 @@ public class CraftRenderer {
         List<Button> currentRow = new ArrayList<>();
         for (HeroRarity rarity : HeroRarity.values()) {
             currentRow.add(new Button(RARITY_BUTTON_TEMPLATE.formatted(
-                    heroRenderer.emoji(rarity), heroRenderer.displayName(rarity),
+                    heroRenderer.emoji(rarity), heroRenderer.title(rarity),
                     gameConfig.rarity(rarity).craftCost(), shardsEmoji),
                     CRAFT_COMMAND_PREFIX + rarity.name()));
             if (currentRow.size() == BUTTONS_PER_ROW) {
@@ -76,7 +76,7 @@ public class CraftRenderer {
 
                 Остаток кусочков: %d.""".formatted(
                 result.shardsSpent(),
-                heroRenderer.emoji(hero.rarity()), hero.name(), heroRenderer.displayName(hero.rarity()),
+                heroRenderer.emoji(hero.rarity()), hero.name(), heroRenderer.title(hero.rarity()),
                 hero.attack(), hero.defense(), hero.health(), result.shardsBalance());
         return new Message(text);
     }

@@ -38,6 +38,9 @@ public class EnvironmentConfigReader implements ConfigProvider {
     /** Имя переменной окружения с эмодзи игровых кусочков. */
     private static final String SHARDS_EMOJI = "SHARDS_EMOJI";
 
+    /** Имя переменной окружения с комиссией рынка (в процентах). */
+    private static final String MARKET_COMMISSION_PERCENT = "MARKET_COMMISSION_PERCENT";
+
     /** Значение кулдауна по умолчанию (1440 минут = 24 часа). */
     private static final long DEFAULT_DAILY_COOLDOWN_MINUTES = 1440;
 
@@ -71,7 +74,8 @@ public class EnvironmentConfigReader implements ConfigProvider {
                 Duration.ofMinutes(readPositiveLong(NOTIFICATION_INTERVAL_MINUTES, DEFAULT_NOTIFICATION_INTERVAL_MINUTES)),
                 readNonBlank(CURRENCY_NAME, GameConfig.DEFAULT_CURRENCY_NAME),
                 readNonBlank(CURRENCY_EMOJI, GameConfig.DEFAULT_CURRENCY_EMOJI),
-                readNonBlank(SHARDS_EMOJI, GameConfig.DEFAULT_SHARDS_EMOJI));
+                readNonBlank(SHARDS_EMOJI, GameConfig.DEFAULT_SHARDS_EMOJI),
+                readMarketCommissionPercent());
         return new AppConfig(require(BOT_TOKEN), database, game);
     }
 
@@ -131,6 +135,34 @@ public class EnvironmentConfigReader implements ConfigProvider {
         } catch (NumberFormatException exception) {
             throw new InvalidConfigurationException(name,
                     "Invalid numeric configuration: " + name, exception);
+        }
+    }
+
+    /**
+     * Читает комиссию рынка из переменной окружения.
+     * <p>
+     * Если переменная не задана или пуста, возвращает значение по умолчанию.
+     *
+     * @return комиссия рынка в процентах (0..100)
+     * @throws InvalidConfigurationException если значение не является числом
+     *                                       или находится вне диапазона 0..100
+     */
+    private int readMarketCommissionPercent() throws InvalidConfigurationException {
+        String value = envSource.get(MARKET_COMMISSION_PERCENT);
+        if (value == null || value.isBlank()) {
+            return GameConfig.DEFAULT_MARKET_COMMISSION_PERCENT;
+        }
+        try {
+            int parsed = Integer.parseInt(value);
+            if (parsed < 0 || parsed > 100) {
+                throw new InvalidConfigurationException(MARKET_COMMISSION_PERCENT,
+                        "Configuration parameter " + MARKET_COMMISSION_PERCENT
+                                + " must be between 0 and 100, got: " + parsed);
+            }
+            return parsed;
+        } catch (NumberFormatException exception) {
+            throw new InvalidConfigurationException(MARKET_COMMISSION_PERCENT,
+                    "Invalid numeric configuration: " + MARKET_COMMISSION_PERCENT, exception);
         }
     }
 }

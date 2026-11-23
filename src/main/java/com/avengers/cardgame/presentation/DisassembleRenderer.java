@@ -78,7 +78,7 @@ public class DisassembleRenderer {
      */
     public Message renderQuantity(@NotNull Hero hero, int count) {
         String text = "%s %s [%s] ×%d%nСколько карточек разобрать?".formatted(
-                heroRenderer.emoji(hero.rarity()), hero.name(), heroRenderer.displayName(hero.rarity()), count);
+                heroRenderer.emoji(hero.rarity()), hero.name(), heroRenderer.title(hero.rarity()), count);
         List<List<Button>> rows = new ArrayList<>();
         rows.add(quantityButtons(hero.id(), count));
         rows.add(List.of(new Button(CANCEL_BUTTON_TEXT, CANCEL_COMMAND)));
@@ -98,7 +98,7 @@ public class DisassembleRenderer {
     public Message renderConfirmation(@NotNull Hero hero, int available, int quantity,
                                       int shardsToGain, @NotNull String shardsEmoji) {
         String text = "%s %s [%s] ×%d%nРазобрать карточек: %d?%nПолучишь кусочков: %d %s."
-                .formatted(heroRenderer.emoji(hero.rarity()), hero.name(), heroRenderer.displayName(hero.rarity()),
+                .formatted(heroRenderer.emoji(hero.rarity()), hero.name(), heroRenderer.title(hero.rarity()),
                         available, quantity, shardsToGain, shardsEmoji);
         return new Message(text, List.of(
                 List.of(new Button(CONFIRM_BUTTON_TEXT, "/disassemble_confirm " + hero.id() + " " + quantity),
@@ -119,7 +119,7 @@ public class DisassembleRenderer {
                 Получено кусочков: %d.
                 Твой баланс кусочков: %d.""".formatted(
                 shardsEmoji,
-                heroRenderer.emoji(hero.rarity()), hero.name(), heroRenderer.displayName(hero.rarity()),
+                heroRenderer.emoji(hero.rarity()), hero.name(), heroRenderer.title(hero.rarity()),
                 result.cardsDisassembled(), result.shardsGained(), result.shardsBalance());
         return new Message(text);
     }

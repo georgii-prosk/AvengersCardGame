@@ -2,7 +2,7 @@ package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.config.GameConfig;
 import com.avengers.cardgame.fakes.FakeBot;
-import com.avengers.cardgame.fakes.FakeHeroRepository;
+import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
@@ -41,7 +41,7 @@ class SellPriceCommandHandlerTest {
 
     @BeforeEach
     void setUp() {
-        FakeHeroRepository heroRepository = new FakeHeroRepository();
+        InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
         heroRepository.save(COMMON_HERO);
         bot = new FakeBot();
         handler = new SellPriceCommandHandler(heroRepository, GAME_CONFIG);

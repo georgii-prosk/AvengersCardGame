@@ -68,24 +68,23 @@ public class CommandRegistryFactory {
         registry.register("/setbio", wrap(new SetBioCommandHandler(userService)));
         registry.register("/daily", wrap(new DailyCommandHandler(cardService)));
 
-        InventoryCommandHandler inventoryHandler =
-                new InventoryCommandHandler(userCardRepository, heroRepository);
-        registry.register("/inventory", wrap(inventoryHandler));
-        registry.register("/inventory_page", inventoryHandler::handlePage);
+        registry.register("/inventory", wrap(new InventoryCommandHandler(userCardRepository, heroRepository)));
+        registry.register("/inventory_page", new InventoryPageCommandHandler(userCardRepository, heroRepository));
 
         registry.register("/view_card", new ViewCardCommandHandler(heroRepository, userCardRepository));
 
-        DisassembleCommandHandler disassembleHandler = new DisassembleCommandHandler(
-                userCardRepository, heroRepository, cardService, gameConfig);
-        registry.register("/disassemble", wrap(disassembleHandler));
-        registry.register("/disassemble_page", disassembleHandler::handlePage);
-        registry.register("/disassemble_pick", disassembleHandler::handlePick);
-        registry.register("/disassemble_qty", disassembleHandler::handleQuantity);
-        registry.register("/disassemble_confirm", disassembleHandler::handleConfirm);
+        registry.register("/disassemble", wrap(new DisassembleCommandHandler(
+                userCardRepository, heroRepository, gameConfig)));
+        registry.register("/disassemble_page", new DisassemblePageCommandHandler(
+                userCardRepository, heroRepository, gameConfig));
+        registry.register("/disassemble_pick", new DisassemblePickCommandHandler(userCardRepository, heroRepository));
+        registry.register("/disassemble_qty", new DisassembleQuantityCommandHandler(
+                userCardRepository, heroRepository, gameConfig));
+        registry.register("/disassemble_confirm", new DisassembleConfirmCommandHandler(
+                cardService, heroRepository, gameConfig));
 
-        CraftCommandHandler craftHandler = new CraftCommandHandler(cardService, userService, gameConfig);
-        registry.register("/craft", wrap(craftHandler));
-        registry.register("/craft_make", craftHandler::handleMake);
+        registry.register("/craft", wrap(new CraftCommandHandler(userService, gameConfig)));
+        registry.register("/craft_make", new CraftMakeCommandHandler(cardService));
 
         registry.register("/sell", wrap(new SellCommandHandler(userCardRepository, heroRepository)));
         registry.register("/sell_page", new SellPageCommandHandler(userCardRepository, heroRepository));

@@ -59,15 +59,4 @@ class MarketPageCommandHandlerTest {
 
         Assertions.assertTrue(bot.lastSent().message().text().contains("Некорректный номер"));
     }
-
-    /**
-     * Проверяет неизвестный фильтр при переключении страницы.
-     */
-    @Test
-    @DisplayName("Сообщает о неизвестном фильтре")
-    void rejectsUnknownFilter() {
-        handler.handle(context("mythic 1"));
-
-        Assertions.assertTrue(bot.lastSent().message().text().contains("Неизвестный фильтр"));
-    }
 }

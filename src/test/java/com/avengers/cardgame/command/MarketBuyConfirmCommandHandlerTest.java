@@ -6,7 +6,7 @@ import com.avengers.cardgame.exception.InsufficientFundsException;
 import com.avengers.cardgame.exception.ListingUnavailableException;
 import com.avengers.cardgame.exception.OwnListingException;
 import com.avengers.cardgame.fakes.FakeBot;
-import com.avengers.cardgame.fakes.FakeHeroRepository;
+import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.fakes.FakeMarketService;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.messaging.Message;
@@ -61,7 +61,7 @@ class MarketBuyConfirmCommandHandlerTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        FakeHeroRepository heroRepository = new FakeHeroRepository();
+        InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
         heroRepository.save(COMMON_HERO);
         InMemoryUserRepository userRepository = new InMemoryUserRepository();
         UserService userService = new UserServiceImpl(userRepository);

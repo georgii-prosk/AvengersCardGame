@@ -4,7 +4,7 @@ import com.avengers.cardgame.config.GameConfig;
 import com.avengers.cardgame.exception.InsufficientShardsException;
 import com.avengers.cardgame.exception.NotEnoughCardsException;
 import com.avengers.cardgame.exception.UserNotFoundException;
-import com.avengers.cardgame.fakes.FakeHeroRepository;
+import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.fakes.FakeHeroService;
 import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
@@ -66,7 +66,7 @@ class CardServiceTest {
     private InMemoryUserCardRepository userCardRepository;
 
     /** Репозиторий героев. */
-    private FakeHeroRepository heroRepository;
+    private InMemoryHeroRepository heroRepository;
 
     /** Сервис пользователей. */
     private UserService userService;
@@ -75,7 +75,7 @@ class CardServiceTest {
     void setUp() {
         userRepository = new InMemoryUserRepository();
         userCardRepository = new InMemoryUserCardRepository(userRepository);
-        heroRepository = new FakeHeroRepository();
+        heroRepository = new InMemoryHeroRepository();
         heroRepository.save(ironMan);
         heroRepository.save(widow);
         heroRepository.save(commonHero);

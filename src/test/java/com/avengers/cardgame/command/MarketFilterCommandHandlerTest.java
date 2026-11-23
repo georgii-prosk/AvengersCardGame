@@ -79,17 +79,6 @@ class MarketFilterCommandHandlerTest {
     }
 
     /**
-     * Проверяет неизвестный фильтр.
-     */
-    @Test
-    @DisplayName("Сообщает о неизвестном фильтре")
-    void rejectsUnknownFilter() {
-        handler.handle(context("mythic"));
-
-        Assertions.assertTrue(bot.lastSent().message().text().contains("Неизвестный фильтр"));
-    }
-
-    /**
      * Проверяет фильтрацию по редкости.
      */
     @Test

@@ -120,13 +120,31 @@ public record GameConfig(
     public GameConfig(Duration dailyCooldown, Duration notificationInterval,
                       String currencyName, String currencyEmoji, String shardsEmoji) {
         this(dailyCooldown, notificationInterval, currencyName, currencyEmoji, shardsEmoji,
+                DEFAULT_MARKET_COMMISSION_PERCENT);
+    }
+
+    /**
+     * Создаёт конфигурацию с заданной валютой, кусочками, комиссией рынка
+     * и экономикой редкостей по умолчанию.
+     *
+     * @param dailyCooldown           время ожидания между /daily
+     * @param notificationInterval    интервал планировщика
+     * @param currencyName            название валюты
+     * @param currencyEmoji           эмодзи валюты
+     * @param shardsEmoji             эмодзи кусочков
+     * @param marketCommissionPercent комиссия рынка в процентах
+     */
+    public GameConfig(Duration dailyCooldown, Duration notificationInterval,
+                      String currencyName, String currencyEmoji, String shardsEmoji,
+                      int marketCommissionPercent) {
+        this(dailyCooldown, notificationInterval, currencyName, currencyEmoji, shardsEmoji,
                 Map.of(
                         HeroRarity.COMMON, new RarityConfig(1, 5, 10, 200),
                         HeroRarity.RARE, new RarityConfig(3, 15, 50, 1000),
                         HeroRarity.EPIC, new RarityConfig(8, 40, 200, 5000),
                         HeroRarity.LEGENDARY, new RarityConfig(20, 100, 1000, 25000)
                 ),
-                DEFAULT_MARKET_COMMISSION_PERCENT);
+                marketCommissionPercent);
     }
 
     /**

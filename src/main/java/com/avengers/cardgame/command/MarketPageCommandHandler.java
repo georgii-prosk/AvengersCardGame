@@ -7,6 +7,8 @@ import com.avengers.cardgame.service.CommandContext;
 import com.avengers.cardgame.service.CommandHandler;
 import com.avengers.cardgame.service.MarketService;
 import com.avengers.cardgame.service.command.CommandArguments;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +17,9 @@ import java.util.Optional;
  * Обработчик команды /market_page (переключение страницы рынка с фильтром).
  */
 public class MarketPageCommandHandler implements CommandHandler {
+
+    /** Логгер. */
+    private final Logger log = LoggerFactory.getLogger(MarketPageCommandHandler.class);
 
     /** Первая страница. */
     private static final int FIRST_PAGE = 1;
@@ -56,7 +61,7 @@ public class MarketPageCommandHandler implements CommandHandler {
         try {
             rarity = pageSender.parseFilter(filter);
         } catch (IllegalArgumentException exception) {
-            pageSender.sendInvalidFilter(context);
+            log.error("Unknown market filter argument: {}", context.argument(), exception);
             return;
         }
         pageSender.send(context, rarity, page);

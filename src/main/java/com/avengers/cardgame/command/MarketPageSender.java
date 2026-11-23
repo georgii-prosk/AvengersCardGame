@@ -71,13 +71,4 @@ class MarketPageSender {
     void sendInvalidPage(CommandContext context) {
         context.bot().sendMessage(marketRenderer.renderInvalidPage(), context.chatId());
     }
-
-    /**
-     * Отправляет сообщение о неизвестном фильтре редкости.
-     *
-     * @param context контекст команды
-     */
-    void sendInvalidFilter(CommandContext context) {
-        context.bot().sendMessage(marketRenderer.renderInvalidFilter(), context.chatId());
-    }
 }

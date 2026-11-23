@@ -221,4 +221,48 @@ class EnvironmentConfigReaderTest {
         Assertions.assertEquals(new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30)).rarityConfigs(),
                 config.game().rarityConfigs());
     }
+
+    @Test
+    @DisplayName("Читает настраиваемую комиссию рынка")
+    void readsCustomMarketCommission() throws ConfigurationException {
+        Map<String, String> env = validEnv();
+        env.put("MARKET_COMMISSION_PERCENT", "10");
+
+        AppConfig config = readerWith(env).read();
+
+        Assertions.assertEquals(10, config.game().marketCommissionPercent());
+    }
+
+    @Test
+    @DisplayName("Принимает нулевую комиссию рынка")
+    void readsZeroMarketCommission() throws ConfigurationException {
+        Map<String, String> env = validEnv();
+        env.put("MARKET_COMMISSION_PERCENT", "0");
+
+        AppConfig config = readerWith(env).read();
+
+        Assertions.assertEquals(0, config.game().marketCommissionPercent());
+    }
+
+    @Test
+    @DisplayName("Бросает InvalidConfigurationException для нечисловой комиссии рынка")
+    void throwsWhenCommissionNotNumeric() {
+        Map<String, String> env = validEnv();
+        env.put("MARKET_COMMISSION_PERCENT", "abc");
+
+        InvalidConfigurationException ex = Assertions.assertThrows(InvalidConfigurationException.class,
+                () -> readerWith(env).read());
+        Assertions.assertEquals("MARKET_COMMISSION_PERCENT", ex.parameterName());
+    }
+
+    @Test
+    @DisplayName("Бросает InvalidConfigurationException для комиссии вне диапазона 0..100")
+    void throwsWhenCommissionOutOfRange() {
+        Map<String, String> env = validEnv();
+        env.put("MARKET_COMMISSION_PERCENT", "101");
+        Assertions.assertThrows(InvalidConfigurationException.class, () -> readerWith(env).read());
+
+        env.put("MARKET_COMMISSION_PERCENT", "-1");
+        Assertions.assertThrows(InvalidConfigurationException.class, () -> readerWith(env).read());
+    }
 }

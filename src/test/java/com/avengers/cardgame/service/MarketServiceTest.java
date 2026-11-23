@@ -7,7 +7,7 @@ import com.avengers.cardgame.exception.InvalidPriceException;
 import com.avengers.cardgame.exception.ListingUnavailableException;
 import com.avengers.cardgame.exception.NotEnoughCardsException;
 import com.avengers.cardgame.exception.OwnListingException;
-import com.avengers.cardgame.fakes.FakeHeroRepository;
+import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.fakes.InMemoryMarketRepository;
 import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
@@ -62,7 +62,7 @@ class MarketServiceTest {
     private InMemoryMarketRepository marketRepository;
 
     /** Репозиторий героев. */
-    private FakeHeroRepository heroRepository;
+    private InMemoryHeroRepository heroRepository;
 
     /** Тестируемый сервис. */
     private MarketService marketService;
@@ -71,7 +71,7 @@ class MarketServiceTest {
     void setUp() {
         userRepository = new InMemoryUserRepository();
         userCardRepository = new InMemoryUserCardRepository(userRepository);
-        heroRepository = new FakeHeroRepository();
+        heroRepository = new InMemoryHeroRepository();
         heroRepository.save(COMMON_HERO);
         heroRepository.save(EPIC_HERO);
         marketRepository = new InMemoryMarketRepository(userRepository, userCardRepository);
