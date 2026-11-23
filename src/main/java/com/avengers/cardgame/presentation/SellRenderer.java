@@ -73,7 +73,7 @@ public class SellRenderer {
         String text = """
                 %s %s [%s]
                 Выбери цену. Допустимо от %d до %d %s.""".formatted(
-                heroRenderer.emoji(hero.rarity()), hero.name(), hero.rarity().displayName(),
+                heroRenderer.emoji(hero.rarity()), hero.name(), heroRenderer.title(hero.rarity()),
                 minPrice, maxPrice, currency);
 
         List<Button> priceButtons = List.of(
@@ -104,7 +104,7 @@ public class SellRenderer {
         String text = """
                 🏷 Выставить %s %s [%s] за %d %s?
                 Комиссия при продаже: %d%%. Ты получишь %d %s.""".formatted(
-                heroRenderer.emoji(hero.rarity()), hero.name(), hero.rarity().displayName(),
+                heroRenderer.emoji(hero.rarity()), hero.name(), heroRenderer.title(hero.rarity()),
                 price, currency, commissionPercent, sellerAmount, currency);
         return new Message(text, List.of(
                 List.of(new Button(CONFIRM_BUTTON_TEXT,
@@ -127,7 +127,7 @@ public class SellRenderer {
         }
         return new Message("✅ Лот #%d создан: %s %s [%s] за %d %s.".formatted(
                 listing.id(), heroRenderer.emoji(hero.rarity()), hero.name(),
-                hero.rarity().displayName(), listing.price(), currency));
+                heroRenderer.title(hero.rarity()), listing.price(), currency));
     }
 
     /**

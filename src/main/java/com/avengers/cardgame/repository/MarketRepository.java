@@ -1,10 +1,9 @@
 package com.avengers.cardgame.repository;
 
+import com.avengers.cardgame.exception.AppException;
 import com.avengers.cardgame.model.MarketListing;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,13 +13,50 @@ import java.util.Optional;
 public interface MarketRepository {
 
     /**
-     * Сохраняет новый лот в рамках заданного соединения.
+     * Выставляет лот на рынок.
+     * <p>
+     * Операция атомарна: карточка снимается у продавца и лот сохраняется
+     * в одной транзакции либо не выполняется вообще.
      *
-     * @param connection соединение с БД, может быть {@code null}
-     * @param listing    лот для сохранения
+     * @param sellerId идентификатор продавца
+     * @param heroId   идентификатор героя
+     * @param price    цена лота
      * @return сохранённый лот с присвоенным идентификатором
+     * @throws com.avengers.cardgame.exception.NotEnoughCardsException если у продавца нет карточки
      */
-    @NotNull MarketListing saveListing(@Nullable Connection connection, @NotNull MarketListing listing);
+    @NotNull MarketListing createListing(long sellerId, long heroId, int price) throws AppException;
+
+    /**
+     * Покупает лот.
+     * <p>
+     * Операция атомарна: лот удаляется, цена списывается с покупателя,
+     * продавцу начисляется переданная сумма, покупателю добавляется карточка.
+     * <p>
+     * Цена лота неизменяема, поэтому сумма продавца, рассчитанная по заранее
+     * прочитанному лоту, совпадает с ценой удалённого лота.
+     *
+     * @param buyerId      идентификатор покупателя
+     * @param listingId    идентификатор лота
+     * @param sellerAmount сумма, которую получит продавец
+     * @return удалённый лот
+     * @throws com.avengers.cardgame.exception.ListingUnavailableException если лот уже недоступен
+     * @throws com.avengers.cardgame.exception.InsufficientFundsException  если у покупателя не хватает средств
+     * @throws com.avengers.cardgame.exception.UserNotFoundException       если покупатель или продавец не найден
+     */
+    @NotNull MarketListing buy(long buyerId, long listingId, int sellerAmount) throws AppException;
+
+    /**
+     * Снимает лот с продажи.
+     * <p>
+     * Операция атомарна: лот удаляется и карточка возвращается продавцу
+     * в одной транзакции либо не выполняется вообще.
+     *
+     * @param sellerId  идентификатор продавца
+     * @param listingId идентификатор лота
+     * @return снятый лот
+     * @throws com.avengers.cardgame.exception.ListingUnavailableException если лот уже недоступен или принадлежит другому игроку
+     */
+    @NotNull MarketListing cancelListing(long sellerId, long listingId) throws AppException;
 
     /**
      * Находит лот по идентификатору.
@@ -44,24 +80,4 @@ public interface MarketRepository {
      * @return список лотов
      */
     @NotNull List<MarketListing> findBySeller(long sellerId);
-
-    /**
-     * Удаляет лот и возвращает его данные.
-     *
-     * @param connection соединение с БД, может быть {@code null}
-     * @param listingId  идентификатор лота
-     * @return удалённый лот, либо пустой {@link Optional}, если лот уже отсутствует
-     */
-    @NotNull Optional<MarketListing> deleteListingAndReturn(@Nullable Connection connection, long listingId);
-
-    /**
-     * Удаляет лот продавца и возвращает его данные.
-     *
-     * @param connection соединение с БД, может быть {@code null}
-     * @param listingId  идентификатор лота
-     * @param sellerId   идентификатор продавца
-     * @return удалённый лот, либо пустой {@link Optional}, если лот уже отсутствует или принадлежит другому игроку
-     */
-    @NotNull Optional<MarketListing> deleteListingBySellerAndReturn(
-            @Nullable Connection connection, long listingId, long sellerId);
 }

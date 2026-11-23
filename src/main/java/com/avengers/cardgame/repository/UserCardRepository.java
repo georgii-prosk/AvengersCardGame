@@ -1,10 +1,9 @@
 package com.avengers.cardgame.repository;
 
+import com.avengers.cardgame.exception.AppException;
 import com.avengers.cardgame.model.UserCard;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.sql.Connection;
 import java.util.List;
 
 /**
@@ -21,30 +20,35 @@ public interface UserCardRepository {
     void addCard(long userId, long heroId);
 
     /**
-     * Добавляет карточку пользователю в рамках заданного соединения.
+     * Разбирает карточки пользователя на кусочки.
+     * <p>
+     * Операция атомарна: карточки списываются и кусочки начисляются в одной
+     * транзакции либо не выполняются вообще.
      *
-     * @param connection соединение с БД, может быть {@code null}
      * @param userId     идентификатор пользователя
      * @param heroId     идентификатор героя
+     * @param count      количество разбираемых карточек
+     * @param shardsGain количество начисляемых кусочков
+     * @return баланс кусочков после операции
+     * @throws com.avengers.cardgame.exception.NotEnoughCardsException если карточек недостаточно
+     * @throws com.avengers.cardgame.exception.UserNotFoundException    если пользователь не найден
      */
-    void addCard(@Nullable Connection connection, long userId, long heroId);
+    int disassemble(long userId, long heroId, int count, int shardsGain) throws AppException;
 
     /**
-     * Удаляет указанное количество копий карточки в рамках заданного соединения.
+     * Создаёт карточку пользователю за кусочки.
      * <p>
-     * При достижении нулевого количества строка удаляется из хранилища.
-     * <p>
-     * Метод вызывается только в инвертированном виде: результат {@code false}
-     * означает, что копий недостаточно.
+     * Операция атомарна: кусочки списываются и карточка добавляется в одной
+     * транзакции либо не выполняются вообще.
      *
-     * @param connection соединение с БД, может быть {@code null}
      * @param userId     идентификатор пользователя
      * @param heroId     идентификатор героя
-     * @param count      количество копий для удаления
-     * @return {@code true}, если удаление выполнено; {@code false}, если копий недостаточно
+     * @param shardsCost стоимость крафта в кусочках
+     * @return баланс кусочков после операции
+     * @throws com.avengers.cardgame.exception.InsufficientShardsException если кусочков недостаточно
+     * @throws com.avengers.cardgame.exception.UserNotFoundException       если пользователь не найден
      */
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    boolean removeCard(@Nullable Connection connection, long userId, long heroId, int count);
+    int craft(long userId, long heroId, int shardsCost) throws AppException;
 
     /**
      * Возвращает все карточки пользователя.

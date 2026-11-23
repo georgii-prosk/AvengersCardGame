@@ -1,7 +1,6 @@
 package com.avengers.cardgame.fakes;
 
 import com.avengers.cardgame.exception.UserAlreadyExistsException;
-import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.model.User;
 import org.junit.jupiter.api.Assertions;
@@ -10,6 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.OptionalInt;
 
 /**
  * Тесты для {@link InMemoryUserRepository}.
@@ -20,7 +20,7 @@ class InMemoryUserRepositoryTest {
     private static final long USER_ID = 1L;
 
     /** Время создания профиля для тестов. */
-    private static final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 1, 1, 12, 0);
+    private final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 1, 1, 12, 0);
 
     /** Репозиторий пользователей. */
     private InMemoryUserRepository repository;
@@ -77,9 +77,9 @@ class InMemoryUserRepositoryTest {
     void spendsBalance() throws Exception {
         saveUser(100, 0);
 
-        boolean spent = repository.spendBalance(null, USER_ID, 40);
+        OptionalInt balance = repository.spendBalance(USER_ID, 40);
 
-        Assertions.assertTrue(spent);
+        Assertions.assertEquals(60, balance.orElseThrow());
         Assertions.assertEquals(60, repository.findByUserId(USER_ID).orElseThrow().balance());
     }
 
@@ -91,19 +91,17 @@ class InMemoryUserRepositoryTest {
     void doesNotSpendBalanceWhenInsufficient() throws Exception {
         saveUser(30, 0);
 
-        boolean spent = repository.spendBalance(null, USER_ID, 40);
-
-        Assertions.assertFalse(spent);
+        Assertions.assertTrue(repository.spendBalance(USER_ID, 40).isEmpty());
         Assertions.assertEquals(30, repository.findByUserId(USER_ID).orElseThrow().balance());
     }
 
     /**
-     * Проверяет, что списание у отсутствующего пользователя возвращает {@code false}.
+     * Проверяет, что списание у отсутствующего пользователя возвращает пустой результат.
      */
     @Test
     @DisplayName("Не списывает валюту у несуществующего пользователя")
     void doesNotSpendBalanceForMissingUser() {
-        Assertions.assertFalse(repository.spendBalance(null, USER_ID, 10));
+        Assertions.assertTrue(repository.spendBalance(USER_ID, 10).isEmpty());
     }
 
     /**
@@ -114,9 +112,9 @@ class InMemoryUserRepositoryTest {
     void spendsShards() throws Exception {
         saveUser(0, 20);
 
-        boolean spent = repository.spendShards(null, USER_ID, 15);
+        OptionalInt balance = repository.spendShards(USER_ID, 15);
 
-        Assertions.assertTrue(spent);
+        Assertions.assertEquals(5, balance.orElseThrow());
         Assertions.assertEquals(5, repository.findByUserId(USER_ID).orElseThrow().shards());
     }
 
@@ -128,9 +126,7 @@ class InMemoryUserRepositoryTest {
     void doesNotSpendShardsWhenInsufficient() throws Exception {
         saveUser(0, 5);
 
-        boolean spent = repository.spendShards(null, USER_ID, 15);
-
-        Assertions.assertFalse(spent);
+        Assertions.assertTrue(repository.spendShards(USER_ID, 15).isEmpty());
         Assertions.assertEquals(5, repository.findByUserId(USER_ID).orElseThrow().shards());
     }
 
@@ -143,9 +139,9 @@ class InMemoryUserRepositoryTest {
         saveUser(100, 100);
 
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> repository.spendBalance(null, USER_ID, 0));
+                () -> repository.spendBalance(USER_ID, 0));
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> repository.spendShards(null, USER_ID, -1));
+                () -> repository.spendShards(USER_ID, -1));
     }
 
     /**
@@ -156,8 +152,7 @@ class InMemoryUserRepositoryTest {
     void addsBalance() throws Exception {
         saveUser(10, 0);
 
-        repository.addBalance(null, USER_ID, 90);
-
+        Assertions.assertTrue(repository.addBalance(USER_ID, 90));
         Assertions.assertEquals(100, repository.findByUserId(USER_ID).orElseThrow().balance());
     }
 
@@ -169,8 +164,9 @@ class InMemoryUserRepositoryTest {
     void addsShards() throws Exception {
         saveUser(0, 10);
 
-        repository.addShards(null, USER_ID, 5);
+        OptionalInt balance = repository.addShards(USER_ID, 5);
 
+        Assertions.assertEquals(15, balance.orElseThrow());
         Assertions.assertEquals(15, repository.findByUserId(USER_ID).orElseThrow().shards());
     }
 
@@ -183,20 +179,18 @@ class InMemoryUserRepositoryTest {
         saveUser(10, 10);
 
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> repository.addBalance(null, USER_ID, -1));
+                () -> repository.addBalance(USER_ID, -1));
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> repository.addShards(null, USER_ID, -1));
+                () -> repository.addShards(USER_ID, -1));
     }
 
     /**
-     * Проверяет, что начисление отсутствующему пользователю отклоняется.
+     * Проверяет, что начисление отсутствующему пользователю не выполняется.
      */
     @Test
-    @DisplayName("Бросает исключение при начислении несуществующему пользователю")
-    void throwsWhenAddingToMissingUser() {
-        Assertions.assertThrows(UserNotFoundException.class,
-                () -> repository.addBalance(null, USER_ID, 10));
-        Assertions.assertThrows(UserNotFoundException.class,
-                () -> repository.addShards(null, USER_ID, 10));
+    @DisplayName("Не начисляет ресурсы несуществующему пользователю")
+    void doesNotAddToMissingUser() {
+        Assertions.assertFalse(repository.addBalance(USER_ID, 10));
+        Assertions.assertTrue(repository.addShards(USER_ID, 10).isEmpty());
     }
 }

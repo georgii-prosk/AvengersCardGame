@@ -1,14 +1,11 @@
 package com.avengers.cardgame.service.impl;
 
-import com.avengers.cardgame.config.ConnectionFactory;
+import com.avengers.cardgame.config.GameConfig;
 import com.avengers.cardgame.dto.PurchaseResult;
 import com.avengers.cardgame.exception.AppException;
-import com.avengers.cardgame.exception.InsufficientFundsException;
 import com.avengers.cardgame.exception.InvalidPriceException;
 import com.avengers.cardgame.exception.ListingUnavailableException;
-import com.avengers.cardgame.exception.NotEnoughCardsException;
 import com.avengers.cardgame.exception.OwnListingException;
-import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
 import com.avengers.cardgame.model.MarketItem;
@@ -17,13 +14,11 @@ import com.avengers.cardgame.model.PlayerName;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.HeroRepository;
 import com.avengers.cardgame.repository.MarketRepository;
-import com.avengers.cardgame.repository.UserCardRepository;
 import com.avengers.cardgame.repository.UserRepository;
 import com.avengers.cardgame.service.MarketService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -35,14 +30,8 @@ public class MarketServiceImpl implements MarketService {
     /** Имя продавца, если профиль не найден. */
     private static final String UNKNOWN_SELLER_NAME = "Avenger";
 
-    /** Фабрика соединений. */
-    private final ConnectionFactory connectionFactory;
-
     /** Репозиторий пользователей. */
     private final UserRepository userRepository;
-
-    /** Репозиторий карточек пользователей. */
-    private final UserCardRepository userCardRepository;
 
     /** Репозиторий рынка. */
     private final MarketRepository marketRepository;
@@ -50,21 +39,21 @@ public class MarketServiceImpl implements MarketService {
     /** Репозиторий героев. */
     private final HeroRepository heroRepository;
 
+    /** Игровая конфигурация. */
+    private final GameConfig gameConfig;
+
     /**
-     * @param connectionFactory  фабрика соединений
-     * @param userRepository     репозиторий пользователей
-     * @param userCardRepository репозиторий карточек
-     * @param marketRepository   репозиторий рынка
-     * @param heroRepository     репозиторий героев
+     * @param userRepository   репозиторий пользователей
+     * @param marketRepository репозиторий рынка
+     * @param heroRepository   репозиторий героев
+     * @param gameConfig       игровая конфигурация
      */
-    public MarketServiceImpl(ConnectionFactory connectionFactory, UserRepository userRepository,
-                             UserCardRepository userCardRepository, MarketRepository marketRepository,
-                             HeroRepository heroRepository) {
-        this.connectionFactory = connectionFactory;
+    public MarketServiceImpl(UserRepository userRepository, MarketRepository marketRepository,
+                             HeroRepository heroRepository, GameConfig gameConfig) {
         this.userRepository = userRepository;
-        this.userCardRepository = userCardRepository;
         this.marketRepository = marketRepository;
         this.heroRepository = heroRepository;
+        this.gameConfig = gameConfig;
     }
 
     @Override
@@ -73,15 +62,7 @@ public class MarketServiceImpl implements MarketService {
                 .orElseThrow(() -> new IllegalArgumentException("Hero not found: " + heroId));
         validatePrice(price, hero.rarity());
 
-        int available = userCardRepository.countByUserIdAndHeroId(sellerId, heroId);
-
-        return JdbcTransactions.execute(connectionFactory, connection -> {
-            if (!userCardRepository.removeCard(connection, sellerId, heroId, 1)) {
-                throw new NotEnoughCardsException(heroId, 1, available);
-            }
-            MarketListing listing = new MarketListing(0, sellerId, heroId, price, LocalDateTime.now());
-            return marketRepository.saveListing(connection, listing);
-        });
+        return marketRepository.createListing(sellerId, heroId, price);
     }
 
     @Override
@@ -91,33 +72,16 @@ public class MarketServiceImpl implements MarketService {
         if (listing.sellerId() == buyerId) {
             throw new OwnListingException(listingId);
         }
-        int buyerBalance = userRepository.findByUserId(buyerId)
-                .orElseThrow(() -> new UserNotFoundException(buyerId))
-                .balance();
-        int commission = listing.price() * COMMISSION_PERCENT / 100;
+        int commission = listing.price() * gameConfig.marketCommissionPercent() / 100;
         int sellerAmount = listing.price() - commission;
 
-        return JdbcTransactions.execute(connectionFactory, connection -> {
-            MarketListing deleted = marketRepository.deleteListingAndReturn(connection, listingId)
-                    .orElseThrow(() -> new ListingUnavailableException(listingId));
-            if (!userRepository.spendBalance(connection, buyerId, deleted.price())) {
-                throw new InsufficientFundsException(deleted.price(), buyerBalance);
-            }
-            userRepository.addBalance(connection, deleted.sellerId(), sellerAmount);
-            userCardRepository.addCard(connection, buyerId, deleted.heroId());
-            return new PurchaseResult(buyerId, deleted.sellerId(), deleted.heroId(), deleted.price());
-        });
+        MarketListing deleted = marketRepository.buy(buyerId, listingId, sellerAmount);
+        return new PurchaseResult(buyerId, deleted.sellerId(), deleted.heroId(), deleted.price());
     }
 
     @Override
     public @NotNull MarketListing cancelListing(long sellerId, long listingId) throws AppException {
-        return JdbcTransactions.execute(connectionFactory, connection -> {
-            MarketListing deleted = marketRepository
-                    .deleteListingBySellerAndReturn(connection, listingId, sellerId)
-                    .orElseThrow(() -> new ListingUnavailableException(listingId));
-            userCardRepository.addCard(connection, sellerId, deleted.heroId());
-            return deleted;
-        });
+        return marketRepository.cancelListing(sellerId, listingId);
     }
 
     @Override
@@ -163,8 +127,9 @@ public class MarketServiceImpl implements MarketService {
      * @throws InvalidPriceException если цена вне допустимого диапазона
      */
     private void validatePrice(int price, HeroRarity rarity) throws InvalidPriceException {
-        if (price < rarity.minPrice() || price > rarity.maxPrice()) {
-            throw new InvalidPriceException(price, rarity.minPrice(), rarity.maxPrice());
+        GameConfig.RarityConfig rarityConfig = gameConfig.rarity(rarity);
+        if (price < rarityConfig.minPrice() || price > rarityConfig.maxPrice()) {
+            throw new InvalidPriceException(price, rarityConfig.minPrice(), rarityConfig.maxPrice());
         }
     }
 

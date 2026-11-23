@@ -70,9 +70,6 @@ public class MarketRenderer {
     /** Сообщение о некорректном номере страницы. */
     private static final String INVALID_PAGE_MESSAGE = "Некорректный номер страницы.";
 
-    /** Сообщение о неизвестном фильтре редкости. */
-    private static final String INVALID_FILTER_MESSAGE = "Неизвестный фильтр редкости.";
-
     /** Сообщение о некорректном идентификаторе лота. */
     private static final String INVALID_LISTING_ID_MESSAGE = "Некорректный идентификатор лота.";
 
@@ -108,7 +105,7 @@ public class MarketRenderer {
             var hero = item.hero();
             text.append('\n').append(LISTING_TEMPLATE.formatted(
                     listing.id(), heroRenderer.emoji(hero.rarity()), hero.name(),
-                    hero.rarity().displayName(), listing.price(), currencyEmoji, item.sellerName()));
+                    heroRenderer.title(hero.rarity()), listing.price(), currencyEmoji, item.sellerName()));
             buyButtons.add(new Button(BUY_BUTTON_TEMPLATE.formatted(listing.id()),
                     "/market_buy " + listing.id()));
         }
@@ -154,7 +151,7 @@ public class MarketRenderer {
             Hero hero = item.hero();
             text.append("\n\n").append(USER_LISTING_TEMPLATE.formatted(
                     listing.id(), heroRenderer.emoji(hero.rarity()), hero.name(),
-                    hero.rarity().displayName(), listing.price(), currencyEmoji));
+                    heroRenderer.title(hero.rarity()), listing.price(), currencyEmoji));
             rows.add(List.of(new Button(CANCEL_BUTTON_TEMPLATE.formatted(listing.id()),
                     "/market_cancel " + listing.id())));
         }
@@ -173,7 +170,7 @@ public class MarketRenderer {
     public Message renderBuyConfirmation(@NotNull MarketItem item, @NotNull String currencyEmoji) {
         Hero hero = item.hero();
         String text = "Купить %s %s [%s] за %d %s?".formatted(
-                heroRenderer.emoji(hero.rarity()), hero.name(), hero.rarity().displayName(),
+                heroRenderer.emoji(hero.rarity()), hero.name(), heroRenderer.title(hero.rarity()),
                 item.listing().price(), currencyEmoji);
         return new Message(text, List.of(
                 List.of(new Button("Подтвердить", "/market_buy_confirm " + item.listing().id()),
@@ -202,7 +199,7 @@ public class MarketRenderer {
                 ⚔️ ATK: %d | 🛡 DEF: %d | ❤️ HP: %d
 
                 Списано: %d %s. Твой баланс: %d %s.""".formatted(
-                heroRenderer.emoji(hero.rarity()), hero.name(), hero.rarity().displayName(),
+                heroRenderer.emoji(hero.rarity()), hero.name(), heroRenderer.title(hero.rarity()),
                 hero.attack(), hero.defense(), hero.health(),
                 result.price(), currencyEmoji, buyerBalance, currencyEmoji);
         return new Message(text);
@@ -220,7 +217,7 @@ public class MarketRenderer {
             return new Message("↩️ Лот #%d снят с продажи.".formatted(listing.id()));
         }
         return new Message("↩️ Лот #%d снят с продажи. %s %s [%s] возвращён в твою коллекцию.".formatted(
-                listing.id(), heroRenderer.emoji(hero.rarity()), hero.name(), hero.rarity().displayName()));
+                listing.id(), heroRenderer.emoji(hero.rarity()), hero.name(), heroRenderer.title(hero.rarity())));
     }
 
     /**
@@ -240,7 +237,7 @@ public class MarketRenderer {
         String heroDescription = hero == null
                 ? "#" + result.heroId()
                 : "%s %s [%s]".formatted(heroRenderer.emoji(hero.rarity()), hero.name(),
-                        hero.rarity().displayName());
+                        heroRenderer.title(hero.rarity()));
         String text = "💰 Твой лот #%d (%s) куплен игроком %s. Тебе начислено %d %s."
                 .formatted(listingId, heroDescription, buyerName, sellerAmount, currencyEmoji);
         return new Message(text);
@@ -284,15 +281,6 @@ public class MarketRenderer {
      */
     public Message renderInvalidPage() {
         return new Message(INVALID_PAGE_MESSAGE);
-    }
-
-    /**
-     * Формирует сообщение о неизвестном фильтре редкости.
-     *
-     * @return сообщение о неизвестном фильтре редкости
-     */
-    public Message renderInvalidFilter() {
-        return new Message(INVALID_FILTER_MESSAGE);
     }
 
     /**

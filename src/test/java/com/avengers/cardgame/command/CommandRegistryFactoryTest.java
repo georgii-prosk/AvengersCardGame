@@ -3,9 +3,8 @@ package com.avengers.cardgame.command;
 import com.avengers.cardgame.config.GameConfig;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.FakeCardService;
-import com.avengers.cardgame.fakes.FakeDailyRewardService;
 import com.avengers.cardgame.fakes.FakeMarketService;
-import com.avengers.cardgame.fakes.FakeHeroRepository;
+import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.Hero;
@@ -34,28 +33,25 @@ class CommandRegistryFactoryTest {
     private static final long CHAT_ID = 110L;
 
     /** Игровая конфигурация для тестов. */
-    private static final GameConfig GAME_CONFIG =
+    private final GameConfig GAME_CONFIG =
             new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
 
     /**
      * Создаёт реестр команд.
      *
-     * @param userRepository    репозиторий пользователей
-     * @param cardRepository   репозиторий карточек
-     * @param heroRepository   репозиторий героев
-     * @param cardService      сервис карточек
-     * @param dailyRewardService сервис ежедневной награды
+     * @param userRepository  репозиторий пользователей
+     * @param cardRepository  репозиторий карточек
+     * @param heroRepository  репозиторий героев
+     * @param cardService     сервис карточек
      * @return реестр команд
      */
     private CommandRegistry registryWith(InMemoryUserRepository userRepository,
                                          InMemoryUserCardRepository cardRepository,
-                                         FakeHeroRepository heroRepository,
-                                         FakeCardService cardService,
-                                         FakeDailyRewardService dailyRewardService) {
+                                         InMemoryHeroRepository heroRepository,
+                                         FakeCardService cardService) {
         return new CommandRegistryFactory(
                 new UserServiceImpl(userRepository),
                 cardService,
-                dailyRewardService,
                 new FakeMarketService(),
                 cardRepository,
                 heroRepository,
@@ -69,10 +65,10 @@ class CommandRegistryFactoryTest {
         InMemoryUserRepository userRepository = new InMemoryUserRepository();
         Hero hero = new Hero(1, "Pepper Potts", HeroRarity.COMMON, 5, 15, 20, "c");
         InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository();
-        FakeHeroRepository heroRepository = new FakeHeroRepository();
+        InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
 
         CommandRegistry registry = registryWith(userRepository, cardRepository, heroRepository,
-                new FakeCardService(List.of(hero)), new FakeDailyRewardService(List.of(hero)));
+                new FakeCardService(List.of(hero)));
         FakeBot bot = new FakeBot();
 
         Optional<ResolvedCommand> resolved = registry.resolve("/daily");
@@ -88,10 +84,10 @@ class CommandRegistryFactoryTest {
     void inventoryIsRegisteredAndRegistersUserBeforeRunning() throws Exception {
         InMemoryUserRepository userRepository = new InMemoryUserRepository();
         InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository();
-        FakeHeroRepository heroRepository = new FakeHeroRepository();
+        InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
 
         CommandRegistry registry = registryWith(userRepository, cardRepository, heroRepository,
-                new FakeCardService(List.of()), new FakeDailyRewardService(List.of()));
+                new FakeCardService(List.of()));
         FakeBot bot = new FakeBot();
 
         Optional<ResolvedCommand> resolved = registry.resolve("/inventory");
@@ -106,8 +102,8 @@ class CommandRegistryFactoryTest {
     @DisplayName("Новые команды экономики зарегистрированы")
     void economyCommandsAreRegistered() {
         CommandRegistry registry = registryWith(new InMemoryUserRepository(),
-                new InMemoryUserCardRepository(), new FakeHeroRepository(),
-                new FakeCardService(List.of()), new FakeDailyRewardService(List.of()));
+                new InMemoryUserCardRepository(), new InMemoryHeroRepository(),
+                new FakeCardService(List.of()));
 
         Assertions.assertTrue(registry.resolve("/disassemble").isPresent());
         Assertions.assertTrue(registry.resolve("/craft").isPresent());

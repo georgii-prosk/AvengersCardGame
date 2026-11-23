@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 /**
  * Фейковый репозиторий героев в памяти.
  */
-public class FakeHeroRepository implements HeroRepository {
+public class InMemoryHeroRepository implements HeroRepository {
 
     /** Хранилище героев по идентификатору. */
     private final Map<Long, Hero> storage = new HashMap<>();
@@ -44,5 +44,14 @@ public class FakeHeroRepository implements HeroRepository {
      */
     public void save(Hero hero) {
         storage.put(hero.id(), hero);
+    }
+
+    /**
+     * Возвращает количество сохранённых героев.
+     *
+     * @return количество героев
+     */
+    public int size() {
+        return storage.size();
     }
 }

@@ -1,13 +1,13 @@
 package com.avengers.cardgame.service;
 
+import com.avengers.cardgame.config.GameConfig;
 import com.avengers.cardgame.dto.PurchaseResult;
 import com.avengers.cardgame.exception.InsufficientFundsException;
 import com.avengers.cardgame.exception.InvalidPriceException;
 import com.avengers.cardgame.exception.ListingUnavailableException;
 import com.avengers.cardgame.exception.NotEnoughCardsException;
 import com.avengers.cardgame.exception.OwnListingException;
-import com.avengers.cardgame.fakes.FakeConnectionFactory;
-import com.avengers.cardgame.fakes.FakeHeroRepository;
+import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.fakes.InMemoryMarketRepository;
 import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -38,15 +39,18 @@ class MarketServiceTest {
     private static final long SELLER_ID = 2L;
 
     /** Обычный герой. */
-    private static final Hero COMMON_HERO =
+    private final Hero COMMON_HERO =
             new Hero(10L, "Pepper", HeroRarity.COMMON, 5, 15, 20, "c");
 
     /** Эпический герой. */
-    private static final Hero EPIC_HERO =
+    private final Hero EPIC_HERO =
             new Hero(11L, "Iron Man", HeroRarity.EPIC, 80, 90, 50, "e");
 
     /** Время создания лота для тестов. */
-    private static final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 1, 1, 12, 0);
+    private final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 1, 1, 12, 0);
+
+    /** Игровая конфигурация. */
+    private final GameConfig gameConfig = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
 
     /** Репозиторий пользователей. */
     private InMemoryUserRepository userRepository;
@@ -57,8 +61,8 @@ class MarketServiceTest {
     /** Репозиторий рынка. */
     private InMemoryMarketRepository marketRepository;
 
-    /** Фабрика фейковых соединений. */
-    private FakeConnectionFactory connectionFactory;
+    /** Репозиторий героев. */
+    private InMemoryHeroRepository heroRepository;
 
     /** Тестируемый сервис. */
     private MarketService marketService;
@@ -66,14 +70,12 @@ class MarketServiceTest {
     @BeforeEach
     void setUp() {
         userRepository = new InMemoryUserRepository();
-        userCardRepository = new InMemoryUserCardRepository();
-        FakeHeroRepository heroRepository = new FakeHeroRepository();
+        userCardRepository = new InMemoryUserCardRepository(userRepository);
+        heroRepository = new InMemoryHeroRepository();
         heroRepository.save(COMMON_HERO);
         heroRepository.save(EPIC_HERO);
-        marketRepository = new InMemoryMarketRepository();
-        connectionFactory = new FakeConnectionFactory();
-        marketService = new MarketServiceImpl(connectionFactory, userRepository,
-                userCardRepository, marketRepository, heroRepository);
+        marketRepository = new InMemoryMarketRepository(userRepository, userCardRepository);
+        marketService = new MarketServiceImpl(userRepository, marketRepository, heroRepository, gameConfig);
     }
 
     /**
@@ -119,25 +121,23 @@ class MarketServiceTest {
         Assertions.assertEquals(100, listing.price());
         Assertions.assertEquals(0, userCardRepository.countByUserId(SELLER_ID));
         Assertions.assertEquals(1, marketRepository.size());
-        Assertions.assertEquals(1, connectionFactory.connection().commitCount());
     }
 
     /**
-     * Проверяет, что цена ниже минимальной отклоняется до транзакции.
+     * Проверяет, что цена ниже минимальной отклоняется.
      */
     @Test
     @DisplayName("Отклоняет слишком низкую цену")
     void rejectsTooLowPrice() throws Exception {
         registerUser(SELLER_ID, 0);
         userCardRepository.addCard(SELLER_ID, COMMON_HERO.id());
+        int minPrice = gameConfig.rarity(HeroRarity.COMMON).minPrice();
 
         Assertions.assertThrows(InvalidPriceException.class,
-                () -> marketService.createListing(SELLER_ID, COMMON_HERO.id(),
-                        COMMON_HERO.rarity().minPrice() - 1));
+                () -> marketService.createListing(SELLER_ID, COMMON_HERO.id(), minPrice - 1));
 
         Assertions.assertEquals(1, userCardRepository.countByUserId(SELLER_ID));
         Assertions.assertEquals(0, marketRepository.size());
-        Assertions.assertEquals(0, connectionFactory.connection().commitCount());
     }
 
     /**
@@ -148,10 +148,10 @@ class MarketServiceTest {
     void rejectsTooHighPrice() throws Exception {
         registerUser(SELLER_ID, 0);
         userCardRepository.addCard(SELLER_ID, EPIC_HERO.id());
+        int maxPrice = gameConfig.rarity(HeroRarity.EPIC).maxPrice();
 
         Assertions.assertThrows(InvalidPriceException.class,
-                () -> marketService.createListing(SELLER_ID, EPIC_HERO.id(),
-                        EPIC_HERO.rarity().maxPrice() + 1));
+                () -> marketService.createListing(SELLER_ID, EPIC_HERO.id(), maxPrice + 1));
     }
 
     /**
@@ -166,11 +166,10 @@ class MarketServiceTest {
                 () -> marketService.createListing(SELLER_ID, COMMON_HERO.id(), 100));
 
         Assertions.assertEquals(0, marketRepository.size());
-        Assertions.assertEquals(1, connectionFactory.connection().rollbackCount());
     }
 
     /**
-     * Проверяет полный сценарий покупки с комиссией.
+     * Проверяет полный сценарий покупки с комиссией по умолчанию.
      */
     @Test
     @DisplayName("Покупает лот с комиссией 5%")
@@ -189,7 +188,27 @@ class MarketServiceTest {
         Assertions.assertEquals(95, userRepository.findByUserId(SELLER_ID).orElseThrow().balance());
         Assertions.assertEquals(1, userCardRepository.countByUserId(BUYER_ID));
         Assertions.assertEquals(0, marketRepository.size());
-        Assertions.assertEquals(1, connectionFactory.connection().commitCount());
+    }
+
+    /**
+     * Проверяет, что сумма продавца считается по комиссии из конфигурации.
+     */
+    @Test
+    @DisplayName("Считает сумму продавца по комиссии из конфигурации")
+    void buysListingWithConfiguredCommission() throws Exception {
+        GameConfig customConfig = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30),
+                GameConfig.DEFAULT_CURRENCY_NAME, GameConfig.DEFAULT_CURRENCY_EMOJI,
+                GameConfig.DEFAULT_SHARDS_EMOJI, gameConfig.rarityConfigs(), 10);
+        MarketService customService = new MarketServiceImpl(userRepository, marketRepository,
+                heroRepository, customConfig);
+        registerUser(BUYER_ID, 150);
+        registerUser(SELLER_ID, 0);
+        MarketListing listing = saveListing(SELLER_ID, COMMON_HERO.id(), 100);
+
+        customService.buy(BUYER_ID, listing.id());
+
+        Assertions.assertEquals(50, userRepository.findByUserId(BUYER_ID).orElseThrow().balance());
+        Assertions.assertEquals(90, userRepository.findByUserId(SELLER_ID).orElseThrow().balance());
     }
 
     /**
@@ -221,7 +240,7 @@ class MarketServiceTest {
     }
 
     /**
-     * Проверяет, что при недостатке средств покупка откатывается.
+     * Проверяет, что при недостатке средств покупка не меняет состояние.
      */
     @Test
     @DisplayName("Откатывает покупку при недостатке средств")
@@ -236,7 +255,7 @@ class MarketServiceTest {
         Assertions.assertEquals(30, userRepository.findByUserId(BUYER_ID).orElseThrow().balance());
         Assertions.assertEquals(0, userRepository.findByUserId(SELLER_ID).orElseThrow().balance());
         Assertions.assertEquals(0, userCardRepository.countByUserId(BUYER_ID));
-        Assertions.assertEquals(1, connectionFactory.connection().rollbackCount());
+        Assertions.assertEquals(1, marketRepository.size());
     }
 
     /**
@@ -253,7 +272,6 @@ class MarketServiceTest {
         Assertions.assertEquals(listing.id(), cancelled.id());
         Assertions.assertEquals(0, marketRepository.size());
         Assertions.assertEquals(1, userCardRepository.countByUserId(SELLER_ID));
-        Assertions.assertEquals(1, connectionFactory.connection().commitCount());
     }
 
     /**
