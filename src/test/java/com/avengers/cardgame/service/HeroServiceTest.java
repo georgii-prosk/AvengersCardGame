@@ -129,4 +129,33 @@ class HeroServiceTest {
             Assertions.assertTrue(repository.findAll().contains(hero));
         }
     }
+
+    @Test
+    @DisplayName("getRandomHero(rarity) возвращает героя нужной редкости")
+    void randomHeroOfRarityReturnsMatchingHero() {
+        HeroService service = new HeroServiceImpl(fullRepository(), new ScriptedRandom(0));
+
+        Hero hero = service.getRandomHero(HeroRarity.LEGENDARY).orElseThrow();
+
+        Assertions.assertEquals(legendary, hero);
+        Assertions.assertEquals(HeroRarity.LEGENDARY, hero.rarity());
+    }
+
+    @Test
+    @DisplayName("getRandomHero(rarity) выбирает героя по случайному индексу")
+    void randomHeroOfRarityUsesRandomIndex() {
+        HeroService first = new HeroServiceImpl(fullRepository(), new ScriptedRandom(0));
+        HeroService second = new HeroServiceImpl(fullRepository(), new ScriptedRandom(1));
+
+        Assertions.assertEquals(Optional.of(common1), first.getRandomHero(HeroRarity.COMMON));
+        Assertions.assertEquals(Optional.of(common2), second.getRandomHero(HeroRarity.COMMON));
+    }
+
+    @Test
+    @DisplayName("getRandomHero(rarity) возвращает пустой Optional, если такой редкости нет")
+    void randomHeroOfRarityReturnsEmptyWhenAbsent() {
+        HeroService service = new HeroServiceImpl(repositoryOf(common1), new ScriptedRandom(0));
+
+        Assertions.assertTrue(service.getRandomHero(HeroRarity.LEGENDARY).isEmpty());
+    }
 }

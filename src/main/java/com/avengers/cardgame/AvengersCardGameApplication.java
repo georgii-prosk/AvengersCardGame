@@ -10,18 +10,22 @@ import com.avengers.cardgame.config.EnvironmentConfigReader;
 import com.avengers.cardgame.config.GameConfig;
 import com.avengers.cardgame.exception.ConfigurationException;
 import com.avengers.cardgame.repository.HeroRepository;
+import com.avengers.cardgame.repository.MarketRepository;
 import com.avengers.cardgame.repository.UserCardRepository;
 import com.avengers.cardgame.repository.UserRepository;
+import com.avengers.cardgame.repository.impl.PostgresMarketRepository;
 import com.avengers.cardgame.repository.impl.PostgresUserCardRepository;
 import com.avengers.cardgame.repository.impl.PostgresUserRepository;
 import com.avengers.cardgame.service.CardService;
 import com.avengers.cardgame.service.CommandRegistry;
 import com.avengers.cardgame.service.HeroService;
+import com.avengers.cardgame.service.MarketService;
 import com.avengers.cardgame.service.MessageProcessingService;
 import com.avengers.cardgame.service.UserService;
 import com.avengers.cardgame.service.impl.CardServiceImpl;
 import com.avengers.cardgame.service.impl.CommandMessageProcessingService;
 import com.avengers.cardgame.service.impl.HeroServiceImpl;
+import com.avengers.cardgame.service.impl.MarketServiceImpl;
 import com.avengers.cardgame.service.impl.UserServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,15 +70,19 @@ public class AvengersCardGameApplication {
         UserRepository userRepository = new PostgresUserRepository(connectionFactory);
         HeroRepository heroRepository = new InMemoryHeroRepository();
         UserCardRepository userCardRepository = new PostgresUserCardRepository(connectionFactory);
+        MarketRepository marketRepository = new PostgresMarketRepository(connectionFactory);
 
         // 4. Создание сервисов
         UserService userService = new UserServiceImpl(userRepository);
         HeroService heroService = new HeroServiceImpl(heroRepository, new Random());
         CardService cardService = new CardServiceImpl(userService, userCardRepository,
-                heroService, gameConfig, new Random(), Clock.systemUTC());
+                heroService, heroRepository, gameConfig, new Random(), Clock.systemUTC());
+        MarketService marketService = new MarketServiceImpl(userRepository, marketRepository,
+                heroRepository, gameConfig);
 
         // 5. Настройка обработки команд
-        CommandRegistry registry = new CommandRegistryFactory(userService, cardService, userCardRepository, heroRepository).create();
+        CommandRegistry registry = new CommandRegistryFactory(userService, cardService, marketService,
+                userCardRepository, heroRepository, gameConfig).create();
 
         MessageProcessingService logic = new CommandMessageProcessingService(registry);
         TelegramBot bot = new TelegramBot(config.botToken(), logic);

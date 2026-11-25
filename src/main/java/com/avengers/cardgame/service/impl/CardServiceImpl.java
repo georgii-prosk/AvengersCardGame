@@ -1,16 +1,23 @@
 package com.avengers.cardgame.service.impl;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.exception.AppException;
 import com.avengers.cardgame.exception.UserNotFoundException;
 import com.avengers.cardgame.model.Hero;
+import com.avengers.cardgame.model.HeroRarity;
 import com.avengers.cardgame.model.User;
+import com.avengers.cardgame.repository.HeroRepository;
 import com.avengers.cardgame.repository.UserCardRepository;
 import com.avengers.cardgame.service.CardService;
-import com.avengers.cardgame.service.DailyRewardResult;
 import com.avengers.cardgame.service.Cooldown;
-import com.avengers.cardgame.service.Success;
+import com.avengers.cardgame.service.CraftResult;
+import com.avengers.cardgame.service.DailyRewardResult;
+import com.avengers.cardgame.service.DisassembleResult;
 import com.avengers.cardgame.service.HeroService;
+import com.avengers.cardgame.service.Success;
 import com.avengers.cardgame.service.UserService;
+import org.jetbrains.annotations.NotNull;
+
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -35,6 +42,8 @@ public class CardServiceImpl implements CardService {
     private final UserCardRepository userCardRepository;
     /** Сервис героев. */
     private final HeroService heroService;
+    /** Репозиторий героев. */
+    private final HeroRepository heroRepository;
     /** Игровая конфигурация. */
     private final GameConfig gameConfig;
     /** Источник случайности. */
@@ -46,23 +55,23 @@ public class CardServiceImpl implements CardService {
      * @param userService сервис пользователей
      * @param userCardRepository репозиторий карточек
      * @param heroService сервис героев
+     * @param heroRepository репозиторий героев
      * @param gameConfig игровая конфигурация
      * @param random генератор случайных чисел
      * @param clock часы
      */
     public CardServiceImpl(UserService userService, UserCardRepository userCardRepository,
-                           HeroService heroService, GameConfig gameConfig, Random random, Clock clock) {
+                           HeroService heroService, HeroRepository heroRepository,
+                           GameConfig gameConfig, Random random, Clock clock) {
         this.userService = userService;
         this.userCardRepository = userCardRepository;
         this.heroService = heroService;
+        this.heroRepository = heroRepository;
         this.gameConfig = gameConfig;
         this.random = random;
         this.clock = clock;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public synchronized DailyRewardResult grantDaily(long userId) throws UserNotFoundException {
         // Метод синхронизирован для предотвращения состояния гонки (check-then-act):
@@ -89,6 +98,31 @@ public class CardServiceImpl implements CardService {
 
         userService.updateLastDailyAt(userId, now);
         return new Success(heroes);
+    }
+
+    @Override
+    public DisassembleResult disassemble(long userId, long heroId, int count) throws AppException {
+        if (count <= 0) {
+            throw new IllegalArgumentException("Count to disassemble must be positive");
+        }
+        Hero hero = heroRepository.findById(heroId)
+                .orElseThrow(() -> new IllegalArgumentException("Hero not found: " + heroId));
+
+        int shardsGained = gameConfig.rarity(hero.rarity()).shardsYield() * count;
+        int shardsBalance = userCardRepository.disassemble(userId, heroId, count, shardsGained);
+
+        return new DisassembleResult(hero, count, shardsGained, shardsBalance);
+    }
+
+    @Override
+    public @NotNull CraftResult craft(long userId, @NotNull HeroRarity rarity) throws AppException {
+        int craftCost = gameConfig.rarity(rarity).craftCost();
+        Hero hero = heroService.getRandomHero(rarity)
+                .orElseThrow(() -> new IllegalStateException("No heroes available for rarity " + rarity));
+
+        int shardsBalance = userCardRepository.craft(userId, hero.id(), craftCost);
+
+        return new CraftResult(hero, craftCost, shardsBalance);
     }
 
     /**

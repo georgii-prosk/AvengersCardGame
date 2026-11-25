@@ -2,6 +2,7 @@ package com.avengers.cardgame.presentation;
 
 import com.avengers.cardgame.messaging.Button;
 import com.avengers.cardgame.messaging.Message;
+import com.avengers.cardgame.service.command.CommandNames;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,8 +45,29 @@ public class InventoryRenderer {
      * @return сообщение с текстом и кнопками навигации
      */
     public Message render(List<InventoryItem> items, int page) {
+        return render(items, page, EMPTY_MESSAGE, HEADER_TEMPLATE,
+                CommandNames.VIEW_CARD + " ", CommandNames.INVENTORY_PAGE + " ");
+    }
+
+    /**
+     * Формирует сообщение со страницей инвентаря с заданными настройками.
+     * <p>
+     * Если карточек нет — возвращает сообщение об этом.
+     * Если номер страницы вне диапазона — приводит к ближайшей существующей.
+     *
+     * @param items             отсортированный список записей (герой и количество его копий)
+     * @param page              запрошенная страница (начиная с 1)
+     * @param emptyMessage      сообщение при отсутствии карточек
+     * @param headerTemplate    шаблон заголовка страницы
+     * @param cardCommandPrefix префикс команды просмотра карточки
+     * @param pageCommandPrefix префикс команды переключения страницы
+     * @return сообщение с текстом и кнопками навигации
+     */
+    public Message render(List<InventoryItem> items, int page,
+                          String emptyMessage, String headerTemplate,
+                          String cardCommandPrefix, String pageCommandPrefix) {
         if (items.isEmpty()) {
-            return new Message(EMPTY_MESSAGE);
+            return new Message(emptyMessage);
         }
 
         int totalPages = (items.size() + PAGE_SIZE - 1) / PAGE_SIZE;
@@ -54,7 +76,7 @@ public class InventoryRenderer {
         int from = (currentPage - 1) * PAGE_SIZE;
         List<InventoryItem> pageItems = items.subList(from, Math.min(from + PAGE_SIZE, items.size()));
 
-        StringBuilder text = new StringBuilder(HEADER_TEMPLATE.formatted(currentPage, totalPages));
+        StringBuilder text = new StringBuilder(headerTemplate.formatted(currentPage, totalPages));
         List<List<Button>> rows = new ArrayList<>();
 
         for (InventoryItem item : pageItems) {
@@ -63,12 +85,12 @@ public class InventoryRenderer {
             text.append('\n').append(LINE_TEMPLATE.formatted(
                     heroRenderer.emoji(rarity), hero.name(), heroRenderer.title(rarity), item.count()));
             rows.add(List.of(new Button(CARD_BUTTON_TEMPLATE.formatted(
-                    heroRenderer.emoji(rarity), hero.name(), item.count()), "/view_card " + hero.id())));
+                    heroRenderer.emoji(rarity), hero.name(), item.count()), cardCommandPrefix + hero.id())));
         }
 
         List<Button> navigation = new ArrayList<>();
-        if (currentPage > 1) navigation.add(new Button(PREVIOUS_BUTTON_TEXT, "/inventory_page " + (currentPage - 1)));
-        if (currentPage < totalPages) navigation.add(new Button(NEXT_BUTTON_TEXT, "/inventory_page " + (currentPage + 1)));
+        if (currentPage > 1) navigation.add(new Button(PREVIOUS_BUTTON_TEXT, pageCommandPrefix + (currentPage - 1)));
+        if (currentPage < totalPages) navigation.add(new Button(NEXT_BUTTON_TEXT, pageCommandPrefix + (currentPage + 1)));
         if (!navigation.isEmpty()) rows.add(navigation);
 
         return new Message(text.toString(), rows);

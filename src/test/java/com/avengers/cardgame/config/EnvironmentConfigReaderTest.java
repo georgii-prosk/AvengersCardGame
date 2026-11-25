@@ -169,4 +169,98 @@ class EnvironmentConfigReaderTest {
 
         Assertions.assertEquals(Duration.ofMinutes(1440), config.game().dailyCooldown());
     }
+
+    @Test
+    @DisplayName("Использует валюту по умолчанию, если переменные не заданы")
+    void usesDefaultCurrencyWhenNotSet() throws ConfigurationException {
+        AppConfig config = readerWith(validEnv()).read();
+
+        Assertions.assertEquals(TestGameConfig.CURRENCY_NAME, config.game().currencyName());
+        Assertions.assertEquals(TestGameConfig.CURRENCY_EMOJI, config.game().currencyEmoji());
+    }
+
+    @Test
+    @DisplayName("Читает настраиваемое название и эмодзи валюты")
+    void readsCustomCurrency() throws ConfigurationException {
+        Map<String, String> env = validEnv();
+        env.put("CURRENCY_NAME", "Гири");
+        env.put("CURRENCY_EMOJI", "🪙");
+
+        AppConfig config = readerWith(env).read();
+
+        Assertions.assertEquals("Гири", config.game().currencyName());
+        Assertions.assertEquals("🪙", config.game().currencyEmoji());
+    }
+
+    @Test
+    @DisplayName("Использует эмодзи кусочков по умолчанию, если переменная не задана")
+    void usesDefaultShardsEmojiWhenNotSet() throws ConfigurationException {
+        AppConfig config = readerWith(validEnv()).read();
+
+        Assertions.assertEquals(TestGameConfig.SHARDS_EMOJI, config.game().shardsEmoji());
+    }
+
+    @Test
+    @DisplayName("Читает настраиваемый эмодзи кусочков")
+    void readsCustomShardsEmoji() throws ConfigurationException {
+        Map<String, String> env = validEnv();
+        env.put("SHARDS_EMOJI", "⭐");
+
+        AppConfig config = readerWith(env).read();
+
+        Assertions.assertEquals("⭐", config.game().shardsEmoji());
+    }
+
+    @Test
+    @DisplayName("Использует параметры экономики по умолчанию")
+    void usesDefaultEconomyParams() throws ConfigurationException {
+        AppConfig config = readerWith(validEnv()).read();
+
+        Assertions.assertEquals(TestGameConfig.COMMISSION, config.game().marketCommissionPercent());
+        Assertions.assertEquals(new TestGameConfig().defaultRarities(), config.game().rarityConfigs());
+    }
+
+    @Test
+    @DisplayName("Читает настраиваемую комиссию рынка")
+    void readsCustomMarketCommission() throws ConfigurationException {
+        Map<String, String> env = validEnv();
+        env.put("MARKET_COMMISSION_PERCENT", "10");
+
+        AppConfig config = readerWith(env).read();
+
+        Assertions.assertEquals(10, config.game().marketCommissionPercent());
+    }
+
+    @Test
+    @DisplayName("Принимает нулевую комиссию рынка")
+    void readsZeroMarketCommission() throws ConfigurationException {
+        Map<String, String> env = validEnv();
+        env.put("MARKET_COMMISSION_PERCENT", "0");
+
+        AppConfig config = readerWith(env).read();
+
+        Assertions.assertEquals(0, config.game().marketCommissionPercent());
+    }
+
+    @Test
+    @DisplayName("Бросает InvalidConfigurationException для нечисловой комиссии рынка")
+    void throwsWhenCommissionNotNumeric() {
+        Map<String, String> env = validEnv();
+        env.put("MARKET_COMMISSION_PERCENT", "abc");
+
+        InvalidConfigurationException ex = Assertions.assertThrows(InvalidConfigurationException.class,
+                () -> readerWith(env).read());
+        Assertions.assertEquals("MARKET_COMMISSION_PERCENT", ex.parameterName());
+    }
+
+    @Test
+    @DisplayName("Бросает InvalidConfigurationException для комиссии вне диапазона 0..100")
+    void throwsWhenCommissionOutOfRange() {
+        Map<String, String> env = validEnv();
+        env.put("MARKET_COMMISSION_PERCENT", "101");
+        Assertions.assertThrows(InvalidConfigurationException.class, () -> readerWith(env).read());
+
+        env.put("MARKET_COMMISSION_PERCENT", "-1");
+        Assertions.assertThrows(InvalidConfigurationException.class, () -> readerWith(env).read());
+    }
 }

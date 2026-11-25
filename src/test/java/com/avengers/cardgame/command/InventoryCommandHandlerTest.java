@@ -3,6 +3,7 @@ package com.avengers.cardgame.command;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
+import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.messaging.Button;
 import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.model.Hero;
@@ -32,7 +33,7 @@ class InventoryCommandHandlerTest {
 
     @BeforeEach
     void setUp() {
-        cardRepository = new InMemoryUserCardRepository();
+        cardRepository = new InMemoryUserCardRepository(new InMemoryUserRepository());
         heroRepository = new InMemoryHeroRepository();
         bot = new FakeBot();
         renderer = new InventoryRenderer();
