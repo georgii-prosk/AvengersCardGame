@@ -1,6 +1,7 @@
 package com.avengers.cardgame.fakes;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.exception.AppException;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
@@ -36,7 +37,7 @@ public class FakeCardService implements CardService {
     private AppException craftError;
 
     /** Конфигурация со значениями экономики по умолчанию. */
-    private final GameConfig defaultConfig = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+    private final GameConfig defaultConfig = new TestGameConfig().defaultConfig();
 
     /**
      * @param heroes герои, которые будет возвращать фейк

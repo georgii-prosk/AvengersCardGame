@@ -7,6 +7,7 @@ import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
 import com.avengers.cardgame.model.MarketItem;
 import com.avengers.cardgame.model.MarketListing;
+import com.avengers.cardgame.service.command.CommandNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -107,21 +108,21 @@ public class MarketRenderer {
                     listing.id(), heroRenderer.emoji(hero.rarity()), hero.name(),
                     heroRenderer.title(hero.rarity()), listing.price(), currencyEmoji, item.sellerName()));
             buyButtons.add(new Button(BUY_BUTTON_TEMPLATE.formatted(listing.id()),
-                    "/market_buy " + listing.id()));
+                    CommandNames.MARKET_BUY + " " + listing.id()));
         }
 
         rows.add(buyButtons);
         rows.add(filterButtons());
-        rows.add(List.of(new Button(MY_LISTINGS_BUTTON, "/market_mine")));
+        rows.add(List.of(new Button(MY_LISTINGS_BUTTON, CommandNames.MARKET_MINE)));
 
         List<Button> navigation = new ArrayList<>();
         if (currentPage > 1) {
             navigation.add(new Button(PREVIOUS_BUTTON_TEXT,
-                    "/market_page " + filterCode + " " + (currentPage - 1)));
+                    CommandNames.MARKET_PAGE + " " + filterCode + " " + (currentPage - 1)));
         }
         if (currentPage < totalPages) {
             navigation.add(new Button(NEXT_BUTTON_TEXT,
-                    "/market_page " + filterCode + " " + (currentPage + 1)));
+                    CommandNames.MARKET_PAGE + " " + filterCode + " " + (currentPage + 1)));
         }
         if (!navigation.isEmpty()) {
             rows.add(navigation);
@@ -140,7 +141,7 @@ public class MarketRenderer {
     public Message renderUserListings(@NotNull List<MarketItem> items, @NotNull String currencyEmoji) {
         if (items.isEmpty()) {
             return new Message(EMPTY_USER_LISTINGS_MESSAGE,
-                    List.of(List.of(new Button(BACK_TO_MARKET_BUTTON, "/market"))));
+                    List.of(List.of(new Button(BACK_TO_MARKET_BUTTON, CommandNames.MARKET))));
         }
 
         StringBuilder text = new StringBuilder("📋 Твои лоты:");
@@ -153,10 +154,10 @@ public class MarketRenderer {
                     listing.id(), heroRenderer.emoji(hero.rarity()), hero.name(),
                     heroRenderer.title(hero.rarity()), listing.price(), currencyEmoji));
             rows.add(List.of(new Button(CANCEL_BUTTON_TEMPLATE.formatted(listing.id()),
-                    "/market_cancel " + listing.id())));
+                    CommandNames.MARKET_CANCEL + " " + listing.id())));
         }
 
-        rows.add(List.of(new Button(BACK_TO_MARKET_BUTTON, "/market")));
+        rows.add(List.of(new Button(BACK_TO_MARKET_BUTTON, CommandNames.MARKET)));
         return new Message(text.toString(), rows);
     }
 
@@ -173,8 +174,8 @@ public class MarketRenderer {
                 heroRenderer.emoji(hero.rarity()), hero.name(), heroRenderer.title(hero.rarity()),
                 item.listing().price(), currencyEmoji);
         return new Message(text, List.of(
-                List.of(new Button("Подтвердить", "/market_buy_confirm " + item.listing().id()),
-                        new Button("Отмена", "/cancel"))));
+                List.of(new Button("Подтвердить", CommandNames.MARKET_BUY_CONFIRM + " " + item.listing().id()),
+                        new Button("Отмена", CommandNames.CANCEL))));
     }
 
     /**
@@ -309,11 +310,11 @@ public class MarketRenderer {
      */
     private List<Button> filterButtons() {
         return List.of(
-                new Button(heroRenderer.emoji(HeroRarity.COMMON), "/market_filter COMMON"),
-                new Button(heroRenderer.emoji(HeroRarity.RARE), "/market_filter RARE"),
-                new Button(heroRenderer.emoji(HeroRarity.EPIC), "/market_filter EPIC"),
-                new Button(heroRenderer.emoji(HeroRarity.LEGENDARY), "/market_filter LEGENDARY"),
-                new Button(ALL_FILTER_BUTTON, "/market_filter " + ALL_FILTER)
+                new Button(heroRenderer.emoji(HeroRarity.COMMON), CommandNames.MARKET_FILTER + " " + HeroRarity.COMMON.name()),
+                new Button(heroRenderer.emoji(HeroRarity.RARE), CommandNames.MARKET_FILTER + " " + HeroRarity.RARE.name()),
+                new Button(heroRenderer.emoji(HeroRarity.EPIC), CommandNames.MARKET_FILTER + " " + HeroRarity.EPIC.name()),
+                new Button(heroRenderer.emoji(HeroRarity.LEGENDARY), CommandNames.MARKET_FILTER + " " + HeroRarity.LEGENDARY.name()),
+                new Button(ALL_FILTER_BUTTON, CommandNames.MARKET_FILTER + " " + ALL_FILTER)
         );
     }
 }

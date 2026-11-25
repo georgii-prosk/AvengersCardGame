@@ -39,6 +39,6 @@ public class InsufficientFundsException extends AppException {
      * @return сколько валюты не хватает
      */
     public int missing() {
-        return Math.max(0, required - available);
+        return required - available;
     }
 }

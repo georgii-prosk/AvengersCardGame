@@ -1,9 +1,11 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
+import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
@@ -13,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 
 /**
  * Тесты для {@link SellPickCommandHandler}.
@@ -32,7 +33,7 @@ class SellPickCommandHandlerTest {
 
     /** Игровая конфигурация для тестов. */
     private final GameConfig GAME_CONFIG =
-            new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+            new TestGameConfig().defaultConfig();
 
     /** Репозиторий карточек. */
     private InMemoryUserCardRepository cardRepository;
@@ -45,7 +46,7 @@ class SellPickCommandHandlerTest {
 
     @BeforeEach
     void setUp() {
-        cardRepository = new InMemoryUserCardRepository();
+        cardRepository = new InMemoryUserCardRepository(new InMemoryUserRepository());
         InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
         heroRepository.save(COMMON_HERO);
         bot = new FakeBot();
@@ -73,7 +74,9 @@ class SellPickCommandHandlerTest {
         handler.handle(context("1"));
 
         Message message = bot.lastSent().message();
-        Assertions.assertTrue(message.text().contains("от 10 до 200"));
+        Assertions.assertEquals("""
+                ⚪ Pepper [Обычная]
+                Выбери цену. Допустимо от 10 до 200 💎.""", message.text());
         Assertions.assertEquals(3, message.buttons().getFirst().size());
         Assertions.assertEquals("/sell_price 1 10",
                 message.buttons().getFirst().getFirst().callbackData());
@@ -91,7 +94,8 @@ class SellPickCommandHandlerTest {
     void rejectsInvalidHeroId() {
         handler.handle(context("abc"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("Некорректный идентификатор"));
+        Assertions.assertEquals("Некорректный идентификатор карточки.",
+                bot.lastSent().message().text());
     }
 
     /**
@@ -102,7 +106,8 @@ class SellPickCommandHandlerTest {
     void rejectsUnknownHero() {
         handler.handle(context("999"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("не существует"));
+        Assertions.assertEquals("Такой карточки не существует.",
+                bot.lastSent().message().text());
     }
 
     /**
@@ -113,6 +118,7 @@ class SellPickCommandHandlerTest {
     void rejectsMissingCard() {
         handler.handle(context("1"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("нет в твоей коллекции"));
+        Assertions.assertEquals("Этой карточки нет в твоей коллекции.",
+                bot.lastSent().message().text());
     }
 }

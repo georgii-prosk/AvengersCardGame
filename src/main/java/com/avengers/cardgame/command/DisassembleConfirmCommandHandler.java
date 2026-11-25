@@ -12,6 +12,7 @@ import com.avengers.cardgame.service.CommandHandler;
 import com.avengers.cardgame.service.DisassembleResult;
 import com.avengers.cardgame.service.command.CommandArguments;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -45,16 +46,20 @@ public class DisassembleConfirmCommandHandler implements CommandHandler {
 
     @Override
     public void handle(CommandContext context) throws AppException {
-        Optional<CommandArguments.IdAndNumber> parsed = CommandArguments.parseIdAndNumber(context.argument());
-        if (parsed.isEmpty()) {
+        List<String> parts = CommandArguments.splitParts(context.argument());
+        Optional<Long> heroId = parts.size() == 2
+                ? CommandArguments.parseId(parts.getFirst())
+                : Optional.empty();
+        Optional<Integer> quantity = parts.size() == 2
+                ? CommandArguments.parseNumber(parts.getLast())
+                : Optional.empty();
+        if (heroId.isEmpty() || quantity.isEmpty()) {
             context.bot().sendMessage(disassembleRenderer.renderInvalidQuantity(), context.chatId());
             return;
         }
-        long heroId = parsed.get().id();
-        int quantity = parsed.get().number();
 
         try {
-            DisassembleResult result = cardService.disassemble(context.userId(), heroId, quantity);
+            DisassembleResult result = cardService.disassemble(context.userId(), heroId.get(), quantity.get());
             context.bot().sendMessage(
                     disassembleRenderer.renderResult(result, gameConfig.shardsEmoji()), context.chatId());
         } catch (NotEnoughCardsException exception) {

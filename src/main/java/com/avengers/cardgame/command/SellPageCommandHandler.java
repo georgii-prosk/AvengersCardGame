@@ -1,5 +1,7 @@
 package com.avengers.cardgame.command;
 
+import com.avengers.cardgame.presentation.InventoryItem;
+import com.avengers.cardgame.presentation.InventoryLoader;
 import com.avengers.cardgame.presentation.SellRenderer;
 import com.avengers.cardgame.repository.HeroRepository;
 import com.avengers.cardgame.repository.UserCardRepository;
@@ -7,6 +9,7 @@ import com.avengers.cardgame.service.CommandContext;
 import com.avengers.cardgame.service.CommandHandler;
 import com.avengers.cardgame.service.command.CommandArguments;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -14,8 +17,8 @@ import java.util.Optional;
  */
 public class SellPageCommandHandler implements CommandHandler {
 
-    /** Отправитель страницы коллекции. */
-    private final SellSelectionSender selectionSender;
+    /** Загрузчик коллекции карточек. */
+    private final InventoryLoader inventoryLoader;
 
     /** Рендерер выставления лота. */
     private final SellRenderer sellRenderer = new SellRenderer();
@@ -25,7 +28,7 @@ public class SellPageCommandHandler implements CommandHandler {
      * @param heroRepository     репозиторий героев
      */
     public SellPageCommandHandler(UserCardRepository userCardRepository, HeroRepository heroRepository) {
-        this.selectionSender = new SellSelectionSender(userCardRepository, heroRepository);
+        this.inventoryLoader = new InventoryLoader(userCardRepository, heroRepository);
     }
 
     @Override
@@ -35,6 +38,7 @@ public class SellPageCommandHandler implements CommandHandler {
             context.bot().sendMessage(sellRenderer.renderInvalidPage(), context.chatId());
             return;
         }
-        selectionSender.send(context, page.get());
+        List<InventoryItem> items = inventoryLoader.loadAndSortItems(context.userId());
+        context.bot().sendMessage(sellRenderer.renderSelection(items, page.get()), context.chatId());
     }
 }

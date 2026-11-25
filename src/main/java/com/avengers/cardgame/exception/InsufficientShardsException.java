@@ -39,6 +39,6 @@ public class InsufficientShardsException extends AppException {
      * @return сколько кусочков не хватает
      */
     public int missing() {
-        return Math.max(0, required - available);
+        return required - available;
     }
 }

@@ -175,8 +175,8 @@ class EnvironmentConfigReaderTest {
     void usesDefaultCurrencyWhenNotSet() throws ConfigurationException {
         AppConfig config = readerWith(validEnv()).read();
 
-        Assertions.assertEquals(GameConfig.DEFAULT_CURRENCY_NAME, config.game().currencyName());
-        Assertions.assertEquals(GameConfig.DEFAULT_CURRENCY_EMOJI, config.game().currencyEmoji());
+        Assertions.assertEquals(TestGameConfig.CURRENCY_NAME, config.game().currencyName());
+        Assertions.assertEquals(TestGameConfig.CURRENCY_EMOJI, config.game().currencyEmoji());
     }
 
     @Test
@@ -197,7 +197,7 @@ class EnvironmentConfigReaderTest {
     void usesDefaultShardsEmojiWhenNotSet() throws ConfigurationException {
         AppConfig config = readerWith(validEnv()).read();
 
-        Assertions.assertEquals(GameConfig.DEFAULT_SHARDS_EMOJI, config.game().shardsEmoji());
+        Assertions.assertEquals(TestGameConfig.SHARDS_EMOJI, config.game().shardsEmoji());
     }
 
     @Test
@@ -216,10 +216,8 @@ class EnvironmentConfigReaderTest {
     void usesDefaultEconomyParams() throws ConfigurationException {
         AppConfig config = readerWith(validEnv()).read();
 
-        Assertions.assertEquals(GameConfig.DEFAULT_MARKET_COMMISSION_PERCENT,
-                config.game().marketCommissionPercent());
-        Assertions.assertEquals(new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30)).rarityConfigs(),
-                config.game().rarityConfigs());
+        Assertions.assertEquals(TestGameConfig.COMMISSION, config.game().marketCommissionPercent());
+        Assertions.assertEquals(new TestGameConfig().defaultRarities(), config.game().rarityConfigs());
     }
 
     @Test

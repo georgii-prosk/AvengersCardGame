@@ -10,10 +10,7 @@ import com.avengers.cardgame.repository.UserCardRepository;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalInt;
 
@@ -22,16 +19,11 @@ import java.util.OptionalInt;
  */
 public class PostgresUserCardRepository extends JdbcSupport implements UserCardRepository {
 
-    /** Запрос для поиска карточек пользователя. */
-    private static final String SQL_FIND_BY_USER =
-            "SELECT user_id, hero_id, count FROM user_cards WHERE user_id = ?";
+    /** DAO карточек пользователей. */
+    private final UserCardDao userCardDao = new UserCardDao();
 
-    /** Запрос для подсчёта количества копий конкретной карточки. */
-    private static final String SQL_COUNT_BY_USER_AND_HERO =
-            "SELECT COALESCE(SUM(count), 0) FROM user_cards WHERE user_id = ? AND hero_id = ?";
-
-    /** SQL-операции экономики. */
-    private final EconomySql economySql = new EconomySql();
+    /** DAO пользователей. */
+    private final UserDao userDao = new UserDao();
 
     /**
      * @param connectionFactory фабрика соединений
@@ -43,7 +35,7 @@ public class PostgresUserCardRepository extends JdbcSupport implements UserCardR
     @Override
     public void addCard(long userId, long heroId) {
         try (Connection connection = connectionFactory.getConnection()) {
-            economySql.addCard(connection, userId, heroId);
+            userCardDao.addCard(connection, userId, heroId);
         } catch (SQLException exception) {
             throw new RuntimeException("Error adding card", exception);
         }
@@ -55,11 +47,11 @@ public class PostgresUserCardRepository extends JdbcSupport implements UserCardR
             throw new IllegalArgumentException("Count to remove must be positive");
         }
         return inTransaction(connection -> {
-            if (!economySql.removeCard(connection, userId, heroId, count)) {
+            if (userCardDao.removeCard(connection, userId, heroId, count) == 0) {
                 throw new NotEnoughCardsException(heroId, count,
-                        economySql.countCards(connection, userId, heroId));
+                        userCardDao.countCards(connection, userId, heroId));
             }
-            OptionalInt balance = economySql.addShards(connection, userId, shardsGain);
+            OptionalInt balance = userDao.addShards(connection, userId, shardsGain);
             if (balance.isEmpty()) {
                 throw new UserNotFoundException(userId);
             }
@@ -73,54 +65,34 @@ public class PostgresUserCardRepository extends JdbcSupport implements UserCardR
             throw new IllegalArgumentException("Craft cost must be positive");
         }
         return inTransaction(connection -> {
-            OptionalInt balance = economySql.spendShards(connection, userId, shardsCost);
+            OptionalInt balance = userDao.spendShards(connection, userId, shardsCost);
             if (balance.isEmpty()) {
-                OptionalInt available = economySql.findShards(connection, userId);
+                OptionalInt available = userDao.findShards(connection, userId);
                 if (available.isEmpty()) {
                     throw new UserNotFoundException(userId);
                 }
                 throw new InsufficientShardsException(shardsCost, available.getAsInt());
             }
-            economySql.addCard(connection, userId, heroId);
+            userCardDao.addCard(connection, userId, heroId);
             return balance.getAsInt();
         });
     }
 
     @Override
     public @NotNull List<UserCard> findByUserId(long userId) {
-        List<UserCard> cards = new ArrayList<>();
-        try (Connection connection = connectionFactory.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQL_FIND_BY_USER)) {
-            statement.setLong(1, userId);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                while (resultSet.next()) {
-                    cards.add(new UserCard(
-                            resultSet.getLong("user_id"),
-                            resultSet.getLong("hero_id"),
-                            resultSet.getInt("count")
-                    ));
-                }
-            }
+        try (Connection connection = connectionFactory.getConnection()) {
+            return userCardDao.findByUserId(connection, userId);
         } catch (SQLException exception) {
             throw new RuntimeException("Error finding cards by user", exception);
         }
-        return cards;
     }
 
     @Override
     public int countByUserIdAndHeroId(long userId, long heroId) {
-        try (Connection connection = connectionFactory.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQL_COUNT_BY_USER_AND_HERO)) {
-            statement.setLong(1, userId);
-            statement.setLong(2, heroId);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getInt(1);
-                }
-            }
+        try (Connection connection = connectionFactory.getConnection()) {
+            return userCardDao.countCards(connection, userId, heroId);
         } catch (SQLException exception) {
             throw new RuntimeException("Error counting cards by user and hero", exception);
         }
-        return 0;
     }
 }

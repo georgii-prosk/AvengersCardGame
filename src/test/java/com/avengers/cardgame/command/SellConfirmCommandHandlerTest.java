@@ -1,6 +1,7 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.exception.InvalidPriceException;
 import com.avengers.cardgame.exception.NotEnoughCardsException;
 import com.avengers.cardgame.fakes.FakeBot;
@@ -16,7 +17,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
@@ -36,7 +36,7 @@ class SellConfirmCommandHandlerTest {
 
     /** Игровая конфигурация для тестов. */
     private final GameConfig GAME_CONFIG =
-            new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+            new TestGameConfig().defaultConfig();
 
     /** Фейковый сервис рынка. */
     private FakeMarketService marketService;
@@ -78,9 +78,8 @@ class SellConfirmCommandHandlerTest {
         handler.handle(context("1 100"));
 
         Message message = bot.lastSent().message();
-        Assertions.assertTrue(message.text().contains("Лот #7 создан"));
-        Assertions.assertTrue(message.text().contains("Pepper"));
-        Assertions.assertTrue(message.text().contains("100 💎"));
+        Assertions.assertEquals("✅ Лот #7 создан: ⚪ Pepper [Обычная] за 100 💎.",
+                message.text());
     }
 
     /**
@@ -93,7 +92,8 @@ class SellConfirmCommandHandlerTest {
 
         handler.handle(context("1 100"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("нет этой карточки"));
+        Assertions.assertEquals("❌ У тебя нет этой карточки в коллекции.",
+                bot.lastSent().message().text());
     }
 
     /**
@@ -106,7 +106,8 @@ class SellConfirmCommandHandlerTest {
 
         handler.handle(context("1 5"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("от 10 до 200"));
+        Assertions.assertEquals("❌ Цена должна быть от 10 до 200 💎.",
+                bot.lastSent().message().text());
     }
 
     /**
@@ -117,6 +118,7 @@ class SellConfirmCommandHandlerTest {
     void rejectsInvalidListingArguments() throws Exception {
         handler.handle(context("1"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("Некорректные параметры"));
+        Assertions.assertEquals("Некорректные параметры лота.",
+                bot.lastSent().message().text());
     }
 }

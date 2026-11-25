@@ -1,9 +1,11 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
+import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
@@ -13,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 
 /**
  * Тесты для {@link DisassembleCommandHandler}.
@@ -30,7 +31,7 @@ class DisassembleCommandHandlerTest {
     private final Hero commonHero = new Hero(1L, "Pepper", HeroRarity.COMMON, 5, 15, 20, "c");
 
     /** Игровая конфигурация для тестов. */
-    private final GameConfig gameConfig = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+    private final GameConfig gameConfig = new TestGameConfig().defaultConfig();
 
     /** Репозиторий карточек. */
     private InMemoryUserCardRepository cardRepository;
@@ -43,7 +44,7 @@ class DisassembleCommandHandlerTest {
 
     @BeforeEach
     void setUp() {
-        cardRepository = new InMemoryUserCardRepository();
+        cardRepository = new InMemoryUserCardRepository(new InMemoryUserRepository());
         InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
         heroRepository.save(commonHero);
         bot = new FakeBot();
@@ -67,7 +68,8 @@ class DisassembleCommandHandlerTest {
     void sendsEmptyMessage() {
         handler.handle(context());
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("нет карточек"));
+        Assertions.assertEquals("У тебя пока нет карточек для разбора.",
+                bot.lastSent().message().text());
     }
 
     /**
@@ -82,7 +84,9 @@ class DisassembleCommandHandlerTest {
         handler.handle(context());
 
         Message message = bot.lastSent().message();
-        Assertions.assertTrue(message.text().contains("страница 1/1"));
+        Assertions.assertEquals("""
+                🧩 Выбери карточку для разбора (страница 1/1):
+                ⚪ Pepper — Обычная ×2""", message.text());
         Assertions.assertEquals("/disassemble_pick 1",
                 message.buttons().getFirst().getFirst().callbackData());
     }
@@ -97,6 +101,7 @@ class DisassembleCommandHandlerTest {
 
         handler.handle(context());
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("нет карточек"));
+        Assertions.assertEquals("У тебя пока нет карточек для разбора.",
+                bot.lastSent().message().text());
     }
 }

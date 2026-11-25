@@ -28,7 +28,8 @@ class ListingUnavailableExceptionTest {
     void messageContainsListingId() {
         ListingUnavailableException exception = new ListingUnavailableException(42L);
 
-        Assertions.assertTrue(exception.getMessage().contains("42"));
+        Assertions.assertEquals("Listing is unavailable: listingId=42",
+                exception.getMessage());
     }
 
     /**

@@ -183,6 +183,17 @@ public record User(
     }
 
     /**
+     * Возвращает копию с новым количеством карточек.
+     *
+     * @param newCardCount новое количество карточек
+     * @return копия
+     */
+    public User withCardCount(int newCardCount) {
+        return new User(userId, playerName, bio, balance, shards, newCardCount,
+                createdAt, updatedAt, lastDailyAt, dailyNotifiedAt);
+    }
+
+    /**
      * Возвращает копию с новым временем последнего получения /daily.
      *
      * @param newLastDailyAt новое время

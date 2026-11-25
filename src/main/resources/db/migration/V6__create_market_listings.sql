@@ -1,4 +1,4 @@
-CREATE TABLE market_listings (
+CREATE TABLE IF NOT EXISTS market_listings (
     id         BIGSERIAL PRIMARY KEY,
     seller_id  BIGINT NOT NULL,
     hero_id    BIGINT NOT NULL,

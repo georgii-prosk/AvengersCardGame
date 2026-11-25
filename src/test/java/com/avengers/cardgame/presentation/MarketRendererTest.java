@@ -73,7 +73,8 @@ class MarketRendererTest {
     void rendersEmptyMarket() {
         Message message = renderer.renderMarket(List.of(), 1, CURRENCY, MarketRenderer.ALL_FILTER);
 
-        Assertions.assertTrue(message.text().contains("нет лотов"));
+        Assertions.assertEquals("Сейчас на рынке нет лотов. Будь первым — выставь карточку через /sell!",
+                message.text());
         Assertions.assertTrue(message.buttons().isEmpty());
     }
 
@@ -86,12 +87,9 @@ class MarketRendererTest {
         Message message = renderer.renderMarket(
                 List.of(item(7L, HeroRarity.EPIC, 500)), 1, CURRENCY, MarketRenderer.ALL_FILTER);
 
-        Assertions.assertTrue(message.text().contains("страница 1/1"));
-        Assertions.assertTrue(message.text().contains("#7"));
-        Assertions.assertTrue(message.text().contains("Hero7"));
-        Assertions.assertTrue(message.text().contains("Эпическая"));
-        Assertions.assertTrue(message.text().contains("500 " + CURRENCY));
-        Assertions.assertTrue(message.text().contains("продавец: Seller"));
+        Assertions.assertEquals("""
+                🏪 Рынок (страница 1/1):
+                #7 🟣 Hero7 [Эпическая] — 500 💎 (продавец: Seller)""", message.text());
         Assertions.assertEquals("/market_buy 7", message.buttons().getFirst().getFirst().callbackData());
     }
 
@@ -103,7 +101,7 @@ class MarketRendererTest {
     void limitsPageToFiveItems() {
         Message message = renderer.renderMarket(items(), 1, CURRENCY, MarketRenderer.ALL_FILTER);
 
-        Assertions.assertTrue(message.text().contains("страница 1/2"));
+        Assertions.assertTrue(message.text().startsWith("🏪 Рынок (страница 1/2):"));
         List<Button> buyButtons = message.buttons().getFirst();
         Assertions.assertEquals(5, buyButtons.size());
         Assertions.assertEquals("/market_buy 1", buyButtons.getFirst().callbackData());
@@ -131,7 +129,7 @@ class MarketRendererTest {
     void addsPreviousButtonOnSecondPage() {
         Message message = renderer.renderMarket(items(), 2, CURRENCY, MarketRenderer.ALL_FILTER);
 
-        Assertions.assertTrue(message.text().contains("страница 2/2"));
+        Assertions.assertTrue(message.text().startsWith("🏪 Рынок (страница 2/2):"));
         Assertions.assertEquals(2, message.buttons().getFirst().size());
         List<Button> navigation = message.buttons().getLast();
         Assertions.assertEquals(1, navigation.size());
@@ -147,8 +145,8 @@ class MarketRendererTest {
         Message high = renderer.renderMarket(items(), 99, CURRENCY, MarketRenderer.ALL_FILTER);
         Message low = renderer.renderMarket(items(), -5, CURRENCY, MarketRenderer.ALL_FILTER);
 
-        Assertions.assertTrue(high.text().contains("страница 2/2"));
-        Assertions.assertTrue(low.text().contains("страница 1/2"));
+        Assertions.assertTrue(high.text().startsWith("🏪 Рынок (страница 2/2):"));
+        Assertions.assertTrue(low.text().startsWith("🏪 Рынок (страница 1/2):"));
     }
 
     /**
@@ -188,7 +186,7 @@ class MarketRendererTest {
     void rendersEmptyUserListings() {
         Message message = renderer.renderUserListings(List.of(), CURRENCY);
 
-        Assertions.assertTrue(message.text().contains("нет активных лотов"));
+        Assertions.assertEquals("📋 У тебя нет активных лотов.", message.text());
         Assertions.assertEquals("/market", message.buttons().getFirst().getFirst().callbackData());
     }
 
@@ -201,8 +199,12 @@ class MarketRendererTest {
         Message message = renderer.renderUserListings(
                 List.of(item(3L, HeroRarity.RARE, 200), item(4L, HeroRarity.EPIC, 500)), CURRENCY);
 
-        Assertions.assertTrue(message.text().contains("#3"));
-        Assertions.assertTrue(message.text().contains("#4"));
+        Assertions.assertEquals("""
+                📋 Твои лоты:
+
+                #3 🔵 Hero3 [Редкая] — 200 💎
+
+                #4 🟣 Hero4 [Эпическая] — 500 💎""", message.text());
         Assertions.assertEquals("/market_cancel 3", message.buttons().getFirst().getFirst().callbackData());
         Assertions.assertEquals("/market_cancel 4", message.buttons().get(1).getFirst().callbackData());
         Assertions.assertEquals("/market", message.buttons().getLast().getFirst().callbackData());
@@ -216,8 +218,7 @@ class MarketRendererTest {
     void rendersBuyConfirmation() {
         Message message = renderer.renderBuyConfirmation(item(9L, HeroRarity.LEGENDARY, 1500), CURRENCY);
 
-        Assertions.assertTrue(message.text().contains("Hero9"));
-        Assertions.assertTrue(message.text().contains("1500 " + CURRENCY));
+        Assertions.assertEquals("Купить 🟡 Hero9 [Легендарная] за 1500 💎?", message.text());
         Assertions.assertEquals("/market_buy_confirm 9",
                 message.buttons().getFirst().getFirst().callbackData());
         Assertions.assertEquals("/cancel", message.buttons().getFirst().get(1).callbackData());
@@ -243,10 +244,13 @@ class MarketRendererTest {
 
         Message message = renderer.renderPurchaseSuccess(result, HERO, 250, CURRENCY);
 
-        Assertions.assertTrue(message.text().contains("✅ Покупка совершена!"));
-        Assertions.assertTrue(message.text().contains("Hero"));
-        Assertions.assertTrue(message.text().contains("Списано: 500 " + CURRENCY));
-        Assertions.assertTrue(message.text().contains("Твой баланс: 250 " + CURRENCY));
+        Assertions.assertEquals("""
+                ✅ Покупка совершена!
+
+                🟣 Hero [Эпическая]
+                ⚔️ ATK: 10 | 🛡 DEF: 5 | ❤️ HP: 20
+
+                Списано: 500 💎. Твой баланс: 250 💎.""", message.text());
     }
 
     /**
@@ -259,9 +263,10 @@ class MarketRendererTest {
 
         Message message = renderer.renderPurchaseSuccess(result, null, 250, CURRENCY);
 
-        Assertions.assertTrue(message.text().contains("✅ Покупка совершена!"));
-        Assertions.assertTrue(message.text().contains("Списано: 500 " + CURRENCY));
-        Assertions.assertTrue(message.text().contains("Твой баланс: 250 " + CURRENCY));
+        Assertions.assertEquals(String.join(System.lineSeparator(),
+                "✅ Покупка совершена!",
+                "",
+                "Списано: 500 💎. Твой баланс: 250 💎."), message.text());
     }
 
     /**
@@ -274,8 +279,9 @@ class MarketRendererTest {
 
         Message message = renderer.renderListingCancelled(listing, HERO);
 
-        Assertions.assertTrue(message.text().contains("↩️ Лот #7 снят с продажи."));
-        Assertions.assertTrue(message.text().contains("возвращён в твою коллекцию"));
+        Assertions.assertEquals(
+                "↩️ Лот #7 снят с продажи. 🟣 Hero [Эпическая] возвращён в твою коллекцию.",
+                message.text());
     }
 
     /**
@@ -301,9 +307,9 @@ class MarketRendererTest {
 
         Message message = renderer.renderSellerNotification(7L, result, HERO, 475, "Buyer", CURRENCY);
 
-        Assertions.assertTrue(message.text().contains("💰 Твой лот #7"));
-        Assertions.assertTrue(message.text().contains("куплен игроком Buyer"));
-        Assertions.assertTrue(message.text().contains("Тебе начислено 475 " + CURRENCY));
+        Assertions.assertEquals(
+                "💰 Твой лот #7 (🟣 Hero [Эпическая]) куплен игроком Buyer. Тебе начислено 475 💎.",
+                message.text());
     }
 
     /**
@@ -316,7 +322,9 @@ class MarketRendererTest {
 
         Message message = renderer.renderSellerNotification(7L, result, null, 475, "Buyer", CURRENCY);
 
-        Assertions.assertTrue(message.text().contains("(#3)"));
+        Assertions.assertEquals(
+                "💰 Твой лот #7 (#3) куплен игроком Buyer. Тебе начислено 475 💎.",
+                message.text());
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.avengers.cardgame.service;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.exception.InsufficientShardsException;
 import com.avengers.cardgame.exception.NotEnoughCardsException;
 import com.avengers.cardgame.exception.UserNotFoundException;
@@ -57,7 +58,7 @@ class CardServiceTest {
     private final LocalDateTime now = LocalDateTime.now(clock);
 
     /** Игровая конфигурация. */
-    private final GameConfig gameConfig = new GameConfig(COOLDOWN, Duration.ofMinutes(30));
+    private final GameConfig gameConfig = new TestGameConfig().withCooldown(COOLDOWN);
 
     /** Репозиторий пользователей. */
     private InMemoryUserRepository userRepository;

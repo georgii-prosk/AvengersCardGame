@@ -22,12 +22,12 @@ public class InMemoryUserRepository implements UserRepository {
     private final Map<Long, User> storage = new HashMap<>();
 
     @Override
-    public @NotNull Optional<User> findByUserId(long userId) {
+    public synchronized @NotNull Optional<User> findByUserId(long userId) {
         return Optional.ofNullable(storage.get(userId));
     }
 
     @Override
-    public void save(@NotNull User user) throws UserAlreadyExistsException {
+    public synchronized void save(@NotNull User user) throws UserAlreadyExistsException {
         if (storage.containsKey(user.userId())) {
             throw new UserAlreadyExistsException(user.userId());
         }
@@ -35,7 +35,7 @@ public class InMemoryUserRepository implements UserRepository {
     }
 
     @Override
-    public void update(@NotNull User user) throws UserNotFoundException {
+    public synchronized void update(@NotNull User user) throws UserNotFoundException {
         if (!storage.containsKey(user.userId())) {
             throw new UserNotFoundException(user.userId());
         }
@@ -43,7 +43,7 @@ public class InMemoryUserRepository implements UserRepository {
     }
 
     @Override
-    public void updateLastDailyAt(long userId, @NotNull LocalDateTime lastDailyAt) throws UserNotFoundException {
+    public synchronized void updateLastDailyAt(long userId, @NotNull LocalDateTime lastDailyAt) throws UserNotFoundException {
         User user = storage.get(userId);
         if (user == null) {
             throw new UserNotFoundException(userId);
@@ -52,7 +52,7 @@ public class InMemoryUserRepository implements UserRepository {
     }
 
     @Override
-    public @NotNull List<User> findUsersToNotify(@NotNull LocalDateTime thresholdTime) {
+    public synchronized @NotNull List<User> findUsersToNotify(@NotNull LocalDateTime thresholdTime) {
         return storage.values().stream()
                 .filter(user -> user.lastDailyAt() != null)
                 .filter(user -> !user.lastDailyAt().isAfter(thresholdTime))
@@ -62,7 +62,7 @@ public class InMemoryUserRepository implements UserRepository {
     }
 
     @Override
-    public void updateDailyNotifiedAt(long userId, @NotNull LocalDateTime notifiedAt) throws UserNotFoundException {
+    public synchronized void updateDailyNotifiedAt(long userId, @NotNull LocalDateTime notifiedAt) throws UserNotFoundException {
         User user = storage.get(userId);
         if (user == null) {
             throw new UserNotFoundException(userId);
@@ -77,7 +77,7 @@ public class InMemoryUserRepository implements UserRepository {
      * @param amount сумма списания
      * @return новый баланс, если списание выполнено
      */
-    OptionalInt spendBalance(long userId, int amount) {
+    synchronized OptionalInt spendBalance(long userId, int amount) {
         if (amount <= 0) {
             throw new IllegalArgumentException("Amount to spend must be positive");
         }
@@ -97,7 +97,7 @@ public class InMemoryUserRepository implements UserRepository {
      * @param amount количество кусочков
      * @return новый баланс, если списание выполнено
      */
-    OptionalInt spendShards(long userId, int amount) {
+    synchronized OptionalInt spendShards(long userId, int amount) {
         if (amount <= 0) {
             throw new IllegalArgumentException("Amount to spend must be positive");
         }
@@ -117,7 +117,7 @@ public class InMemoryUserRepository implements UserRepository {
      * @param amount количество кусочков
      * @return новый баланс, если пользователь найден
      */
-    OptionalInt addShards(long userId, int amount) {
+    synchronized OptionalInt addShards(long userId, int amount) {
         if (amount < 0) {
             throw new IllegalArgumentException("Amount to add must be non-negative");
         }
@@ -137,7 +137,7 @@ public class InMemoryUserRepository implements UserRepository {
      * @param amount сумма начисления
      * @return {@code true}, если пользователь найден; иначе {@code false}
      */
-    boolean addBalance(long userId, int amount) {
+    synchronized boolean addBalance(long userId, int amount) {
         if (amount < 0) {
             throw new IllegalArgumentException("Amount to add must be non-negative");
         }
@@ -155,7 +155,7 @@ public class InMemoryUserRepository implements UserRepository {
      * @param userId идентификатор пользователя
      * @return баланс, если пользователь найден
      */
-    OptionalInt findBalance(long userId) {
+    synchronized OptionalInt findBalance(long userId) {
         User user = storage.get(userId);
         return user == null ? OptionalInt.empty() : OptionalInt.of(user.balance());
     }
@@ -166,7 +166,7 @@ public class InMemoryUserRepository implements UserRepository {
      * @param userId идентификатор пользователя
      * @return баланс, если пользователь найден
      */
-    OptionalInt findShards(long userId) {
+    synchronized OptionalInt findShards(long userId) {
         User user = storage.get(userId);
         return user == null ? OptionalInt.empty() : OptionalInt.of(user.shards());
     }
@@ -176,7 +176,7 @@ public class InMemoryUserRepository implements UserRepository {
      *
      * @return копия хранилища
      */
-    Map<Long, User> snapshot() {
+    synchronized Map<Long, User> snapshot() {
         return new HashMap<>(storage);
     }
 
@@ -185,7 +185,7 @@ public class InMemoryUserRepository implements UserRepository {
      *
      * @param snapshot снимок хранилища
      */
-    void restore(Map<Long, User> snapshot) {
+    synchronized void restore(Map<Long, User> snapshot) {
         storage.clear();
         storage.putAll(snapshot);
     }
@@ -195,7 +195,7 @@ public class InMemoryUserRepository implements UserRepository {
      *
      * @return количество пользователей
      */
-    public int size() {
+    public synchronized int size() {
         return storage.size();
     }
 }

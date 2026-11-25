@@ -6,6 +6,7 @@ import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
 import com.avengers.cardgame.service.CraftResult;
+import com.avengers.cardgame.service.command.CommandNames;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -26,9 +27,6 @@ public class CraftRenderer {
     /** Количество кнопок редкости в одном ряду. */
     private static final int BUTTONS_PER_ROW = 2;
 
-    /** Префикс команды крафта выбранной редкости. */
-    private static final String CRAFT_COMMAND_PREFIX = "/craft_make ";
-
     /** Рендерер героев. */
     private final HeroRenderer heroRenderer = new HeroRenderer();
 
@@ -48,7 +46,7 @@ public class CraftRenderer {
             currentRow.add(new Button(RARITY_BUTTON_TEMPLATE.formatted(
                     heroRenderer.emoji(rarity), heroRenderer.title(rarity),
                     gameConfig.rarity(rarity).craftCost(), shardsEmoji),
-                    CRAFT_COMMAND_PREFIX + rarity.name()));
+                    CommandNames.CRAFT_MAKE + " " + rarity.name()));
             if (currentRow.size() == BUTTONS_PER_ROW) {
                 rows.add(currentRow);
                 currentRow = new ArrayList<>();

@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Игровые настройки (кулдауны, интервалы и параметры валюты).
+ * Игровые настройки (кулдауны, интервалы, параметры валюты и экономики).
  *
  * @param dailyCooldown           время ожидания между командами /daily
  * @param notificationInterval    интервал проверки планировщика уведомлений
@@ -27,18 +27,6 @@ public record GameConfig(
         @NotNull Map<HeroRarity, RarityConfig> rarityConfigs,
         int marketCommissionPercent
 ) {
-
-    /** Название валюты по умолчанию. */
-    public static final String DEFAULT_CURRENCY_NAME = "Кристаллы";
-
-    /** Эмодзи валюты по умолчанию. */
-    public static final String DEFAULT_CURRENCY_EMOJI = "💎";
-
-    /** Эмодзи кусочков по умолчанию. */
-    public static final String DEFAULT_SHARDS_EMOJI = "🧩";
-
-    /** Комиссия рынка по умолчанию (в процентах). */
-    public static final int DEFAULT_MARKET_COMMISSION_PERCENT = 5;
 
     /**
      * Создаёт конфигурацию с валидацией инвариантов.
@@ -85,78 +73,16 @@ public record GameConfig(
     }
 
     /**
-     * Создаёт конфигурацию с валютой, кусочками и экономикой по умолчанию.
-     *
-     * @param dailyCooldown        время ожидания между /daily
-     * @param notificationInterval интервал планировщика
-     */
-    public GameConfig(Duration dailyCooldown, Duration notificationInterval) {
-        this(dailyCooldown, notificationInterval, DEFAULT_CURRENCY_NAME, DEFAULT_CURRENCY_EMOJI,
-                DEFAULT_SHARDS_EMOJI);
-    }
-
-    /**
-     * Создаёт конфигурацию с заданной валютой и экономикой по умолчанию.
-     *
-     * @param dailyCooldown        время ожидания между /daily
-     * @param notificationInterval интервал планировщика
-     * @param currencyName         название валюты
-     * @param currencyEmoji        эмодзи валюты
-     */
-    public GameConfig(Duration dailyCooldown, Duration notificationInterval,
-                      String currencyName, String currencyEmoji) {
-        this(dailyCooldown, notificationInterval, currencyName, currencyEmoji, DEFAULT_SHARDS_EMOJI);
-    }
-
-    /**
-     * Создаёт конфигурацию с заданной валютой, кусочками и экономикой по умолчанию.
-     *
-     * @param dailyCooldown        время ожидания между /daily
-     * @param notificationInterval интервал планировщика
-     * @param currencyName         название валюты
-     * @param currencyEmoji        эмодзи валюты
-     * @param shardsEmoji          эмодзи кусочков
-     */
-    public GameConfig(Duration dailyCooldown, Duration notificationInterval,
-                      String currencyName, String currencyEmoji, String shardsEmoji) {
-        this(dailyCooldown, notificationInterval, currencyName, currencyEmoji, shardsEmoji,
-                DEFAULT_MARKET_COMMISSION_PERCENT);
-    }
-
-    /**
-     * Создаёт конфигурацию с заданной валютой, кусочками, комиссией рынка
-     * и экономикой редкостей по умолчанию.
-     *
-     * @param dailyCooldown           время ожидания между /daily
-     * @param notificationInterval    интервал планировщика
-     * @param currencyName            название валюты
-     * @param currencyEmoji           эмодзи валюты
-     * @param shardsEmoji             эмодзи кусочков
-     * @param marketCommissionPercent комиссия рынка в процентах
-     */
-    public GameConfig(Duration dailyCooldown, Duration notificationInterval,
-                      String currencyName, String currencyEmoji, String shardsEmoji,
-                      int marketCommissionPercent) {
-        this(dailyCooldown, notificationInterval, currencyName, currencyEmoji, shardsEmoji,
-                Map.of(
-                        HeroRarity.COMMON, new RarityConfig(1, 5, 10, 200),
-                        HeroRarity.RARE, new RarityConfig(3, 15, 50, 1000),
-                        HeroRarity.EPIC, new RarityConfig(8, 40, 200, 5000),
-                        HeroRarity.LEGENDARY, new RarityConfig(20, 100, 1000, 25000)
-                ),
-                marketCommissionPercent);
-    }
-
-    /**
      * Возвращает экономические параметры редкости.
      *
      * @param rarity редкость
      * @return параметры редкости
+     * @throws IllegalStateException если параметры редкости отсутствуют
      */
     public @NotNull RarityConfig rarity(@NotNull HeroRarity rarity) {
         RarityConfig config = rarityConfigs.get(rarity);
         if (config == null) {
-            throw new IllegalArgumentException("Missing rarity config for " + rarity);
+            throw new IllegalStateException("Missing rarity config for " + rarity);
         }
         return config;
     }

@@ -63,10 +63,13 @@ class CraftMakeCommandHandlerTest {
         handler.handle(context("common"));
 
         Message message = bot.lastSent().message();
-        Assertions.assertTrue(message.text().contains("Крафт успешен"));
-        Assertions.assertTrue(message.text().contains("Pepper"));
-        Assertions.assertTrue(message.text().contains("Потрачено кусочков: 5"));
-        Assertions.assertTrue(message.text().contains("Остаток кусочков: 0"));
+        Assertions.assertEquals("""
+                🔨 Крафт успешен! Потрачено кусочков: 5.
+
+                ⚪ Pepper [Обычная]
+                ⚔️ ATK: 5 | 🛡 DEF: 15 | ❤️ HP: 20
+
+                Остаток кусочков: 0.""", message.text());
     }
 
     /**
@@ -80,9 +83,8 @@ class CraftMakeCommandHandlerTest {
         handler.handle(context("legendary"));
 
         Message message = bot.lastSent().message();
-        Assertions.assertTrue(message.text().contains("Недостаточно кусочков"));
-        Assertions.assertTrue(message.text().contains("Нужно: 100"));
-        Assertions.assertTrue(message.text().contains("у тебя: 15"));
-        Assertions.assertTrue(message.text().contains("Не хватает: 85"));
+        Assertions.assertEquals(
+                "❌ Недостаточно кусочков. Нужно: 100, у тебя: 15. Не хватает: 85.",
+                message.text());
     }
 }

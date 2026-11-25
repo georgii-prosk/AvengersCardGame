@@ -8,12 +8,12 @@ import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.model.UserCard;
 import com.avengers.cardgame.repository.UserCardRepository;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.OptionalInt;
 
 /**
@@ -27,26 +27,21 @@ public class InMemoryUserCardRepository implements UserCardRepository {
     /** Количество копий: пользователь → (герой → количество). */
     private final Map<Long, Map<Long, Integer>> cards = new HashMap<>();
 
-    /** Репозиторий пользователей для составных операций, может быть {@code null}. */
+    /** Репозиторий пользователей для составных операций. */
     private final InMemoryUserRepository userRepository;
 
     /**
-     * Создаёт репозиторий без поддержки составных операций экономики.
+     * @param userRepository репозиторий пользователей для составных операций
      */
-    public InMemoryUserCardRepository() {
-        this(null);
-    }
-
-    /**
-     * @param userRepository репозиторий пользователей для составных операций, может быть {@code null}
-     */
-    public InMemoryUserCardRepository(@Nullable InMemoryUserRepository userRepository) {
-        this.userRepository = userRepository;
+    public InMemoryUserCardRepository(InMemoryUserRepository userRepository) {
+        this.userRepository = Objects.requireNonNull(userRepository, "User repository must not be null");
     }
 
     @Override
     public void addCard(long userId, long heroId) {
-        cards.computeIfAbsent(userId, _ -> new HashMap<>()).merge(heroId, 1, Integer::sum);
+        synchronized (userRepository) {
+            cards.computeIfAbsent(userId, _ -> new HashMap<>()).merge(heroId, 1, Integer::sum);
+        }
     }
 
     @Override
@@ -54,24 +49,23 @@ public class InMemoryUserCardRepository implements UserCardRepository {
         if (count <= 0) {
             throw new IllegalArgumentException("Count to remove must be positive");
         }
-        if (userRepository == null) {
-            throw new IllegalStateException("User repository is required for economy operations");
-        }
-        Map<Long, User> userSnapshot = userRepository.snapshot();
-        Map<Long, Map<Long, Integer>> cardSnapshot = snapshot();
-        try {
-            if (!removeCard(userId, heroId, count)) {
-                throw new NotEnoughCardsException(heroId, count, countByUserIdAndHeroId(userId, heroId));
+        synchronized (userRepository) {
+            Map<Long, User> userSnapshot = userRepository.snapshot();
+            Map<Long, Map<Long, Integer>> cardSnapshot = snapshot();
+            try {
+                if (!removeCard(userId, heroId, count)) {
+                    throw new NotEnoughCardsException(heroId, count, countByUserIdAndHeroId(userId, heroId));
+                }
+                OptionalInt balance = userRepository.addShards(userId, shardsGain);
+                if (balance.isEmpty()) {
+                    throw new UserNotFoundException(userId);
+                }
+                return balance.getAsInt();
+            } catch (AppException | RuntimeException exception) {
+                userRepository.restore(userSnapshot);
+                restore(cardSnapshot);
+                throw exception;
             }
-            OptionalInt balance = userRepository.addShards(userId, shardsGain);
-            if (balance.isEmpty()) {
-                throw new UserNotFoundException(userId);
-            }
-            return balance.getAsInt();
-        } catch (AppException | RuntimeException exception) {
-            userRepository.restore(userSnapshot);
-            restore(cardSnapshot);
-            throw exception;
         }
     }
 
@@ -80,26 +74,25 @@ public class InMemoryUserCardRepository implements UserCardRepository {
         if (shardsCost <= 0) {
             throw new IllegalArgumentException("Craft cost must be positive");
         }
-        if (userRepository == null) {
-            throw new IllegalStateException("User repository is required for economy operations");
-        }
-        Map<Long, User> userSnapshot = userRepository.snapshot();
-        Map<Long, Map<Long, Integer>> cardSnapshot = snapshot();
-        try {
-            OptionalInt balance = userRepository.spendShards(userId, shardsCost);
-            if (balance.isEmpty()) {
-                OptionalInt available = userRepository.findShards(userId);
-                if (available.isEmpty()) {
-                    throw new UserNotFoundException(userId);
+        synchronized (userRepository) {
+            Map<Long, User> userSnapshot = userRepository.snapshot();
+            Map<Long, Map<Long, Integer>> cardSnapshot = snapshot();
+            try {
+                OptionalInt balance = userRepository.spendShards(userId, shardsCost);
+                if (balance.isEmpty()) {
+                    OptionalInt available = userRepository.findShards(userId);
+                    if (available.isEmpty()) {
+                        throw new UserNotFoundException(userId);
+                    }
+                    throw new InsufficientShardsException(shardsCost, available.getAsInt());
                 }
-                throw new InsufficientShardsException(shardsCost, available.getAsInt());
+                addCard(userId, heroId);
+                return balance.getAsInt();
+            } catch (AppException | RuntimeException exception) {
+                userRepository.restore(userSnapshot);
+                restore(cardSnapshot);
+                throw exception;
             }
-            addCard(userId, heroId);
-            return balance.getAsInt();
-        } catch (AppException | RuntimeException exception) {
-            userRepository.restore(userSnapshot);
-            restore(cardSnapshot);
-            throw exception;
         }
     }
 
@@ -115,21 +108,23 @@ public class InMemoryUserCardRepository implements UserCardRepository {
         if (count <= 0) {
             throw new IllegalArgumentException("Count to remove must be positive");
         }
-        Map<Long, Integer> userCards = cards.get(userId);
-        if (userCards == null) {
-            return false;
+        synchronized (userRepository) {
+            Map<Long, Integer> userCards = cards.get(userId);
+            if (userCards == null) {
+                return false;
+            }
+            Integer current = userCards.get(heroId);
+            if (current == null || current < count) {
+                return false;
+            }
+            int remaining = current - count;
+            if (remaining == 0) {
+                userCards.remove(heroId);
+            } else {
+                userCards.put(heroId, remaining);
+            }
+            return true;
         }
-        Integer current = userCards.get(heroId);
-        if (current == null || current < count) {
-            return false;
-        }
-        int remaining = current - count;
-        if (remaining == 0) {
-            userCards.remove(heroId);
-        } else {
-            userCards.put(heroId, remaining);
-        }
-        return true;
     }
 
     /**
@@ -140,10 +135,12 @@ public class InMemoryUserCardRepository implements UserCardRepository {
      */
     @Override
     public @NotNull List<UserCard> findByUserId(long userId) {
-        List<UserCard> result = new ArrayList<>();
-        cards.getOrDefault(userId, Map.of())
-                .forEach((heroId, count) -> result.add(new UserCard(userId, heroId, count)));
-        return result;
+        synchronized (userRepository) {
+            List<UserCard> result = new ArrayList<>();
+            cards.getOrDefault(userId, Map.of())
+                    .forEach((heroId, count) -> result.add(new UserCard(userId, heroId, count)));
+            return result;
+        }
     }
 
     /**
@@ -153,12 +150,17 @@ public class InMemoryUserCardRepository implements UserCardRepository {
      * @return количество карточек
      */
     public int countByUserId(long userId) {
-        return cards.getOrDefault(userId, Map.of()).values().stream().mapToInt(Integer::intValue).sum();
+        synchronized (userRepository) {
+            return cards.getOrDefault(userId, Map.of()).values().stream()
+                    .mapToInt(Integer::intValue).sum();
+        }
     }
 
     @Override
     public int countByUserIdAndHeroId(long userId, long heroId) {
-        return cards.getOrDefault(userId, Map.of()).getOrDefault(heroId, 0);
+        synchronized (userRepository) {
+            return cards.getOrDefault(userId, Map.of()).getOrDefault(heroId, 0);
+        }
     }
 
     /**
@@ -167,9 +169,11 @@ public class InMemoryUserCardRepository implements UserCardRepository {
      * @return копия хранилища
      */
     Map<Long, Map<Long, Integer>> snapshot() {
-        Map<Long, Map<Long, Integer>> copy = new HashMap<>();
-        cards.forEach((userId, heroMap) -> copy.put(userId, new HashMap<>(heroMap)));
-        return copy;
+        synchronized (userRepository) {
+            Map<Long, Map<Long, Integer>> copy = new HashMap<>();
+            cards.forEach((userId, heroMap) -> copy.put(userId, new HashMap<>(heroMap)));
+            return copy;
+        }
     }
 
     /**
@@ -178,7 +182,9 @@ public class InMemoryUserCardRepository implements UserCardRepository {
      * @param snapshot снимок хранилища
      */
     void restore(Map<Long, Map<Long, Integer>> snapshot) {
-        cards.clear();
-        snapshot.forEach((userId, heroMap) -> cards.put(userId, new HashMap<>(heroMap)));
+        synchronized (userRepository) {
+            cards.clear();
+            snapshot.forEach((userId, heroMap) -> cards.put(userId, new HashMap<>(heroMap)));
+        }
     }
 }

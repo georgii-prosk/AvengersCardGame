@@ -1,6 +1,7 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.FakeMarketService;
 import com.avengers.cardgame.model.Hero;
@@ -13,7 +14,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -37,7 +37,7 @@ class MarketFilterCommandHandlerTest {
 
     /** Игровая конфигурация для тестов. */
     private final GameConfig GAME_CONFIG =
-            new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+            new TestGameConfig().defaultConfig();
 
     /** Время создания лота для тестов. */
     private final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 1, 1, 12, 0);
@@ -88,6 +88,9 @@ class MarketFilterCommandHandlerTest {
 
         handler.handle(context("common"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("#7"));
+        Assertions.assertEquals("""
+                🏪 Рынок (страница 1/1):
+                #7 ⚪ Pepper [Обычная] — 100 💎 (продавец: Seller)""",
+                bot.lastSent().message().text());
     }
 }

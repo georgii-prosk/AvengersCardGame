@@ -16,10 +16,7 @@ class GameConfigTest {
     @Test
     @DisplayName("Создаёт валидную конфигурацию")
     void createsValidConfig() {
-        GameConfig config = new GameConfig(
-                Duration.ofHours(24),
-                Duration.ofMinutes(30)
-        );
+        GameConfig config = new TestGameConfig().defaultConfig();
 
         Assertions.assertEquals(Duration.ofHours(24), config.dailyCooldown());
         Assertions.assertEquals(Duration.ofMinutes(30), config.notificationInterval());
@@ -29,52 +26,35 @@ class GameConfigTest {
     @DisplayName("Бросает исключение при нулевом кулдауне")
     void throwsOnZeroCooldown() {
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new GameConfig(Duration.ZERO, Duration.ofMinutes(30)));
+                () -> new TestGameConfig().withCooldown(Duration.ZERO));
     }
 
     @Test
     @DisplayName("Бросает исключение при отрицательном кулдауне")
     void throwsOnNegativeCooldown() {
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new GameConfig(Duration.ofMinutes(-1), Duration.ofMinutes(30)));
+                () -> new TestGameConfig().withCooldown(Duration.ofMinutes(-1)));
     }
 
     @Test
     @DisplayName("Бросает исключение при нулевом интервале уведомлений")
     void throwsOnZeroNotificationInterval() {
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new GameConfig(Duration.ofHours(24), Duration.ZERO));
+                () -> new TestGameConfig().withNotificationInterval(Duration.ZERO));
     }
 
     @Test
     @DisplayName("Бросает исключение при null вместо кулдауна")
     void throwsOnNullCooldown() {
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new GameConfig(null, Duration.ofMinutes(30)));
-    }
-
-    @Test
-    @DisplayName("Использует валюту по умолчанию в коротком конструкторе")
-    void usesDefaultCurrencyInShortConstructor() {
-        GameConfig config = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
-
-        Assertions.assertEquals(GameConfig.DEFAULT_CURRENCY_NAME, config.currencyName());
-        Assertions.assertEquals(GameConfig.DEFAULT_CURRENCY_EMOJI, config.currencyEmoji());
-    }
-
-    @Test
-    @DisplayName("Использует эмодзи кусочков по умолчанию в коротком конструкторе")
-    void usesDefaultShardsEmojiInShortConstructor() {
-        GameConfig config = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
-
-        Assertions.assertEquals(GameConfig.DEFAULT_SHARDS_EMOJI, config.shardsEmoji());
+                () -> new TestGameConfig().withCooldown(null));
     }
 
     @Test
     @DisplayName("Сохраняет заданные название и эмодзи валюты")
     void keepsCustomCurrency() {
-        GameConfig config = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30),
-                "Гири", "🪙");
+        GameConfig config = new TestGameConfig()
+                .withCurrency("Гири", "🪙", TestGameConfig.SHARDS_EMOJI);
 
         Assertions.assertEquals("Гири", config.currencyName());
         Assertions.assertEquals("🪙", config.currencyEmoji());
@@ -83,8 +63,8 @@ class GameConfigTest {
     @Test
     @DisplayName("Сохраняет заданный эмодзи кусочков")
     void keepsCustomShardsEmoji() {
-        GameConfig config = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30),
-                "Гири", "🪙", "⭐");
+        GameConfig config = new TestGameConfig()
+                .withCurrency("Гири", "🪙", "⭐");
 
         Assertions.assertEquals("⭐", config.shardsEmoji());
     }
@@ -93,52 +73,56 @@ class GameConfigTest {
     @DisplayName("Бросает исключение при пустом названии валюты")
     void throwsOnBlankCurrencyName() {
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30), "  ", "💎"));
+                () -> new TestGameConfig().withCurrency("  ", TestGameConfig.CURRENCY_EMOJI,
+                        TestGameConfig.SHARDS_EMOJI));
     }
 
     @Test
     @DisplayName("Бросает исключение при пустом эмодзи валюты")
     void throwsOnBlankCurrencyEmoji() {
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30), "Кристаллы", " "));
+                () -> new TestGameConfig().withCurrency(TestGameConfig.CURRENCY_NAME, " ",
+                        TestGameConfig.SHARDS_EMOJI));
     }
 
     @Test
     @DisplayName("Бросает исключение при null вместо названия валюты")
     void throwsOnNullCurrencyName() {
         Assertions.assertThrows(NullPointerException.class,
-                () -> new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30), null, "💎"));
+                () -> new TestGameConfig().withCurrency(null, TestGameConfig.CURRENCY_EMOJI,
+                        TestGameConfig.SHARDS_EMOJI));
     }
 
     @Test
     @DisplayName("Бросает исключение при null вместо эмодзи валюты")
     void throwsOnNullCurrencyEmoji() {
         Assertions.assertThrows(NullPointerException.class,
-                () -> new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30), "Кристаллы", null));
+                () -> new TestGameConfig().withCurrency(TestGameConfig.CURRENCY_NAME, null,
+                        TestGameConfig.SHARDS_EMOJI));
     }
 
     @Test
     @DisplayName("Бросает исключение при пустом эмодзи кусочков")
     void throwsOnBlankShardsEmoji() {
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30),
-                        "Кристаллы", "💎", " "));
+                () -> new TestGameConfig().withCurrency(TestGameConfig.CURRENCY_NAME,
+                        TestGameConfig.CURRENCY_EMOJI, " "));
     }
 
     @Test
     @DisplayName("Бросает исключение при null вместо эмодзи кусочков")
     void throwsOnNullShardsEmoji() {
         Assertions.assertThrows(NullPointerException.class,
-                () -> new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30),
-                        "Кристаллы", "💎", null));
+                () -> new TestGameConfig().withCurrency(TestGameConfig.CURRENCY_NAME,
+                        TestGameConfig.CURRENCY_EMOJI, null));
     }
 
     @Test
     @DisplayName("Использует параметры экономики по умолчанию")
     void usesDefaultEconomyParams() {
-        GameConfig config = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+        GameConfig config = new TestGameConfig().defaultConfig();
 
-        Assertions.assertEquals(GameConfig.DEFAULT_MARKET_COMMISSION_PERCENT, config.marketCommissionPercent());
+        Assertions.assertEquals(TestGameConfig.COMMISSION, config.marketCommissionPercent());
         Assertions.assertEquals(1, config.rarity(HeroRarity.COMMON).shardsYield());
         Assertions.assertEquals(5, config.rarity(HeroRarity.COMMON).craftCost());
         Assertions.assertEquals(10, config.rarity(HeroRarity.COMMON).minPrice());
@@ -152,9 +136,7 @@ class GameConfigTest {
     @Test
     @DisplayName("Сохраняет заданную комиссию рынка")
     void keepsCustomCommission() {
-        GameConfig config = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30),
-                GameConfig.DEFAULT_CURRENCY_NAME, GameConfig.DEFAULT_CURRENCY_EMOJI,
-                GameConfig.DEFAULT_SHARDS_EMOJI, new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30)).rarityConfigs(), 10);
+        GameConfig config = new TestGameConfig().withCommission(10);
 
         Assertions.assertEquals(10, config.marketCommissionPercent());
     }
@@ -163,13 +145,9 @@ class GameConfigTest {
     @DisplayName("Бросает исключение при комиссии вне диапазона 0..100")
     void throwsOnCommissionOutOfRange() {
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30),
-                        GameConfig.DEFAULT_CURRENCY_NAME, GameConfig.DEFAULT_CURRENCY_EMOJI,
-                        GameConfig.DEFAULT_SHARDS_EMOJI, new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30)).rarityConfigs(), 101));
+                () -> new TestGameConfig().withCommission(101));
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30),
-                        GameConfig.DEFAULT_CURRENCY_NAME, GameConfig.DEFAULT_CURRENCY_EMOJI,
-                        GameConfig.DEFAULT_SHARDS_EMOJI, new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30)).rarityConfigs(), -1));
+                () -> new TestGameConfig().withCommission(-1));
     }
 
     @Test
@@ -177,8 +155,8 @@ class GameConfigTest {
     void throwsOnMissingRarityConfig() {
         Assertions.assertThrows(IllegalArgumentException.class,
                 () -> new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30),
-                        GameConfig.DEFAULT_CURRENCY_NAME, GameConfig.DEFAULT_CURRENCY_EMOJI,
-                        GameConfig.DEFAULT_SHARDS_EMOJI, Map.of(), 5));
+                        TestGameConfig.CURRENCY_NAME, TestGameConfig.CURRENCY_EMOJI,
+                        TestGameConfig.SHARDS_EMOJI, Map.of(), TestGameConfig.COMMISSION));
     }
 
     @Test

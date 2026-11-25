@@ -12,17 +12,16 @@ import org.junit.jupiter.api.Test;
 class CancelCommandHandlerTest {
 
     /**
-     * Проверяет, что команда сообщает об отмене действия.
+     * Проверяет, что команда не отправляет сообщение.
      */
     @Test
-    @DisplayName("Сообщает об отмене действия")
-    void sendsCancelMessage() {
+    @DisplayName("Не отправляет сообщение при отмене")
+    void sendsNothing() {
         FakeBot bot = new FakeBot();
         CancelCommandHandler handler = new CancelCommandHandler();
 
         handler.handle(new CommandContext(1L, 10L, "Tony", "", bot));
 
-        Assertions.assertEquals("Действие отменено.", bot.lastSent().message().text());
-        Assertions.assertEquals(10L, bot.lastSent().chatId());
+        Assertions.assertEquals(0, bot.count());
     }
 }

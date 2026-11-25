@@ -1,6 +1,7 @@
 package com.avengers.cardgame.presentation;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
@@ -9,7 +10,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 
 /**
  * Тесты для {@link CraftRenderer}.
@@ -21,7 +21,7 @@ class CraftRendererTest {
 
     /** Игровая конфигурация для тестов. */
     private final GameConfig GAME_CONFIG =
-            new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+            new TestGameConfig().defaultConfig();
 
     /** Герой для тестов. */
     private final Hero HERO =
@@ -38,13 +38,15 @@ class CraftRendererTest {
     void rendersMenu() {
         Message message = renderer.renderMenu(50, SHARDS_EMOJI, GAME_CONFIG);
 
-        Assertions.assertTrue(message.text().contains("Твой баланс кусочков: 50 🧩"));
+        Assertions.assertEquals("🔨 Выбери редкость для крафта. Твой баланс кусочков: 50 🧩.",
+                message.text());
         Assertions.assertEquals(2, message.buttons().size());
         Assertions.assertEquals("/craft_make COMMON",
                 message.buttons().getFirst().getFirst().callbackData());
         Assertions.assertEquals("/craft_make LEGENDARY",
                 message.buttons().getLast().getLast().callbackData());
-        Assertions.assertTrue(message.buttons().getFirst().getFirst().text().contains("5 🧩"));
+        Assertions.assertEquals("⚪ Обычная — 5 🧩",
+                message.buttons().getFirst().getFirst().text());
     }
 
     /**
@@ -57,10 +59,13 @@ class CraftRendererTest {
 
         Message message = renderer.renderCraftSuccess(result);
 
-        Assertions.assertTrue(message.text().contains("🔨 Крафт успешен! Потрачено кусочков: 5."));
-        Assertions.assertTrue(message.text().contains("Pepper"));
-        Assertions.assertTrue(message.text().contains("⚔️ ATK: 5 | 🛡 DEF: 15 | ❤️ HP: 20"));
-        Assertions.assertTrue(message.text().contains("Остаток кусочков: 45."));
+        Assertions.assertEquals("""
+                🔨 Крафт успешен! Потрачено кусочков: 5.
+
+                ⚪ Pepper [Обычная]
+                ⚔️ ATK: 5 | 🛡 DEF: 15 | ❤️ HP: 20
+
+                Остаток кусочков: 45.""", message.text());
     }
 
     /**

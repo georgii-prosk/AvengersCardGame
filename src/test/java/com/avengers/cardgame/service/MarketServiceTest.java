@@ -1,6 +1,7 @@
 package com.avengers.cardgame.service;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.dto.PurchaseResult;
 import com.avengers.cardgame.exception.InsufficientFundsException;
 import com.avengers.cardgame.exception.InvalidPriceException;
@@ -23,7 +24,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -50,7 +50,7 @@ class MarketServiceTest {
     private final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 1, 1, 12, 0);
 
     /** Игровая конфигурация. */
-    private final GameConfig gameConfig = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+    private final GameConfig gameConfig = new TestGameConfig().defaultConfig();
 
     /** Репозиторий пользователей. */
     private InMemoryUserRepository userRepository;
@@ -196,9 +196,7 @@ class MarketServiceTest {
     @Test
     @DisplayName("Считает сумму продавца по комиссии из конфигурации")
     void buysListingWithConfiguredCommission() throws Exception {
-        GameConfig customConfig = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30),
-                GameConfig.DEFAULT_CURRENCY_NAME, GameConfig.DEFAULT_CURRENCY_EMOJI,
-                GameConfig.DEFAULT_SHARDS_EMOJI, gameConfig.rarityConfigs(), 10);
+        GameConfig customConfig = new TestGameConfig().withCommission(10);
         MarketService customService = new MarketServiceImpl(userRepository, marketRepository,
                 heroRepository, customConfig);
         registerUser(BUYER_ID, 150);

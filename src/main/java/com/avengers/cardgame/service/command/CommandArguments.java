@@ -11,9 +11,6 @@ public final class CommandArguments {
     /** Разделитель частей аргумента команды. */
     private static final String PART_SEPARATOR = "\\s+";
 
-    /** Ожидаемое количество частей составного аргумента. */
-    private static final int EXPECTED_PART_COUNT = 2;
-
     private CommandArguments() {
     }
 
@@ -53,33 +50,5 @@ public final class CommandArguments {
         } catch (NumberFormatException exception) {
             return Optional.empty();
         }
-    }
-
-    /**
-     * Разбирает составной аргумент «идентификатор + число».
-     *
-     * @param argument аргумент команды
-     * @return пара идентификатор и число, если разбор удался
-     */
-    public static Optional<IdAndNumber> parseIdAndNumber(String argument) {
-        List<String> parts = splitParts(argument);
-        if (parts.size() != EXPECTED_PART_COUNT) {
-            return Optional.empty();
-        }
-        Optional<Long> id = parseId(parts.getFirst());
-        Optional<Integer> number = parseNumber(parts.getLast());
-        if (id.isEmpty() || number.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(new IdAndNumber(id.get(), number.get()));
-    }
-
-    /**
-     * Пара «идентификатор + число».
-     *
-     * @param id     идентификатор
-     * @param number число
-     */
-    public record IdAndNumber(long id, int number) {
     }
 }

@@ -28,6 +28,7 @@ class OwnListingExceptionTest {
     void messageContainsListingId() {
         OwnListingException exception = new OwnListingException(42L);
 
-        Assertions.assertTrue(exception.getMessage().contains("42"));
+        Assertions.assertEquals("Own listing cannot be bought: listingId=42",
+                exception.getMessage());
     }
 }

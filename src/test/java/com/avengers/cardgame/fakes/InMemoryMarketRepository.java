@@ -9,7 +9,6 @@ import com.avengers.cardgame.model.MarketListing;
 import com.avengers.cardgame.model.User;
 import com.avengers.cardgame.repository.MarketRepository;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,18 +33,18 @@ public class InMemoryMarketRepository implements MarketRepository {
     /** Следующий идентификатор лота. */
     private long nextId = 1;
 
-    /** Репозиторий пользователей для составных операций, может быть {@code null}. */
+    /** Репозиторий пользователей для составных операций. */
     private final InMemoryUserRepository userRepository;
 
-    /** Репозиторий карточек для составных операций, может быть {@code null}. */
+    /** Репозиторий карточек для составных операций. */
     private final InMemoryUserCardRepository userCardRepository;
 
     /**
-     * @param userRepository     репозиторий пользователей, может быть {@code null}
-     * @param userCardRepository репозиторий карточек, может быть {@code null}
+     * @param userRepository     репозиторий пользователей
+     * @param userCardRepository репозиторий карточек
      */
-    public InMemoryMarketRepository(@Nullable InMemoryUserRepository userRepository,
-                                    @Nullable InMemoryUserCardRepository userCardRepository) {
+    public InMemoryMarketRepository(InMemoryUserRepository userRepository,
+                                    InMemoryUserCardRepository userCardRepository) {
         this.userRepository = userRepository;
         this.userCardRepository = userCardRepository;
     }
@@ -57,87 +56,89 @@ public class InMemoryMarketRepository implements MarketRepository {
      * @return сохранённый лот с присвоенным идентификатором
      */
     public @NotNull MarketListing saveListing(@NotNull MarketListing listing) {
-        long id = listing.id() == 0 ? nextId++ : listing.id();
-        MarketListing saved = new MarketListing(id, listing.sellerId(), listing.heroId(),
-                listing.price(), listing.createdAt());
-        storage.put(id, saved);
-        return saved;
+        synchronized (userRepository) {
+            long id = listing.id() == 0 ? nextId++ : listing.id();
+            MarketListing saved = new MarketListing(id, listing.sellerId(), listing.heroId(),
+                    listing.price(), listing.createdAt());
+            storage.put(id, saved);
+            return saved;
+        }
     }
 
     @Override
     public @NotNull MarketListing createListing(long sellerId, long heroId, int price) throws AppException {
-        if (userRepository == null || userCardRepository == null) {
-            throw new IllegalStateException("User and card repositories are required for economy operations");
-        }
-        Map<Long, User> userSnapshot = userRepository.snapshot();
-        Map<Long, Map<Long, Integer>> cardSnapshot = userCardRepository.snapshot();
-        Map<Long, MarketListing> marketSnapshot = snapshot();
-        long nextIdSnapshot = nextId;
-        try {
-            if (!userCardRepository.removeCard(sellerId, heroId, 1)) {
-                throw new NotEnoughCardsException(heroId, 1,
-                        userCardRepository.countByUserIdAndHeroId(sellerId, heroId));
+        synchronized (userRepository) {
+            Map<Long, User> userSnapshot = userRepository.snapshot();
+            Map<Long, Map<Long, Integer>> cardSnapshot = userCardRepository.snapshot();
+            Map<Long, MarketListing> marketSnapshot = snapshot();
+            long nextIdSnapshot = nextId;
+            try {
+                if (!userCardRepository.removeCard(sellerId, heroId, 1)) {
+                    throw new NotEnoughCardsException(heroId, 1,
+                            userCardRepository.countByUserIdAndHeroId(sellerId, heroId));
+                }
+                return saveListing(new MarketListing(0, sellerId, heroId, price, LocalDateTime.now()));
+            } catch (AppException | RuntimeException exception) {
+                restore(userRepository, userCardRepository, userSnapshot, cardSnapshot, marketSnapshot,
+                        nextIdSnapshot);
+                throw exception;
             }
-            return saveListing(new MarketListing(0, sellerId, heroId, price, LocalDateTime.now()));
-        } catch (AppException | RuntimeException exception) {
-            restore(userRepository, userCardRepository, userSnapshot, cardSnapshot, marketSnapshot, nextIdSnapshot);
-            throw exception;
         }
     }
 
     @Override
     public @NotNull MarketListing buy(long buyerId, long listingId, int sellerAmount) throws AppException {
-        if (userRepository == null || userCardRepository == null) {
-            throw new IllegalStateException("User and card repositories are required for economy operations");
-        }
-        Map<Long, User> userSnapshot = userRepository.snapshot();
-        Map<Long, Map<Long, Integer>> cardSnapshot = userCardRepository.snapshot();
-        Map<Long, MarketListing> marketSnapshot = snapshot();
-        long nextIdSnapshot = nextId;
-        try {
-            MarketListing deleted = storage.remove(listingId);
-            if (deleted == null) {
-                throw new ListingUnavailableException(listingId);
-            }
-            OptionalInt balance = userRepository.spendBalance(buyerId, deleted.price());
-            if (balance.isEmpty()) {
-                OptionalInt available = userRepository.findBalance(buyerId);
-                if (available.isEmpty()) {
-                    throw new UserNotFoundException(buyerId);
+        synchronized (userRepository) {
+            Map<Long, User> userSnapshot = userRepository.snapshot();
+            Map<Long, Map<Long, Integer>> cardSnapshot = userCardRepository.snapshot();
+            Map<Long, MarketListing> marketSnapshot = snapshot();
+            long nextIdSnapshot = nextId;
+            try {
+                MarketListing deleted = storage.remove(listingId);
+                if (deleted == null) {
+                    throw new ListingUnavailableException(listingId);
                 }
-                throw new InsufficientFundsException(deleted.price(), available.getAsInt());
+                OptionalInt balance = userRepository.spendBalance(buyerId, deleted.price());
+                if (balance.isEmpty()) {
+                    OptionalInt available = userRepository.findBalance(buyerId);
+                    if (available.isEmpty()) {
+                        throw new UserNotFoundException(buyerId);
+                    }
+                    throw new InsufficientFundsException(deleted.price(), available.getAsInt());
+                }
+                if (!userRepository.addBalance(deleted.sellerId(), sellerAmount)) {
+                    throw new UserNotFoundException(deleted.sellerId());
+                }
+                userCardRepository.addCard(buyerId, deleted.heroId());
+                return deleted;
+            } catch (AppException | RuntimeException exception) {
+                restore(userRepository, userCardRepository, userSnapshot, cardSnapshot, marketSnapshot,
+                        nextIdSnapshot);
+                throw exception;
             }
-            if (!userRepository.addBalance(deleted.sellerId(), sellerAmount)) {
-                throw new UserNotFoundException(deleted.sellerId());
-            }
-            userCardRepository.addCard(buyerId, deleted.heroId());
-            return deleted;
-        } catch (AppException | RuntimeException exception) {
-            restore(userRepository, userCardRepository, userSnapshot, cardSnapshot, marketSnapshot, nextIdSnapshot);
-            throw exception;
         }
     }
 
     @Override
     public @NotNull MarketListing cancelListing(long sellerId, long listingId) throws AppException {
-        if (userRepository == null || userCardRepository == null) {
-            throw new IllegalStateException("User and card repositories are required for economy operations");
-        }
-        Map<Long, User> userSnapshot = userRepository.snapshot();
-        Map<Long, Map<Long, Integer>> cardSnapshot = userCardRepository.snapshot();
-        Map<Long, MarketListing> marketSnapshot = snapshot();
-        long nextIdSnapshot = nextId;
-        try {
-            MarketListing listing = storage.get(listingId);
-            if (listing == null || listing.sellerId() != sellerId) {
-                throw new ListingUnavailableException(listingId);
+        synchronized (userRepository) {
+            Map<Long, User> userSnapshot = userRepository.snapshot();
+            Map<Long, Map<Long, Integer>> cardSnapshot = userCardRepository.snapshot();
+            Map<Long, MarketListing> marketSnapshot = snapshot();
+            long nextIdSnapshot = nextId;
+            try {
+                MarketListing listing = storage.get(listingId);
+                if (listing == null || listing.sellerId() != sellerId) {
+                    throw new ListingUnavailableException(listingId);
+                }
+                storage.remove(listingId);
+                userCardRepository.addCard(sellerId, listing.heroId());
+                return listing;
+            } catch (AppException | RuntimeException exception) {
+                restore(userRepository, userCardRepository, userSnapshot, cardSnapshot, marketSnapshot,
+                        nextIdSnapshot);
+                throw exception;
             }
-            storage.remove(listingId);
-            userCardRepository.addCard(sellerId, listing.heroId());
-            return listing;
-        } catch (AppException | RuntimeException exception) {
-            restore(userRepository, userCardRepository, userSnapshot, cardSnapshot, marketSnapshot, nextIdSnapshot);
-            throw exception;
         }
     }
 
@@ -149,19 +150,25 @@ public class InMemoryMarketRepository implements MarketRepository {
      */
     @Override
     public @NotNull Optional<MarketListing> findById(long listingId) {
-        return Optional.ofNullable(storage.get(listingId));
+        synchronized (userRepository) {
+            return Optional.ofNullable(storage.get(listingId));
+        }
     }
 
     @Override
     public @NotNull List<MarketListing> findAllActive() {
-        return sorted(storage.values());
+        synchronized (userRepository) {
+            return sorted(storage.values());
+        }
     }
 
     @Override
     public @NotNull List<MarketListing> findBySeller(long sellerId) {
-        return sorted(storage.values().stream()
-                .filter(listing -> listing.sellerId() == sellerId)
-                .toList());
+        synchronized (userRepository) {
+            return sorted(storage.values().stream()
+                    .filter(listing -> listing.sellerId() == sellerId)
+                    .toList());
+        }
     }
 
     /**
@@ -182,7 +189,9 @@ public class InMemoryMarketRepository implements MarketRepository {
      * @return копия хранилища
      */
     Map<Long, MarketListing> snapshot() {
-        return new HashMap<>(storage);
+        synchronized (userRepository) {
+            return new HashMap<>(storage);
+        }
     }
 
     /**
@@ -198,17 +207,21 @@ public class InMemoryMarketRepository implements MarketRepository {
     private void restore(InMemoryUserRepository users, InMemoryUserCardRepository cards,
                          Map<Long, User> userSnapshot, Map<Long, Map<Long, Integer>> cardSnapshot,
                          Map<Long, MarketListing> marketSnapshot, long nextIdSnapshot) {
-        users.restore(userSnapshot);
-        cards.restore(cardSnapshot);
-        storage.clear();
-        storage.putAll(marketSnapshot);
-        nextId = nextIdSnapshot;
+        synchronized (userRepository) {
+            users.restore(userSnapshot);
+            cards.restore(cardSnapshot);
+            storage.clear();
+            storage.putAll(marketSnapshot);
+            nextId = nextIdSnapshot;
+        }
     }
 
     /**
      * @return количество сохранённых лотов
      */
     public int size() {
-        return storage.size();
+        synchronized (userRepository) {
+            return storage.size();
+        }
     }
 }

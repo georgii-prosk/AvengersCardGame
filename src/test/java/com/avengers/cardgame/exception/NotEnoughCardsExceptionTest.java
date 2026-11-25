@@ -17,9 +17,8 @@ class NotEnoughCardsExceptionTest {
     void messageContainsDetails() {
         NotEnoughCardsException exception = new NotEnoughCardsException(5L, 3, 1);
 
-        Assertions.assertTrue(exception.getMessage().contains("5"));
-        Assertions.assertTrue(exception.getMessage().contains("3"));
-        Assertions.assertTrue(exception.getMessage().contains("1"));
+        Assertions.assertEquals("Not enough cards: heroId=5, requested=3, available=1",
+                exception.getMessage());
     }
 
     /**

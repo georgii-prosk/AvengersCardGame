@@ -4,6 +4,7 @@ import com.avengers.cardgame.messaging.Button;
 import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.MarketListing;
+import com.avengers.cardgame.service.command.CommandNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,26 +21,11 @@ public class SellRenderer {
     /** Сообщение при отсутствии карточек. */
     private static final String EMPTY_MESSAGE = "У тебя пока нет карточек для продажи.";
 
-    /** Префикс команды выбора карточки. */
-    private static final String CARD_COMMAND_PREFIX = "/sell_pick ";
-
-    /** Префикс команды переключения страницы. */
-    private static final String PAGE_COMMAND_PREFIX = "/sell_page ";
-
-    /** Префикс команды выбора цены. */
-    private static final String PRICE_COMMAND_PREFIX = "/sell_price ";
-
-    /** Префикс команды подтверждения лота. */
-    private static final String CONFIRM_COMMAND_PREFIX = "/sell_confirm ";
-
     /** Текст кнопки подтверждения. */
     private static final String CONFIRM_BUTTON_TEXT = "Подтвердить";
 
     /** Текст кнопки отмены. */
     private static final String CANCEL_BUTTON_TEXT = "Отмена";
-
-    /** Команда отмены. */
-    private static final String CANCEL_COMMAND = "/cancel";
 
     /** Рендерер страниц инвентаря. */
     private final InventoryRenderer inventoryRenderer = new InventoryRenderer();
@@ -56,7 +42,7 @@ public class SellRenderer {
      */
     public Message renderSelection(@NotNull List<InventoryItem> items, int page) {
         return inventoryRenderer.render(items, page, EMPTY_MESSAGE, HEADER_TEMPLATE,
-                CARD_COMMAND_PREFIX, PAGE_COMMAND_PREFIX);
+                CommandNames.SELL_PICK + " ", CommandNames.SELL_PAGE + " ");
     }
 
     /**
@@ -78,15 +64,15 @@ public class SellRenderer {
 
         List<Button> priceButtons = List.of(
                 new Button("Минимум: %d %s".formatted(minPrice, currency),
-                        PRICE_COMMAND_PREFIX + hero.id() + " " + minPrice),
+                        CommandNames.SELL_PRICE + " " + hero.id() + " " + minPrice),
                 new Button("Средняя: %d %s".formatted(averagePrice, currency),
-                        PRICE_COMMAND_PREFIX + hero.id() + " " + averagePrice),
+                        CommandNames.SELL_PRICE + " " + hero.id() + " " + averagePrice),
                 new Button("Максимум: %d %s".formatted(maxPrice, currency),
-                        PRICE_COMMAND_PREFIX + hero.id() + " " + maxPrice)
+                        CommandNames.SELL_PRICE + " " + hero.id() + " " + maxPrice)
         );
         return new Message(text, List.of(
                 priceButtons,
-                List.of(new Button(CANCEL_BUTTON_TEXT, CANCEL_COMMAND))));
+                List.of(new Button(CANCEL_BUTTON_TEXT, CommandNames.CANCEL))));
     }
 
     /**
@@ -108,8 +94,8 @@ public class SellRenderer {
                 price, currency, commissionPercent, sellerAmount, currency);
         return new Message(text, List.of(
                 List.of(new Button(CONFIRM_BUTTON_TEXT,
-                                CONFIRM_COMMAND_PREFIX + hero.id() + " " + price),
-                        new Button(CANCEL_BUTTON_TEXT, CANCEL_COMMAND))));
+                                CommandNames.SELL_CONFIRM + " " + hero.id() + " " + price),
+                        new Button(CANCEL_BUTTON_TEXT, CommandNames.CANCEL))));
     }
 
     /**

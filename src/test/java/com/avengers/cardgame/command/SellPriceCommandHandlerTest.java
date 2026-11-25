@@ -1,6 +1,7 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.messaging.Message;
@@ -12,7 +13,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 
 /**
  * Тесты для {@link SellPriceCommandHandler}.
@@ -31,7 +31,7 @@ class SellPriceCommandHandlerTest {
 
     /** Игровая конфигурация для тестов. */
     private final GameConfig GAME_CONFIG =
-            new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+            new TestGameConfig().defaultConfig();
 
     /** Фейковый бот. */
     private FakeBot bot;
@@ -66,8 +66,9 @@ class SellPriceCommandHandlerTest {
         handler.handle(context("1 100"));
 
         Message message = bot.lastSent().message();
-        Assertions.assertTrue(message.text().contains("Комиссия при продаже: 5%"));
-        Assertions.assertTrue(message.text().contains("Ты получишь 95"));
+        Assertions.assertEquals("""
+                🏷 Выставить ⚪ Pepper [Обычная] за 100 💎?
+                Комиссия при продаже: 5%. Ты получишь 95 💎.""", message.text());
         Assertions.assertEquals("/sell_confirm 1 100",
                 message.buttons().getFirst().getFirst().callbackData());
     }
@@ -80,7 +81,8 @@ class SellPriceCommandHandlerTest {
     void rejectsPriceOutOfRange() {
         handler.handle(context("1 5"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("от 10 до 200"));
+        Assertions.assertEquals("❌ Цена должна быть от 10 до 200 💎.",
+                bot.lastSent().message().text());
     }
 
     /**
@@ -91,6 +93,7 @@ class SellPriceCommandHandlerTest {
     void rejectsInvalidPriceArguments() {
         handler.handle(context("1"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("Некорректные параметры"));
+        Assertions.assertEquals("Некорректные параметры цены.",
+                bot.lastSent().message().text());
     }
 }

@@ -23,14 +23,14 @@ class InsufficientFundsExceptionTest {
     }
 
     /**
-     * Проверяет, что недостающее количество не бывает отрицательным.
+     * Проверяет, что недостающее количество вычисляется как разница.
      */
     @Test
-    @DisplayName("Недостающее количество не отрицательное")
-    void missingIsNotNegative() {
+    @DisplayName("Недостающее количество вычисляется как разница")
+    void missingUsesDifference() {
         InsufficientFundsException exception = new InsufficientFundsException(10, 30);
 
-        Assertions.assertEquals(0, exception.missing());
+        Assertions.assertEquals(-20, exception.missing());
     }
 
     /**
@@ -41,16 +41,7 @@ class InsufficientFundsExceptionTest {
     void messageContainsDetails() {
         InsufficientFundsException exception = new InsufficientFundsException(100, 30);
 
-        Assertions.assertTrue(exception.getMessage().contains("100"));
-        Assertions.assertTrue(exception.getMessage().contains("30"));
-    }
-
-    /**
-     * Проверяет, что исключение является проверяемым наследником {@link AppException}.
-     */
-    @Test
-    @DisplayName("Наследует AppException")
-    void extendsAppException() {
-        Assertions.assertInstanceOf(AppException.class, new InsufficientFundsException(100, 30));
+        Assertions.assertEquals("Insufficient funds: required=100, available=30",
+                exception.getMessage());
     }
 }

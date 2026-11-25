@@ -72,9 +72,6 @@ public class CardServiceImpl implements CardService {
         this.clock = clock;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public synchronized DailyRewardResult grantDaily(long userId) throws UserNotFoundException {
         // Метод синхронизирован для предотвращения состояния гонки (check-then-act):
@@ -103,9 +100,6 @@ public class CardServiceImpl implements CardService {
         return new Success(heroes);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public DisassembleResult disassemble(long userId, long heroId, int count) throws AppException {
         if (count <= 0) {
@@ -120,9 +114,6 @@ public class CardServiceImpl implements CardService {
         return new DisassembleResult(hero, count, shardsGained, shardsBalance);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public @NotNull CraftResult craft(long userId, @NotNull HeroRarity rarity) throws AppException {
         int craftCost = gameConfig.rarity(rarity).craftCost();

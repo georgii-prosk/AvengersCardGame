@@ -1,6 +1,7 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.messaging.Message;
@@ -14,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
@@ -29,7 +29,7 @@ class CraftCommandHandlerTest {
     private static final long CHAT_ID = 10L;
 
     /** Игровая конфигурация для тестов. */
-    private final GameConfig gameConfig = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+    private final GameConfig gameConfig = new TestGameConfig().defaultConfig();
 
     /** Сервис пользователей. */
     private UserService userService;
@@ -68,7 +68,8 @@ class CraftCommandHandlerTest {
         handler.handle(context());
 
         Message message = bot.lastSent().message();
-        Assertions.assertTrue(message.text().contains("50"));
+        Assertions.assertEquals("🔨 Выбери редкость для крафта. Твой баланс кусочков: 50 🧩.",
+                message.text());
         Assertions.assertEquals(2, message.buttons().size());
         Assertions.assertEquals(2, message.buttons().getFirst().size());
         Assertions.assertEquals("/craft_make COMMON",
@@ -94,12 +95,14 @@ class CraftCommandHandlerTest {
     @DisplayName("Показывает эмодзи кусочков из конфигурации")
     void showsConfiguredShardsEmoji() throws Exception {
         handler = new CraftCommandHandler(userService,
-                new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30), "Гири", "🪙", "⭐"));
+                new TestGameConfig().withCurrency("Гири", "🪙", "⭐"));
 
         handler.handle(context());
 
         Message message = bot.lastSent().message();
-        Assertions.assertTrue(message.text().contains("50 ⭐"));
-        Assertions.assertTrue(message.buttons().getFirst().getFirst().text().contains("⭐"));
+        Assertions.assertEquals("🔨 Выбери редкость для крафта. Твой баланс кусочков: 50 ⭐.",
+                message.text());
+        Assertions.assertEquals("⚪ Обычная — 5 ⭐",
+                message.buttons().getFirst().getFirst().text());
     }
 }
