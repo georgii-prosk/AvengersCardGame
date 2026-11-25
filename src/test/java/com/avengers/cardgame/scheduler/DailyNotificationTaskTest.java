@@ -2,6 +2,7 @@ package com.avengers.cardgame.scheduler;
 
 import com.avengers.cardgame.bot.Bot;
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.PlayerName;
@@ -12,7 +13,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -33,7 +33,7 @@ class DailyNotificationTaskTest {
     void setUp() {
         userRepository = new InMemoryUserRepository();
         bot = new FakeBot();
-        config = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+        config = new TestGameConfig().defaultConfig();
         clock = Clock.fixed(NOW_INSTANT, ZoneOffset.UTC);
     }
 

@@ -1,6 +1,7 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.exception.NotEnoughCardsException;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.FakeCardService;
@@ -14,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.util.List;
 
 /**
@@ -32,7 +32,7 @@ class DisassembleConfirmCommandHandlerTest {
     private final Hero commonHero = new Hero(1L, "Pepper", HeroRarity.COMMON, 5, 15, 20, "c");
 
     /** Игровая конфигурация для тестов. */
-    private final GameConfig gameConfig = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+    private final GameConfig gameConfig = new TestGameConfig().defaultConfig();
 
     /** Фейковый сервис карточек. */
     private FakeCardService cardService;
@@ -71,9 +71,10 @@ class DisassembleConfirmCommandHandlerTest {
         handler.handle(context("1 2"));
 
         Message message = bot.lastSent().message();
-        Assertions.assertTrue(message.text().contains("Разобрано"));
-        Assertions.assertTrue(message.text().contains("×2"));
-        Assertions.assertTrue(message.text().contains("Получено кусочков: 2"));
+        Assertions.assertEquals("""
+                🧩 Разобрано: ⚪ Pepper [Обычная] ×2.
+                Получено кусочков: 2.
+                Твой баланс кусочков: 2.""", message.text());
     }
 
     /**
@@ -86,7 +87,8 @@ class DisassembleConfirmCommandHandlerTest {
 
         handler.handle(context("1 5"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("×2"));
+        Assertions.assertEquals("❌ У тебя нет столько карточек Pepper. В коллекции: ×2.",
+                bot.lastSent().message().text());
     }
 
     /**
@@ -97,6 +99,7 @@ class DisassembleConfirmCommandHandlerTest {
     void rejectsInvalidConfirmation() throws Exception {
         handler.handle(context("1"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("Некорректное количество"));
+        Assertions.assertEquals("Некорректное количество карточек.",
+                bot.lastSent().message().text());
     }
 }

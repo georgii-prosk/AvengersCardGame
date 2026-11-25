@@ -23,14 +23,14 @@ class InsufficientShardsExceptionTest {
     }
 
     /**
-     * Проверяет, что недостающее количество не бывает отрицательным.
+     * Проверяет, что недостающее количество вычисляется как разница.
      */
     @Test
-    @DisplayName("Недостающее количество не отрицательное")
-    void missingIsNotNegative() {
+    @DisplayName("Недостающее количество вычисляется как разница")
+    void missingUsesDifference() {
         InsufficientShardsException exception = new InsufficientShardsException(10, 30);
 
-        Assertions.assertEquals(0, exception.missing());
+        Assertions.assertEquals(-20, exception.missing());
     }
 
     /**
@@ -41,8 +41,8 @@ class InsufficientShardsExceptionTest {
     void messageContainsDetails() {
         InsufficientShardsException exception = new InsufficientShardsException(40, 15);
 
-        Assertions.assertTrue(exception.getMessage().contains("40"));
-        Assertions.assertTrue(exception.getMessage().contains("15"));
+        Assertions.assertEquals("Insufficient shards: required=40, available=15",
+                exception.getMessage());
     }
 
     /**

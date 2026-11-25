@@ -1,6 +1,7 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.dto.PurchaseResult;
 import com.avengers.cardgame.exception.InsufficientFundsException;
 import com.avengers.cardgame.exception.ListingUnavailableException;
@@ -22,7 +23,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
@@ -45,7 +45,7 @@ class MarketBuyConfirmCommandHandlerTest {
 
     /** Игровая конфигурация для тестов. */
     private final GameConfig GAME_CONFIG =
-            new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+            new TestGameConfig().defaultConfig();
 
     /** Время создания лота для тестов. */
     private final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 1, 1, 12, 0);
@@ -93,14 +93,19 @@ class MarketBuyConfirmCommandHandlerTest {
         handler.handle(context("7"));
 
         Message buyerMessage = bot.sent().getFirst().message();
-        Assertions.assertTrue(buyerMessage.text().contains("Покупка совершена"));
-        Assertions.assertTrue(buyerMessage.text().contains("Pepper"));
-        Assertions.assertTrue(buyerMessage.text().contains("Списано: 100 💎"));
+        Assertions.assertEquals("""
+                ✅ Покупка совершена!
+
+                ⚪ Pepper [Обычная]
+                ⚔️ ATK: 5 | 🛡 DEF: 15 | ❤️ HP: 20
+
+                Списано: 100 💎. Твой баланс: 50 💎.""", buyerMessage.text());
         Assertions.assertEquals(CHAT_ID, bot.sent().getFirst().chatId());
 
         Message sellerMessage = bot.sent().getLast().message();
-        Assertions.assertTrue(sellerMessage.text().contains("куплен игроком Tony"));
-        Assertions.assertTrue(sellerMessage.text().contains("Тебе начислено 95 💎"));
+        Assertions.assertEquals(
+                "💰 Твой лот #7 (⚪ Pepper [Обычная]) куплен игроком Tony. Тебе начислено 95 💎.",
+                sellerMessage.text());
         Assertions.assertEquals(SELLER_ID, bot.lastSent().chatId());
     }
 
@@ -115,9 +120,8 @@ class MarketBuyConfirmCommandHandlerTest {
         handler.handle(context("7"));
 
         Message message = bot.lastSent().message();
-        Assertions.assertTrue(message.text().contains("Недостаточно средств"));
-        Assertions.assertTrue(message.text().contains("Нужно: 100 💎"));
-        Assertions.assertTrue(message.text().contains("у тебя: 30 💎"));
+        Assertions.assertEquals("❌ Недостаточно средств. Нужно: 100 💎, у тебя: 30 💎.",
+                message.text());
     }
 
     /**
@@ -130,7 +134,8 @@ class MarketBuyConfirmCommandHandlerTest {
 
         handler.handle(context("7"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("собственный лот"));
+        Assertions.assertEquals("❌ Нельзя купить собственный лот.",
+                bot.lastSent().message().text());
     }
 
     /**
@@ -143,7 +148,8 @@ class MarketBuyConfirmCommandHandlerTest {
 
         handler.handle(context("7"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("уже продан"));
+        Assertions.assertEquals("❌ Этот лот уже продан или снят с продажи.",
+                bot.lastSent().message().text());
     }
 
     /**
@@ -154,6 +160,7 @@ class MarketBuyConfirmCommandHandlerTest {
     void rejectsInvalidListingId() throws Exception {
         handler.handle(context("abc"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("Некорректный идентификатор"));
+        Assertions.assertEquals("Некорректный идентификатор лота.",
+                bot.lastSent().message().text());
     }
 }

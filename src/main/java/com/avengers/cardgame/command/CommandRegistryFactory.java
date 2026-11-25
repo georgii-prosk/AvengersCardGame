@@ -8,6 +8,7 @@ import com.avengers.cardgame.service.CommandHandler;
 import com.avengers.cardgame.service.CommandRegistry;
 import com.avengers.cardgame.service.MarketService;
 import com.avengers.cardgame.service.UserService;
+import com.avengers.cardgame.service.command.CommandNames;
 import com.avengers.cardgame.service.impl.CommandRegistryImpl;
 
 /**
@@ -61,47 +62,47 @@ public class CommandRegistryFactory {
     public CommandRegistry create() {
         CommandRegistry registry = new CommandRegistryImpl();
 
-        registry.register("/start", wrap(new StartCommandHandler()));
-        registry.register("/help", new HelpCommandHandler());
-        registry.register("/profile", wrap(new ProfileCommandHandler(userService)));
-        registry.register("/setname", wrap(new SetNameCommandHandler(userService)));
-        registry.register("/setbio", wrap(new SetBioCommandHandler(userService)));
-        registry.register("/daily", wrap(new DailyCommandHandler(cardService)));
+        registry.register(CommandNames.START, wrap(new StartCommandHandler()));
+        registry.register(CommandNames.HELP, new HelpCommandHandler());
+        registry.register(CommandNames.PROFILE, wrap(new ProfileCommandHandler(userService)));
+        registry.register(CommandNames.SET_NAME, wrap(new SetNameCommandHandler(userService)));
+        registry.register(CommandNames.SET_BIO, wrap(new SetBioCommandHandler(userService)));
+        registry.register(CommandNames.DAILY, wrap(new DailyCommandHandler(cardService)));
 
-        registry.register("/inventory", wrap(new InventoryCommandHandler(userCardRepository, heroRepository)));
-        registry.register("/inventory_page", new InventoryPageCommandHandler(userCardRepository, heroRepository));
+        registry.register(CommandNames.INVENTORY, wrap(new InventoryCommandHandler(userCardRepository, heroRepository)));
+        registry.register(CommandNames.INVENTORY_PAGE, new InventoryPageCommandHandler(userCardRepository, heroRepository));
 
-        registry.register("/view_card", new ViewCardCommandHandler(heroRepository, userCardRepository));
+        registry.register(CommandNames.VIEW_CARD, new ViewCardCommandHandler(heroRepository, userCardRepository));
 
-        registry.register("/disassemble", wrap(new DisassembleCommandHandler(
+        registry.register(CommandNames.DISASSEMBLE, wrap(new DisassembleCommandHandler(
                 userCardRepository, heroRepository, gameConfig)));
-        registry.register("/disassemble_page", new DisassemblePageCommandHandler(
+        registry.register(CommandNames.DISASSEMBLE_PAGE, new DisassemblePageCommandHandler(
                 userCardRepository, heroRepository, gameConfig));
-        registry.register("/disassemble_pick", new DisassemblePickCommandHandler(userCardRepository, heroRepository));
-        registry.register("/disassemble_qty", new DisassembleQuantityCommandHandler(
+        registry.register(CommandNames.DISASSEMBLE_PICK, new DisassemblePickCommandHandler(userCardRepository, heroRepository));
+        registry.register(CommandNames.DISASSEMBLE_QTY, new DisassembleQuantityCommandHandler(
                 userCardRepository, heroRepository, gameConfig));
-        registry.register("/disassemble_confirm", new DisassembleConfirmCommandHandler(
+        registry.register(CommandNames.DISASSEMBLE_CONFIRM, new DisassembleConfirmCommandHandler(
                 cardService, heroRepository, gameConfig));
 
-        registry.register("/craft", wrap(new CraftCommandHandler(userService, gameConfig)));
-        registry.register("/craft_make", new CraftMakeCommandHandler(cardService));
+        registry.register(CommandNames.CRAFT, wrap(new CraftCommandHandler(userService, gameConfig)));
+        registry.register(CommandNames.CRAFT_MAKE, new CraftMakeCommandHandler(cardService));
 
-        registry.register("/sell", wrap(new SellCommandHandler(userCardRepository, heroRepository)));
-        registry.register("/sell_page", new SellPageCommandHandler(userCardRepository, heroRepository));
-        registry.register("/sell_pick", new SellPickCommandHandler(userCardRepository, heroRepository, gameConfig));
-        registry.register("/sell_price", new SellPriceCommandHandler(heroRepository, gameConfig));
-        registry.register("/sell_confirm", new SellConfirmCommandHandler(marketService, heroRepository, gameConfig));
+        registry.register(CommandNames.SELL, wrap(new SellCommandHandler(userCardRepository, heroRepository)));
+        registry.register(CommandNames.SELL_PAGE, new SellPageCommandHandler(userCardRepository, heroRepository));
+        registry.register(CommandNames.SELL_PICK, new SellPickCommandHandler(userCardRepository, heroRepository, gameConfig));
+        registry.register(CommandNames.SELL_PRICE, new SellPriceCommandHandler(heroRepository, gameConfig));
+        registry.register(CommandNames.SELL_CONFIRM, new SellConfirmCommandHandler(marketService, heroRepository, gameConfig));
 
-        registry.register("/market", wrap(new MarketCommandHandler(marketService, gameConfig)));
-        registry.register("/market_page", new MarketPageCommandHandler(marketService, gameConfig));
-        registry.register("/market_filter", new MarketFilterCommandHandler(marketService, gameConfig));
-        registry.register("/market_buy", new MarketBuyCommandHandler(marketService, gameConfig));
-        registry.register("/market_buy_confirm", new MarketBuyConfirmCommandHandler(
+        registry.register(CommandNames.MARKET, wrap(new MarketCommandHandler(marketService, gameConfig)));
+        registry.register(CommandNames.MARKET_PAGE, new MarketPageCommandHandler(marketService, gameConfig));
+        registry.register(CommandNames.MARKET_FILTER, new MarketFilterCommandHandler(marketService, gameConfig));
+        registry.register(CommandNames.MARKET_BUY, new MarketBuyCommandHandler(marketService, gameConfig));
+        registry.register(CommandNames.MARKET_BUY_CONFIRM, new MarketBuyConfirmCommandHandler(
                 marketService, heroRepository, userService, gameConfig));
-        registry.register("/market_mine", new MarketMineCommandHandler(marketService, gameConfig));
-        registry.register("/market_cancel", new MarketCancelCommandHandler(marketService, heroRepository));
+        registry.register(CommandNames.MARKET_MINE, new MarketMineCommandHandler(marketService, gameConfig));
+        registry.register(CommandNames.MARKET_CANCEL, new MarketCancelCommandHandler(marketService, heroRepository));
 
-        registry.register("/cancel", new CancelCommandHandler());
+        registry.register(CommandNames.CANCEL, new CancelCommandHandler());
 
         return registry;
     }

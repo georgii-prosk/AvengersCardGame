@@ -8,6 +8,7 @@ import com.avengers.cardgame.service.CommandContext;
 import com.avengers.cardgame.service.CommandHandler;
 import com.avengers.cardgame.service.command.CommandArguments;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -35,14 +36,19 @@ public class SellPriceCommandHandler implements CommandHandler {
 
     @Override
     public void handle(CommandContext context) {
-        Optional<CommandArguments.IdAndNumber> parsed = CommandArguments.parseIdAndNumber(context.argument());
-        if (parsed.isEmpty()) {
+        List<String> parts = CommandArguments.splitParts(context.argument());
+        Optional<Long> heroId = parts.size() == 2
+                ? CommandArguments.parseId(parts.getFirst())
+                : Optional.empty();
+        Optional<Integer> price = parts.size() == 2
+                ? CommandArguments.parseNumber(parts.getLast())
+                : Optional.empty();
+        if (heroId.isEmpty() || price.isEmpty()) {
             context.bot().sendMessage(sellRenderer.renderInvalidPriceArguments(), context.chatId());
             return;
         }
-        long heroId = parsed.get().id();
-        int price = parsed.get().number();
-        Hero hero = heroRepository.findById(heroId).orElse(null);
+        int priceValue = price.get();
+        Hero hero = heroRepository.findById(heroId.get()).orElse(null);
         if (hero == null) {
             context.bot().sendMessage(sellRenderer.renderUnknownHero(), context.chatId());
             return;
@@ -50,7 +56,7 @@ public class SellPriceCommandHandler implements CommandHandler {
         GameConfig.RarityConfig rarityConfig = gameConfig.rarity(hero.rarity());
         int minPrice = rarityConfig.minPrice();
         int maxPrice = rarityConfig.maxPrice();
-        if (price < minPrice || price > maxPrice) {
+        if (priceValue < minPrice || priceValue > maxPrice) {
             context.bot().sendMessage(sellRenderer.renderInvalidPrice(
                     minPrice, maxPrice, gameConfig.currencyEmoji()), context.chatId());
             return;
@@ -58,8 +64,8 @@ public class SellPriceCommandHandler implements CommandHandler {
 
         String currency = gameConfig.currencyEmoji();
         int commissionPercent = gameConfig.marketCommissionPercent();
-        int sellerAmount = price - price * commissionPercent / 100;
-        context.bot().sendMessage(sellRenderer.renderConfirmation(hero, price, sellerAmount,
+        int sellerAmount = priceValue - priceValue * commissionPercent / 100;
+        context.bot().sendMessage(sellRenderer.renderConfirmation(hero, priceValue, sellerAmount,
                 commissionPercent, currency), context.chatId());
     }
 }

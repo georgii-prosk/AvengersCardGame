@@ -1,9 +1,11 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
+import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
 import com.avengers.cardgame.service.CommandContext;
@@ -12,7 +14,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 
 /**
  * Тесты для {@link DisassemblePageCommandHandler}.
@@ -29,7 +30,7 @@ class DisassemblePageCommandHandlerTest {
     private final Hero commonHero = new Hero(1L, "Pepper", HeroRarity.COMMON, 5, 15, 20, "c");
 
     /** Игровая конфигурация для тестов. */
-    private final GameConfig gameConfig = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+    private final GameConfig gameConfig = new TestGameConfig().defaultConfig();
 
     /** Фейковый бот. */
     private FakeBot bot;
@@ -39,7 +40,7 @@ class DisassemblePageCommandHandlerTest {
 
     @BeforeEach
     void setUp() {
-        InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository();
+        InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository(new InMemoryUserRepository());
         InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
         heroRepository.save(commonHero);
         bot = new FakeBot();
@@ -63,6 +64,7 @@ class DisassemblePageCommandHandlerTest {
     void rejectsInvalidPage() {
         handler.handle(context());
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("Некорректный номер"));
+        Assertions.assertEquals("Некорректный номер страницы.",
+                bot.lastSent().message().text());
     }
 }

@@ -30,9 +30,8 @@ class InvalidPriceExceptionTest {
     void messageContainsPriceRange() {
         InvalidPriceException exception = new InvalidPriceException(5, 10, 200);
 
-        Assertions.assertTrue(exception.getMessage().contains("5"));
-        Assertions.assertTrue(exception.getMessage().contains("10"));
-        Assertions.assertTrue(exception.getMessage().contains("200"));
+        Assertions.assertEquals("Invalid price: price=5, allowed=10..200",
+                exception.getMessage());
     }
 
     /**

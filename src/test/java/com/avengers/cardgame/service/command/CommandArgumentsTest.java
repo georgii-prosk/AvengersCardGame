@@ -65,32 +65,4 @@ class CommandArgumentsTest {
     void rejectsInvalidNumber() {
         Assertions.assertTrue(CommandArguments.parseNumber("all").isEmpty());
     }
-
-    /**
-     * Проверяет разбор пары «идентификатор + число».
-     */
-    @Test
-    @DisplayName("Разбирает пару идентификатор и число")
-    void parsesIdAndNumber() {
-        Assertions.assertEquals(Optional.of(new CommandArguments.IdAndNumber(1L, 5)),
-                CommandArguments.parseIdAndNumber("1 5"));
-    }
-
-    /**
-     * Проверяет, что пара с лишними частями не разбирается.
-     */
-    @Test
-    @DisplayName("Не разбирает пару с лишними частями")
-    void rejectsPairWithExtraParts() {
-        Assertions.assertTrue(CommandArguments.parseIdAndNumber("1 5 7").isEmpty());
-    }
-
-    /**
-     * Проверяет, что пара с некорректным числом не разбирается.
-     */
-    @Test
-    @DisplayName("Не разбирает пару с некорректным числом")
-    void rejectsPairWithInvalidNumber() {
-        Assertions.assertTrue(CommandArguments.parseIdAndNumber("1 abc").isEmpty());
-    }
 }

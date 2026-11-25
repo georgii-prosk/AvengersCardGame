@@ -1,9 +1,11 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
+import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
@@ -12,8 +14,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.time.Duration;
 
 /**
  * Тесты для {@link DisassembleQuantityCommandHandler}.
@@ -30,7 +30,7 @@ class DisassembleQuantityCommandHandlerTest {
     private final Hero commonHero = new Hero(1L, "Pepper", HeroRarity.COMMON, 5, 15, 20, "c");
 
     /** Игровая конфигурация для тестов. */
-    private final GameConfig gameConfig = new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+    private final GameConfig gameConfig = new TestGameConfig().defaultConfig();
 
     /** Репозиторий карточек. */
     private InMemoryUserCardRepository cardRepository;
@@ -43,7 +43,7 @@ class DisassembleQuantityCommandHandlerTest {
 
     @BeforeEach
     void setUp() {
-        cardRepository = new InMemoryUserCardRepository();
+        cardRepository = new InMemoryUserCardRepository(new InMemoryUserRepository());
         InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
         heroRepository.save(commonHero);
         bot = new FakeBot();
@@ -82,8 +82,10 @@ class DisassembleQuantityCommandHandlerTest {
         handler.handle(context("1 all"));
 
         Message message = bot.lastSent().message();
-        Assertions.assertTrue(message.text().contains("Разобрать карточек: 7"));
-        Assertions.assertTrue(message.text().contains("Получишь кусочков: 7"));
+        Assertions.assertEquals(String.join(System.lineSeparator(),
+                "⚪ Pepper [Обычная] ×7",
+                "Разобрать карточек: 7?",
+                "Получишь кусочков: 7 🧩."), message.text());
         Assertions.assertEquals("/disassemble_confirm 1 7",
                 message.buttons().getFirst().getFirst().callbackData());
     }
@@ -98,7 +100,8 @@ class DisassembleQuantityCommandHandlerTest {
 
         handler.handle(context("1 abc"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("Некорректное количество"));
+        Assertions.assertEquals("Некорректное количество карточек.",
+                bot.lastSent().message().text());
     }
 
     /**
@@ -111,7 +114,8 @@ class DisassembleQuantityCommandHandlerTest {
 
         handler.handle(context("1 5"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("нет столько карточек"));
+        Assertions.assertEquals("❌ У тебя нет столько карточек Pepper. В коллекции: ×2.",
+                bot.lastSent().message().text());
     }
 
     /**
@@ -123,12 +127,15 @@ class DisassembleQuantityCommandHandlerTest {
         InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
         heroRepository.save(commonHero);
         handler = new DisassembleQuantityCommandHandler(cardRepository, heroRepository,
-                new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30), "Гири", "🪙", "⭐"));
+                new TestGameConfig().withCurrency("Гири", "🪙", "⭐"));
         addCards(1);
 
         handler.handle(context("1 1"));
 
         Message message = bot.lastSent().message();
-        Assertions.assertTrue(message.text().contains("Получишь кусочков: 1 ⭐"));
+        Assertions.assertEquals(String.join(System.lineSeparator(),
+                "⚪ Pepper [Обычная] ×1",
+                "Разобрать карточек: 1?",
+                "Получишь кусочков: 1 ⭐."), message.text());
     }
 }

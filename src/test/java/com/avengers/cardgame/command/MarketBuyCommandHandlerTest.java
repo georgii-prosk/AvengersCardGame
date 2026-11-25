@@ -1,6 +1,7 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.FakeMarketService;
 import com.avengers.cardgame.messaging.Message;
@@ -14,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
@@ -37,7 +37,7 @@ class MarketBuyCommandHandlerTest {
 
     /** Игровая конфигурация для тестов. */
     private final GameConfig GAME_CONFIG =
-            new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+            new TestGameConfig().defaultConfig();
 
     /** Время создания лота для тестов. */
     private final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 1, 1, 12, 0);
@@ -90,8 +90,7 @@ class MarketBuyCommandHandlerTest {
         handler.handle(context("7"));
 
         Message message = bot.lastSent().message();
-        Assertions.assertTrue(message.text().contains("Купить"));
-        Assertions.assertTrue(message.text().contains("100 💎"));
+        Assertions.assertEquals("Купить ⚪ Pepper [Обычная] за 100 💎?", message.text());
         Assertions.assertEquals("/market_buy_confirm 7",
                 message.buttons().getFirst().getFirst().callbackData());
     }
@@ -106,7 +105,8 @@ class MarketBuyCommandHandlerTest {
 
         handler.handle(context("7"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("собственный лот"));
+        Assertions.assertEquals("❌ Нельзя купить собственный лот.",
+                bot.lastSent().message().text());
     }
 
     /**
@@ -117,7 +117,8 @@ class MarketBuyCommandHandlerTest {
     void reportsUnavailableListing() {
         handler.handle(context("7"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("уже продан"));
+        Assertions.assertEquals("❌ Этот лот уже продан или снят с продажи.",
+                bot.lastSent().message().text());
     }
 
     /**
@@ -128,6 +129,7 @@ class MarketBuyCommandHandlerTest {
     void rejectsInvalidListingId() {
         handler.handle(context("abc"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("Некорректный идентификатор"));
+        Assertions.assertEquals("Некорректный идентификатор лота.",
+                bot.lastSent().message().text());
     }
 }

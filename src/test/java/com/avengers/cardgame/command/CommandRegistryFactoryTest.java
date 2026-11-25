@@ -1,6 +1,7 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.FakeCardService;
 import com.avengers.cardgame.fakes.FakeMarketService;
@@ -17,7 +18,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,7 +34,7 @@ class CommandRegistryFactoryTest {
 
     /** Игровая конфигурация для тестов. */
     private final GameConfig GAME_CONFIG =
-            new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+            new TestGameConfig().defaultConfig();
 
     /**
      * Создаёт реестр команд.
@@ -64,7 +64,7 @@ class CommandRegistryFactoryTest {
     void dailyIsRegisteredAndRegistersUserBeforeRunning() throws Exception {
         InMemoryUserRepository userRepository = new InMemoryUserRepository();
         Hero hero = new Hero(1, "Pepper Potts", HeroRarity.COMMON, 5, 15, 20, "c");
-        InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository();
+        InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository(userRepository);
         InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
 
         CommandRegistry registry = registryWith(userRepository, cardRepository, heroRepository,
@@ -83,7 +83,7 @@ class CommandRegistryFactoryTest {
     @DisplayName("/inventory зарегистрирована и регистрирует пользователя перед выполнением")
     void inventoryIsRegisteredAndRegistersUserBeforeRunning() throws Exception {
         InMemoryUserRepository userRepository = new InMemoryUserRepository();
-        InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository();
+        InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository(userRepository);
         InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
 
         CommandRegistry registry = registryWith(userRepository, cardRepository, heroRepository,
@@ -98,21 +98,68 @@ class CommandRegistryFactoryTest {
         Assertions.assertEquals(1, bot.count());
     }
 
-    @Test
-    @DisplayName("Новые команды экономики зарегистрированы")
-    void economyCommandsAreRegistered() {
-        CommandRegistry registry = registryWith(new InMemoryUserRepository(),
-                new InMemoryUserCardRepository(), new InMemoryHeroRepository(),
-                new FakeCardService(List.of()));
+    /**
+     * Создаёт реестр с пустыми репозиториями.
+     *
+     * @return реестр команд
+     */
+    private CommandRegistry emptyRegistry() {
+        InMemoryUserRepository userRepository = new InMemoryUserRepository();
+        return registryWith(userRepository, new InMemoryUserCardRepository(userRepository),
+                new InMemoryHeroRepository(), new FakeCardService(List.of()));
+    }
 
-        Assertions.assertTrue(registry.resolve("/disassemble").isPresent());
-        Assertions.assertTrue(registry.resolve("/craft").isPresent());
-        Assertions.assertTrue(registry.resolve("/sell").isPresent());
-        Assertions.assertTrue(registry.resolve("/market").isPresent());
-        Assertions.assertTrue(registry.resolve("/cancel").isPresent());
-        Assertions.assertTrue(registry.resolve("/craft_make COMMON").isPresent());
-        Assertions.assertTrue(registry.resolve("/market_buy 1").isPresent());
-        Assertions.assertTrue(registry.resolve("/sell_confirm 1 200").isPresent());
-        Assertions.assertTrue(registry.resolve("/disassemble_confirm 1 2").isPresent());
+    @Test
+    @DisplayName("/disassemble зарегистрирована")
+    void disassembleIsRegistered() {
+        Assertions.assertTrue(emptyRegistry().resolve("/disassemble").isPresent());
+    }
+
+    @Test
+    @DisplayName("/craft зарегистрирована")
+    void craftIsRegistered() {
+        Assertions.assertTrue(emptyRegistry().resolve("/craft").isPresent());
+    }
+
+    @Test
+    @DisplayName("/sell зарегистрирована")
+    void sellIsRegistered() {
+        Assertions.assertTrue(emptyRegistry().resolve("/sell").isPresent());
+    }
+
+    @Test
+    @DisplayName("/market зарегистрирована")
+    void marketIsRegistered() {
+        Assertions.assertTrue(emptyRegistry().resolve("/market").isPresent());
+    }
+
+    @Test
+    @DisplayName("/cancel зарегистрирована")
+    void cancelIsRegistered() {
+        Assertions.assertTrue(emptyRegistry().resolve("/cancel").isPresent());
+    }
+
+    @Test
+    @DisplayName("/craft_make зарегистрирована")
+    void craftMakeIsRegistered() {
+        Assertions.assertTrue(emptyRegistry().resolve("/craft_make COMMON").isPresent());
+    }
+
+    @Test
+    @DisplayName("/market_buy зарегистрирована")
+    void marketBuyIsRegistered() {
+        Assertions.assertTrue(emptyRegistry().resolve("/market_buy 1").isPresent());
+    }
+
+    @Test
+    @DisplayName("/sell_confirm зарегистрирована")
+    void sellConfirmIsRegistered() {
+        Assertions.assertTrue(emptyRegistry().resolve("/sell_confirm 1 200").isPresent());
+    }
+
+    @Test
+    @DisplayName("/disassemble_confirm зарегистрирована")
+    void disassembleConfirmIsRegistered() {
+        Assertions.assertTrue(emptyRegistry().resolve("/disassemble_confirm 1 2").isPresent());
     }
 }

@@ -1,6 +1,7 @@
 package com.avengers.cardgame.command;
 
 import com.avengers.cardgame.config.GameConfig;
+import com.avengers.cardgame.config.TestGameConfig;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.FakeMarketService;
 import com.avengers.cardgame.service.CommandContext;
@@ -9,7 +10,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 
 /**
  * Тесты для {@link MarketPageCommandHandler}.
@@ -24,7 +24,7 @@ class MarketPageCommandHandlerTest {
 
     /** Игровая конфигурация для тестов. */
     private final GameConfig GAME_CONFIG =
-            new GameConfig(Duration.ofHours(24), Duration.ofMinutes(30));
+            new TestGameConfig().defaultConfig();
 
     /** Фейковый бот. */
     private FakeBot bot;
@@ -57,6 +57,7 @@ class MarketPageCommandHandlerTest {
     void rejectsInvalidPage() {
         handler.handle(context("abc abc"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("Некорректный номер"));
+        Assertions.assertEquals("Некорректный номер страницы.",
+                bot.lastSent().message().text());
     }
 }

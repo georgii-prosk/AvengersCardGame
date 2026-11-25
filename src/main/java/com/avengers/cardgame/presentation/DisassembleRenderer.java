@@ -4,6 +4,7 @@ import com.avengers.cardgame.messaging.Button;
 import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.service.DisassembleResult;
+import com.avengers.cardgame.service.command.CommandNames;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -25,12 +26,6 @@ public class DisassembleRenderer {
     /** Сообщение при отсутствии карточек. */
     private static final String EMPTY_MESSAGE = "У тебя пока нет карточек для разбора.";
 
-    /** Префикс команды выбора карточки. */
-    private static final String CARD_COMMAND_PREFIX = "/disassemble_pick ";
-
-    /** Префикс команды переключения страницы. */
-    private static final String PAGE_COMMAND_PREFIX = "/disassemble_page ";
-
     /** Текст кнопки «Все». */
     private static final String ALL_BUTTON_TEXT = "Все";
 
@@ -39,9 +34,6 @@ public class DisassembleRenderer {
 
     /** Текст кнопки отмены. */
     private static final String CANCEL_BUTTON_TEXT = "Отмена";
-
-    /** Команда отмены. */
-    private static final String CANCEL_COMMAND = "/cancel";
 
     /** Максимальное количество копий, предлагаемое кнопкой быстрого выбора. */
     private static final int QUICK_SELECTION_LIMIT = 5;
@@ -66,7 +58,7 @@ public class DisassembleRenderer {
     public Message renderSelection(@NotNull List<InventoryItem> items, int page, @NotNull String shardsEmoji) {
         String headerTemplate = shardsEmoji + TITLE_SEPARATOR + HEADER_TEMPLATE;
         return inventoryRenderer.render(items, page, EMPTY_MESSAGE, headerTemplate,
-                CARD_COMMAND_PREFIX, PAGE_COMMAND_PREFIX);
+                CommandNames.DISASSEMBLE_PICK + " ", CommandNames.DISASSEMBLE_PAGE + " ");
     }
 
     /**
@@ -81,7 +73,7 @@ public class DisassembleRenderer {
                 heroRenderer.emoji(hero.rarity()), hero.name(), heroRenderer.title(hero.rarity()), count);
         List<List<Button>> rows = new ArrayList<>();
         rows.add(quantityButtons(hero.id(), count));
-        rows.add(List.of(new Button(CANCEL_BUTTON_TEXT, CANCEL_COMMAND)));
+        rows.add(List.of(new Button(CANCEL_BUTTON_TEXT, CommandNames.CANCEL)));
         return new Message(text, rows);
     }
 
@@ -101,8 +93,8 @@ public class DisassembleRenderer {
                 .formatted(heroRenderer.emoji(hero.rarity()), hero.name(), heroRenderer.title(hero.rarity()),
                         available, quantity, shardsToGain, shardsEmoji);
         return new Message(text, List.of(
-                List.of(new Button(CONFIRM_BUTTON_TEXT, "/disassemble_confirm " + hero.id() + " " + quantity),
-                        new Button(CANCEL_BUTTON_TEXT, CANCEL_COMMAND))));
+                List.of(new Button(CONFIRM_BUTTON_TEXT, CommandNames.DISASSEMBLE_CONFIRM + " " + hero.id() + " " + quantity),
+                        new Button(CANCEL_BUTTON_TEXT, CommandNames.CANCEL))));
     }
 
     /**
@@ -195,9 +187,9 @@ public class DisassembleRenderer {
         List<Button> buttons = new ArrayList<>();
         for (int value : values) {
             buttons.add(new Button(String.valueOf(value),
-                    "/disassemble_qty " + heroId + " " + value));
+                    CommandNames.DISASSEMBLE_QTY + " " + heroId + " " + value));
         }
-        buttons.add(new Button(ALL_BUTTON_TEXT, "/disassemble_qty " + heroId + " " + ALL_ARGUMENT));
+        buttons.add(new Button(ALL_BUTTON_TEXT, CommandNames.DISASSEMBLE_QTY + " " + heroId + " " + ALL_ARGUMENT));
         return buttons;
     }
 }

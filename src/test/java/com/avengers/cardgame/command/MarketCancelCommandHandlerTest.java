@@ -73,8 +73,9 @@ class MarketCancelCommandHandlerTest {
         handler.handle(context("7"));
 
         Message message = bot.lastSent().message();
-        Assertions.assertTrue(message.text().contains("Лот #7 снят с продажи"));
-        Assertions.assertTrue(message.text().contains("Pepper"));
+        Assertions.assertEquals(
+                "↩️ Лот #7 снят с продажи. ⚪ Pepper [Обычная] возвращён в твою коллекцию.",
+                message.text());
     }
 
     /**
@@ -87,7 +88,8 @@ class MarketCancelCommandHandlerTest {
 
         handler.handle(context("7"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("уже продан"));
+        Assertions.assertEquals("❌ Этот лот уже продан или снят с продажи.",
+                bot.lastSent().message().text());
     }
 
     /**
@@ -98,6 +100,7 @@ class MarketCancelCommandHandlerTest {
     void rejectsInvalidListingId() throws Exception {
         handler.handle(context("abc"));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("Некорректный идентификатор"));
+        Assertions.assertEquals("Некорректный идентификатор лота.",
+                bot.lastSent().message().text());
     }
 }

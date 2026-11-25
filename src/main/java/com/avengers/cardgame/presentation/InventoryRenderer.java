@@ -2,6 +2,7 @@ package com.avengers.cardgame.presentation;
 
 import com.avengers.cardgame.messaging.Button;
 import com.avengers.cardgame.messaging.Message;
+import com.avengers.cardgame.service.command.CommandNames;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,12 +16,6 @@ public class InventoryRenderer {
 
     /** Шаблон заголовка страницы (текущая страница / всего страниц). */
     private static final String HEADER_TEMPLATE = "Твоя коллекция (страница %d/%d):";
-
-    /** Префикс команды просмотра карточки по умолчанию. */
-    private static final String DEFAULT_CARD_COMMAND_PREFIX = "/view_card ";
-
-    /** Префикс команды переключения страницы по умолчанию. */
-    private static final String DEFAULT_PAGE_COMMAND_PREFIX = "/inventory_page ";
 
     /** Шаблон строки карточки в тексте (эмодзи, имя, редкость, количество). */
     private static final String LINE_TEMPLATE = "%s %s — %s ×%d";
@@ -51,7 +46,7 @@ public class InventoryRenderer {
      */
     public Message render(List<InventoryItem> items, int page) {
         return render(items, page, EMPTY_MESSAGE, HEADER_TEMPLATE,
-                DEFAULT_CARD_COMMAND_PREFIX, DEFAULT_PAGE_COMMAND_PREFIX);
+                CommandNames.VIEW_CARD + " ", CommandNames.INVENTORY_PAGE + " ");
     }
 
     /**

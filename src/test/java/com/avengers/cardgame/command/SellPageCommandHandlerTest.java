@@ -3,6 +3,7 @@ package com.avengers.cardgame.command;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
+import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
 import com.avengers.cardgame.service.CommandContext;
@@ -34,7 +35,7 @@ class SellPageCommandHandlerTest {
 
     @BeforeEach
     void setUp() {
-        InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository();
+        InMemoryUserCardRepository cardRepository = new InMemoryUserCardRepository(new InMemoryUserRepository());
         InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
         heroRepository.save(COMMON_HERO);
         bot = new FakeBot();
@@ -58,6 +59,7 @@ class SellPageCommandHandlerTest {
     void rejectsInvalidPage() {
         handler.handle(context());
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("Некорректный номер"));
+        Assertions.assertEquals("Некорректный номер страницы.",
+                bot.lastSent().message().text());
     }
 }

@@ -3,6 +3,7 @@ package com.avengers.cardgame.config;
 import com.avengers.cardgame.exception.ConfigurationException;
 import com.avengers.cardgame.exception.InvalidConfigurationException;
 import com.avengers.cardgame.exception.MissingEnvironmentVariableException;
+import com.avengers.cardgame.model.HeroRarity;
 
 import java.time.Duration;
 import java.util.Map;
@@ -47,6 +48,18 @@ public class EnvironmentConfigReader implements ConfigProvider {
     /** Значение интервала уведомлений по умолчанию (30 минут). */
     private static final long DEFAULT_NOTIFICATION_INTERVAL_MINUTES = 30;
 
+    /** Название валюты по умолчанию. */
+    private static final String DEFAULT_CURRENCY_NAME = "Кристаллы";
+
+    /** Эмодзи валюты по умолчанию. */
+    private static final String DEFAULT_CURRENCY_EMOJI = "💎";
+
+    /** Эмодзи кусочков по умолчанию. */
+    private static final String DEFAULT_SHARDS_EMOJI = "🧩";
+
+    /** Комиссия рынка по умолчанию (в процентах). */
+    private static final int DEFAULT_MARKET_COMMISSION_PERCENT = 5;
+
     /** Максимально допустимое количество минут, чтобы избежать переполнения при создании Duration. */
     private static final long MAX_DURATION_MINUTES = Long.MAX_VALUE / 60_000_000L;
 
@@ -69,13 +82,26 @@ public class EnvironmentConfigReader implements ConfigProvider {
     public AppConfig read() throws ConfigurationException {
         DatabaseConfig database = new DatabaseConfig(
                 require(DB_URL), require(DB_USER), require(DB_PASSWORD));
-        GameConfig game = new GameConfig(
-                Duration.ofMinutes(readPositiveLong(DAILY_COOLDOWN_MINUTES, DEFAULT_DAILY_COOLDOWN_MINUTES)),
-                Duration.ofMinutes(readPositiveLong(NOTIFICATION_INTERVAL_MINUTES, DEFAULT_NOTIFICATION_INTERVAL_MINUTES)),
-                readNonBlank(CURRENCY_NAME, GameConfig.DEFAULT_CURRENCY_NAME),
-                readNonBlank(CURRENCY_EMOJI, GameConfig.DEFAULT_CURRENCY_EMOJI),
-                readNonBlank(SHARDS_EMOJI, GameConfig.DEFAULT_SHARDS_EMOJI),
-                readMarketCommissionPercent());
+        Map<HeroRarity, GameConfig.RarityConfig> rarityConfigs = Map.of(
+                HeroRarity.COMMON, new GameConfig.RarityConfig(1, 5, 10, 200),
+                HeroRarity.RARE, new GameConfig.RarityConfig(3, 15, 50, 1000),
+                HeroRarity.EPIC, new GameConfig.RarityConfig(8, 40, 200, 5000),
+                HeroRarity.LEGENDARY, new GameConfig.RarityConfig(20, 100, 1000, 25000)
+        );
+        GameConfig game;
+        try {
+            game = new GameConfig(
+                    Duration.ofMinutes(readPositiveLong(DAILY_COOLDOWN_MINUTES, DEFAULT_DAILY_COOLDOWN_MINUTES)),
+                    Duration.ofMinutes(readPositiveLong(NOTIFICATION_INTERVAL_MINUTES,
+                            DEFAULT_NOTIFICATION_INTERVAL_MINUTES)),
+                    readNonBlank(CURRENCY_NAME, DEFAULT_CURRENCY_NAME),
+                    readNonBlank(CURRENCY_EMOJI, DEFAULT_CURRENCY_EMOJI),
+                    readNonBlank(SHARDS_EMOJI, DEFAULT_SHARDS_EMOJI),
+                    rarityConfigs,
+                    readMarketCommissionPercent());
+        } catch (IllegalArgumentException exception) {
+            throw new InvalidConfigurationException(MARKET_COMMISSION_PERCENT, exception.getMessage(), exception);
+        }
         return new AppConfig(require(BOT_TOKEN), database, game);
     }
 
@@ -142,24 +168,18 @@ public class EnvironmentConfigReader implements ConfigProvider {
      * Читает комиссию рынка из переменной окружения.
      * <p>
      * Если переменная не задана или пуста, возвращает значение по умолчанию.
+     * Диапазон допустимых значений проверяет конструктор {@link GameConfig}.
      *
-     * @return комиссия рынка в процентах (0..100)
+     * @return комиссия рынка в процентах
      * @throws InvalidConfigurationException если значение не является числом
-     *                                       или находится вне диапазона 0..100
      */
     private int readMarketCommissionPercent() throws InvalidConfigurationException {
         String value = envSource.get(MARKET_COMMISSION_PERCENT);
         if (value == null || value.isBlank()) {
-            return GameConfig.DEFAULT_MARKET_COMMISSION_PERCENT;
+            return DEFAULT_MARKET_COMMISSION_PERCENT;
         }
         try {
-            int parsed = Integer.parseInt(value);
-            if (parsed < 0 || parsed > 100) {
-                throw new InvalidConfigurationException(MARKET_COMMISSION_PERCENT,
-                        "Configuration parameter " + MARKET_COMMISSION_PERCENT
-                                + " must be between 0 and 100, got: " + parsed);
-            }
-            return parsed;
+            return Integer.parseInt(value);
         } catch (NumberFormatException exception) {
             throw new InvalidConfigurationException(MARKET_COMMISSION_PERCENT,
                     "Invalid numeric configuration: " + MARKET_COMMISSION_PERCENT, exception);

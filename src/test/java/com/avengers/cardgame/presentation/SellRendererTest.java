@@ -34,8 +34,9 @@ class SellRendererTest {
     void rendersSelection() {
         Message message = renderer.renderSelection(List.of(new InventoryItem(COMMON_HERO, 2)), 1);
 
-        Assertions.assertTrue(message.text().startsWith("🏷 Выбери карточку для продажи (страница 1/1):"));
-        Assertions.assertTrue(message.text().contains("Pepper"));
+        Assertions.assertEquals("""
+                🏷 Выбери карточку для продажи (страница 1/1):
+                ⚪ Pepper — Обычная ×2""", message.text());
         Assertions.assertEquals("/sell_pick 1",
                 message.buttons().getFirst().getFirst().callbackData());
     }
@@ -60,7 +61,9 @@ class SellRendererTest {
     void rendersPrice() {
         Message message = renderer.renderPrice(COMMON_HERO, 10, 100, CURRENCY);
 
-        Assertions.assertTrue(message.text().contains("Выбери цену. Допустимо от 10 до 100 💎."));
+        Assertions.assertEquals("""
+                ⚪ Pepper [Обычная]
+                Выбери цену. Допустимо от 10 до 100 💎.""", message.text());
         Assertions.assertEquals(3, message.buttons().getFirst().size());
         Assertions.assertEquals("/sell_price 1 10",
                 message.buttons().getFirst().getFirst().callbackData());
@@ -78,9 +81,9 @@ class SellRendererTest {
     void rendersConfirmation() {
         Message message = renderer.renderConfirmation(COMMON_HERO, 100, 95, 5, CURRENCY);
 
-        Assertions.assertTrue(message.text().contains("🏷 Выставить"));
-        Assertions.assertTrue(message.text().contains("за 100 💎?"));
-        Assertions.assertTrue(message.text().contains("Комиссия при продаже: 5%. Ты получишь 95 💎."));
+        Assertions.assertEquals("""
+                🏷 Выставить ⚪ Pepper [Обычная] за 100 💎?
+                Комиссия при продаже: 5%. Ты получишь 95 💎.""", message.text());
         Assertions.assertEquals("/sell_confirm 1 100",
                 message.buttons().getFirst().getFirst().callbackData());
     }
@@ -95,9 +98,8 @@ class SellRendererTest {
 
         Message message = renderer.renderCreated(listing, COMMON_HERO, CURRENCY);
 
-        Assertions.assertTrue(message.text().contains("✅ Лот #7 создан:"));
-        Assertions.assertTrue(message.text().contains("Pepper"));
-        Assertions.assertTrue(message.text().contains("за 100 💎"));
+        Assertions.assertEquals("✅ Лот #7 создан: ⚪ Pepper [Обычная] за 100 💎.",
+                message.text());
     }
 
     /**

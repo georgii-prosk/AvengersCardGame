@@ -13,6 +13,7 @@ import com.avengers.cardgame.service.CommandHandler;
 import com.avengers.cardgame.service.MarketService;
 import com.avengers.cardgame.service.command.CommandArguments;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -46,16 +47,20 @@ public class SellConfirmCommandHandler implements CommandHandler {
 
     @Override
     public void handle(CommandContext context) throws AppException {
-        Optional<CommandArguments.IdAndNumber> parsed = CommandArguments.parseIdAndNumber(context.argument());
-        if (parsed.isEmpty()) {
+        List<String> parts = CommandArguments.splitParts(context.argument());
+        Optional<Long> heroId = parts.size() == 2
+                ? CommandArguments.parseId(parts.getFirst())
+                : Optional.empty();
+        Optional<Integer> price = parts.size() == 2
+                ? CommandArguments.parseNumber(parts.getLast())
+                : Optional.empty();
+        if (heroId.isEmpty() || price.isEmpty()) {
             context.bot().sendMessage(sellRenderer.renderInvalidListingArguments(), context.chatId());
             return;
         }
-        long heroId = parsed.get().id();
-        int price = parsed.get().number();
 
         try {
-            MarketListing listing = marketService.createListing(context.userId(), heroId, price);
+            MarketListing listing = marketService.createListing(context.userId(), heroId.get(), price.get());
             Hero hero = heroRepository.findById(listing.heroId()).orElse(null);
             context.bot().sendMessage(sellRenderer.renderCreated(
                     listing, hero, gameConfig.currencyEmoji()), context.chatId());

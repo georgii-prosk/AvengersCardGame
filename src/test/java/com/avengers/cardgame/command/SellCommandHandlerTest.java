@@ -3,6 +3,7 @@ package com.avengers.cardgame.command;
 import com.avengers.cardgame.fakes.FakeBot;
 import com.avengers.cardgame.fakes.InMemoryHeroRepository;
 import com.avengers.cardgame.fakes.InMemoryUserCardRepository;
+import com.avengers.cardgame.fakes.InMemoryUserRepository;
 import com.avengers.cardgame.messaging.Message;
 import com.avengers.cardgame.model.Hero;
 import com.avengers.cardgame.model.HeroRarity;
@@ -38,7 +39,7 @@ class SellCommandHandlerTest {
 
     @BeforeEach
     void setUp() {
-        cardRepository = new InMemoryUserCardRepository();
+        cardRepository = new InMemoryUserCardRepository(new InMemoryUserRepository());
         InMemoryHeroRepository heroRepository = new InMemoryHeroRepository();
         heroRepository.save(COMMON_HERO);
         bot = new FakeBot();
@@ -62,7 +63,8 @@ class SellCommandHandlerTest {
     void sendsEmptyMessage() {
         handler.handle(context());
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("нет карточек"));
+        Assertions.assertEquals("У тебя пока нет карточек для продажи.",
+                bot.lastSent().message().text());
     }
 
     /**
@@ -76,7 +78,9 @@ class SellCommandHandlerTest {
         handler.handle(context());
 
         Message message = bot.lastSent().message();
-        Assertions.assertTrue(message.text().contains("страница 1/1"));
+        Assertions.assertEquals("""
+                🏷 Выбери карточку для продажи (страница 1/1):
+                ⚪ Pepper — Обычная ×1""", message.text());
         Assertions.assertEquals("/sell_pick 1",
                 message.buttons().getFirst().getFirst().callbackData());
     }
