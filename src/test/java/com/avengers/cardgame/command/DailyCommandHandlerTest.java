@@ -38,7 +38,7 @@ class DailyCommandHandlerTest {
         runDaily(service);
 
         Assertions.assertEquals(3, bot.count());
-        Assertions.assertTrue(textOf(0).contains("2"));
+        Assertions.assertEquals("🎁 Ежедневная награда! Тебе выпало карточек: 2", textOf(0));
         Assertions.assertTrue(bot.sent().stream().allMatch(s -> s.chatId() == CHAT_ID));
         Assertions.assertEquals(USER_ID, service.lastUserId());
     }
@@ -48,8 +48,20 @@ class DailyCommandHandlerTest {
     void cardsAreSentInGrantedOrder() throws Exception {
         runDaily(new FakeCardService(List.of(ironMan, pepper)));
 
-        Assertions.assertTrue(textOf(1).contains("Iron Man"));
-        Assertions.assertTrue(textOf(2).contains("Pepper Potts"));
+        Assertions.assertEquals(String.join("\n",
+                "🟣 Iron Man",
+                "Редкость: Эпическая",
+                "⚔️ Атака: 80",
+                "🛡️ Защита: 90",
+                "❤️ Здоровье: 50",
+                "e") + "\n", textOf(1));
+        Assertions.assertEquals(String.join("\n",
+                "⚪ Pepper Potts",
+                "Редкость: Обычная",
+                "⚔️ Атака: 5",
+                "🛡️ Защита: 15",
+                "❤️ Здоровье: 20",
+                "c") + "\n", textOf(2));
     }
 
     @Test
@@ -58,7 +70,8 @@ class DailyCommandHandlerTest {
         runDaily(new FakeCardService(Duration.ofHours(5).plusMinutes(32)));
 
         Assertions.assertEquals(1, bot.count());
-        Assertions.assertTrue(bot.lastSent().message().text().contains("5 ч 32 мин"));
+        Assertions.assertEquals("Ежедневная награда пока недоступна. Загляни через 5 ч 32 мин.",
+                bot.lastSent().message().text());
     }
 
     @Test
@@ -66,7 +79,8 @@ class DailyCommandHandlerTest {
     void cooldownRoundsPartialMinuteUp() throws Exception {
         runDaily(new FakeCardService(Duration.ofHours(5).plusMinutes(31).plusSeconds(20)));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("5 ч 32 мин"));
+        Assertions.assertEquals("Ежедневная награда пока недоступна. Загляни через 5 ч 32 мин.",
+                bot.lastSent().message().text());
     }
 
     @Test
@@ -74,8 +88,8 @@ class DailyCommandHandlerTest {
     void cooldownWithWholeHoursShowsOnlyHours() throws Exception {
         runDaily(new FakeCardService(Duration.ofHours(2)));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("2 ч"));
-        Assertions.assertFalse(bot.lastSent().message().text().contains("мин"));
+        Assertions.assertEquals("Ежедневная награда пока недоступна. Загляни через 2 ч.",
+                bot.lastSent().message().text());
     }
 
     @Test
@@ -83,6 +97,7 @@ class DailyCommandHandlerTest {
     void cooldownUnderOneMinuteShowsOneMinute() throws Exception {
         runDaily(new FakeCardService(Duration.ofSeconds(20)));
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("1 мин"));
+        Assertions.assertEquals("Ежедневная награда пока недоступна. Загляни через 1 мин.",
+                bot.lastSent().message().text());
     }
 }

@@ -115,7 +115,7 @@ class EnvironmentConfigReaderTest {
                 MissingEnvironmentVariableException.class,
                 () -> readerWith(env).read());
 
-        Assertions.assertTrue(ex.getMessage().contains("DB_URL"));
+        Assertions.assertEquals("Environment variable DB_URL is not set", ex.getMessage());
     }
 
     @Test

@@ -54,7 +54,8 @@ class InventoryCommandHandlerTest {
         run();
 
         Assertions.assertEquals(1, bot.count());
-        Assertions.assertTrue(bot.lastSent().message().text().contains("нет карточек"));
+        Assertions.assertEquals("У тебя пока нет карточек. Забери ежедневную награду командой /daily!",
+                bot.lastSent().message().text());
         Assertions.assertTrue(bot.lastSent().message().buttons().isEmpty());
     }
 
@@ -68,9 +69,9 @@ class InventoryCommandHandlerTest {
 
         run();
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("Thor"));
-        Assertions.assertTrue(bot.lastSent().message().text().contains("×3"));
-        Assertions.assertTrue(bot.lastSent().message().text().contains("Эпическая"));
+        Assertions.assertEquals("""
+                Твоя коллекция (страница 1/1):
+                🟣 Thor — Эпическая ×3""", bot.lastSent().message().text());
     }
 
     @Test
@@ -156,8 +157,12 @@ class InventoryCommandHandlerTest {
 
         var items =command.loadAndSortItems(USER_ID);
 
-        Assertions.assertTrue(renderer.render(items, 99).text().contains("страница 1/1"));
-        Assertions.assertTrue(renderer.render(items, -5).text().contains("страница 1/1"));
+        Assertions.assertEquals("""
+                Твоя коллекция (страница 1/1):
+                🟣 Thor — Эпическая ×1""", renderer.render(items, 99).text());
+        Assertions.assertEquals("""
+                Твоя коллекция (страница 1/1):
+                🟣 Thor — Эпическая ×1""", renderer.render(items, -5).text());
     }
 
     @Test
@@ -168,7 +173,8 @@ class InventoryCommandHandlerTest {
 
         run();
 
-        Assertions.assertTrue(bot.lastSent().message().text().contains("нет карточек"));
+        Assertions.assertEquals("У тебя пока нет карточек. Забери ежедневную награду командой /daily!",
+                bot.lastSent().message().text());
     }
 
     @Test

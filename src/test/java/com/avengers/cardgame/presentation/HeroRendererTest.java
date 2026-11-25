@@ -33,13 +33,13 @@ class HeroRendererTest {
 
         String text = renderer.render(hero);
 
-        Assertions.assertTrue(text.contains("🟣"));
-        Assertions.assertTrue(text.contains("Iron Man"));
-        Assertions.assertTrue(text.contains("Эпическая"));
-        Assertions.assertTrue(text.contains("80"));
-        Assertions.assertTrue(text.contains("90"));
-        Assertions.assertTrue(text.contains("50"));
-        Assertions.assertFalse(text.contains("В коллекции"));
+        Assertions.assertEquals(String.join("\n",
+                "🟣 Iron Man",
+                "Редкость: Эпическая",
+                "⚔️ Атака: 80",
+                "🛡️ Защита: 90",
+                "❤️ Здоровье: 50",
+                "desc") + "\n", text);
     }
 
     @Test
@@ -49,7 +49,13 @@ class HeroRendererTest {
 
         String text = renderer.render(hero, 3);
 
-        Assertions.assertTrue(text.contains("В коллекции: ×3"));
-        Assertions.assertTrue(text.contains("desc"));
+        Assertions.assertEquals(String.join("\n",
+                "⚪ Pepper Potts",
+                "Редкость: Обычная",
+                "⚔️ Атака: 5",
+                "🛡️ Защита: 15",
+                "❤️ Здоровье: 20",
+                "desc",
+                "В коллекции: ×3"), text);
     }
 }
