@@ -14,7 +14,7 @@ class UserNotFoundExceptionTest {
     void messageContainsUserId() {
         UserNotFoundException ex = new UserNotFoundException(42L);
 
-        Assertions.assertTrue(ex.getMessage().contains("42"));
+        Assertions.assertEquals("User not found: userId=42", ex.getMessage());
     }
 
     @Test
@@ -32,7 +32,7 @@ class UserNotFoundExceptionTest {
         UserNotFoundException ex = new UserNotFoundException(bigId);
 
         Assertions.assertEquals(bigId, ex.userId());
-        Assertions.assertTrue(ex.getMessage().contains(String.valueOf(bigId)));
+        Assertions.assertEquals("User not found: userId=" + bigId, ex.getMessage());
     }
 
     @Test

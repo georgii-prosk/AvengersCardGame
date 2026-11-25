@@ -14,7 +14,7 @@ class UserAlreadyExistsExceptionTest {
     void messageContainsUserId() {
         UserAlreadyExistsException ex = new UserAlreadyExistsException(42L);
 
-        Assertions.assertTrue(ex.getMessage().contains("42"));
+        Assertions.assertEquals("User already exists: userId=42", ex.getMessage());
     }
 
     @Test
@@ -32,7 +32,7 @@ class UserAlreadyExistsExceptionTest {
         UserAlreadyExistsException ex = new UserAlreadyExistsException(bigId);
 
         Assertions.assertEquals(bigId, ex.userId());
-        Assertions.assertTrue(ex.getMessage().contains(String.valueOf(bigId)));
+        Assertions.assertEquals("User already exists: userId=" + bigId, ex.getMessage());
     }
 
     @Test
